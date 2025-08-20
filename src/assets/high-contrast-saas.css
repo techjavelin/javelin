@@ -1,0 +1,89 @@
+/* Javelin High-Contrast SaaS Theme */
+:root {
+  --background: #181818;
+  --foreground: #f8f8f2;
+  --primary: #00ff99;
+  --secondary: #1e1e2f;
+  --accent: #ff2e88;
+  --border: #00ff99;
+  --nav-bg: #232323;
+  --nav-active: #00ff99;
+  --terminal-bg: #181818;
+  --terminal-fg: #00ff99;
+  --terminal-border: #00ff99;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', monospace;
+  margin: 0;
+}
+
+nav {
+  background: var(--nav-bg);
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  padding: 0.5rem 1rem;
+}
+
+nav a {
+  color: var(--foreground);
+  text-decoration: none;
+  margin-right: 2rem;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+nav a.active, nav a:hover {
+  color: var(--nav-active);
+}
+
+.terminal {
+  background: var(--terminal-bg);
+  color: var(--terminal-fg);
+  border: 2px solid var(--terminal-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 2rem auto;
+  max-width: 700px;
+  box-shadow: 0 0 24px var(--accent);
+  font-size: 1.1rem;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  background: var(--accent);
+}
+
+.terminal-title {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.button {
+  background: var(--primary);
+  color: var(--background);
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s;
+}
+
+.button:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}

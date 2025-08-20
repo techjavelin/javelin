@@ -4,7 +4,7 @@ This repository provides a starter template for creating applications using Vue.
 
 ## Overview
 
-This template equips you with a foundational Vue application integrated with AWS Amplify, streamlined for scalability and performance. It is ideal for developers looking to jumpstart their project with pre-configured AWS services like Cognito, AppSync, and DynamoDB.
+Javelin is a SaaS product offered by Tech Javelin Ltd (techjavelin.com), designed to provide a variety of information, application, and social security services to clients. Built on a scalable Vue.js and AWS Amplify foundation, Javelin streamlines service delivery for organizations and individuals seeking secure, reliable, and modern solutions.
 
 ## Features
 

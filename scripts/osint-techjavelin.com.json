@@ -1,0 +1,11 @@
+{
+  "domain": "techjavelin.com",
+  "wordlist": "subdomains.txt",
+  "github_token": "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",
+  "hibp_api_key": "1c35372138954afe872c36946d641976",
+  "hunter_api_key": "db5943e711b29bb6b9e2cfe8e2241a0b6b849ad3",
+  "max_github_repos": 25,
+  "max_secret_threads": 250,
+  "results_file": "techjavelin-result.json",
+  "verbose": false
+}

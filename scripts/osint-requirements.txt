@@ -1,6 +1,0 @@
-dnspython
-requests
-beautifulsoup4
-trufflehog
-tqdm
-colorama

@@ -17,6 +17,7 @@ export default defineConfig({
     historyApiFallback: true
   },
   build: {
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: undefined

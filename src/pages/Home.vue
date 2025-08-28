@@ -73,6 +73,15 @@ import CardGrid from '../components/CardGrid.vue'
   }
 }
 
+/* Light mode explicit styles */
+[data-theme="light"] .main-content h1 {
+  color: #1a365d;
+}
+
+[data-theme="light"] .main-content > p {
+  color: #4a5568;
+}
+
 /* Dark mode styles */
 [data-theme="dark"] .main-content {
   background: #121212 !important;

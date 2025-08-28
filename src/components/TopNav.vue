@@ -1,12 +1,14 @@
 <template>
-  <nav class="main-nav">
+  <nav ref="navRef" class="main-nav">
     <router-link to="/" class="nav-link">Home</router-link>
     <router-link to="/about" class="nav-link">About Us</router-link>
     
     <NavDropdown 
+      ref="navDropdownRef"
       :items="servicesMenuItems"
       label="Services"
       to="/services"
+      mode="both"
     />
     
     <router-link to="/blog" class="nav-link">Blog</router-link>
@@ -21,17 +23,17 @@
       </div>
       <div class="user-submenu" v-if="userMenuOpen">
         <div v-if="!isLoggedIn" class="user-menu-section">
-          <a @click="handleLogin" class="user-menu-item">
+          <a @click="showLoginModal = true" class="user-menu-item">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M11,7L9.6,8.4l2.6,2.6H2v2h10.2l-2.6,2.6L11,17l5-5L11,7z M20,19h-8v2h8c1.1,0,2-0.9,2-2V5c0-1.1-0.9-2-2-2h-8v2h8V19z"/>
             </svg>
-            Login
+            Login / Sign Up
           </a>
         </div>
-        <div v-if="isLoggedIn" class="user-menu-section">
+        <div v-if="isLoggedIn && user" class="user-menu-section">
           <div class="user-info">
-            <div class="user-name">{{ user.name }}</div>
-            <div class="user-email">{{ user.email }}</div>
+            <div class="user-name">{{ user.signInDetails?.loginId || user.username }}</div>
+            <div class="user-email">{{ user.signInDetails?.loginId || user.username }}</div>
           </div>
           <router-link to="/profile" class="user-menu-item" @click="userMenuOpen = false">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -45,6 +47,12 @@
             </svg>
             Preferences
           </router-link>
+          <router-link v-if="isAdminUser" to="/admin" class="user-menu-item admin-link" @click="userMenuOpen = false">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+            </svg>
+            🎛️ Admin Dashboard
+          </router-link>
         </div>
         <div class="user-menu-divider"></div>
         <div class="user-menu-section">
@@ -57,8 +65,8 @@
             </svg>
             {{ theme === 'light' ? 'Dark Mode' : 'Light Mode' }}
           </a>
-          <div v-if="isLoggedIn" class="user-menu-divider"></div>
-          <a v-if="isLoggedIn" @click="handleLogout" class="user-menu-item">
+          <div v-if="isLoggedIn && user" class="user-menu-divider"></div>
+          <a v-if="isLoggedIn && user" @click="handleLogout" class="user-menu-item">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
             </svg>
@@ -67,12 +75,20 @@
         </div>
       </div>
     </div>
+    
+    <!-- Custom Login Modal -->
+    <LoginComponent 
+      v-if="showLoginModal"
+      @close="showLoginModal = false"
+      @success="handleLoginSuccess"
+    />
   </nav>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import NavDropdown from './NavDropdown.vue'
+import LoginComponent from './LoginComponent.vue'
 
 // Props for user data and theme
 const props = defineProps({
@@ -86,15 +102,42 @@ const props = defineProps({
   },
   user: {
     type: Object,
-    default: () => ({ name: 'John Doe', email: 'john@example.com' })
+    default: null
   }
 })
 
 // Emits for parent component
-const emit = defineEmits(['toggle-theme', 'login', 'logout'])
+const emit = defineEmits(['toggle-theme', 'logout', 'login-success'])
 
 // Local state
 const userMenuOpen = ref(false)
+const showLoginModal = ref(false)
+const navRef = ref(null)
+const navDropdownRef = ref(null)
+
+// Handle click outside
+function handleClickOutside(event) {
+  // Close user menu if clicking outside
+  if (navRef.value && !navRef.value.contains(event.target)) {
+    userMenuOpen.value = false
+    showLoginModal.value = false
+  }
+}
+
+// Setup click outside listener
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+// Computed properties
+const isAdminUser = computed(() => {
+  return props.isLoggedIn && 
+         props.user?.signInDetails?.loginId === 'admin@techjavelin.com'
+})
 
 // Services menu configuration
 const servicesMenuItems = [
@@ -114,20 +157,36 @@ function toggleTheme() {
   userMenuOpen.value = false
 }
 
-function handleLogin() {
-  emit('login')
-  userMenuOpen.value = false
-}
-
 function handleLogout() {
   emit('logout')
   userMenuOpen.value = false
+}
+
+async function handleLoginSuccess(data) {
+  showLoginModal.value = false
+  userMenuOpen.value = false
+  // Import getCurrentUser to get the updated user data
+  try {
+    const { getCurrentUser } = await import('aws-amplify/auth')
+    const user = await getCurrentUser()
+    emit('login-success', user)
+  } catch (error) {
+    console.error('Error getting user after login:', error)
+  }
 }
 
 // Expose methods for parent component
 defineExpose({
   closeUserMenu: () => {
     userMenuOpen.value = false
+    showLoginModal.value = false
+  },
+  closeAllMenus: () => {
+    userMenuOpen.value = false
+    showLoginModal.value = false
+    if (navDropdownRef.value) {
+      navDropdownRef.value.closeDropdown()
+    }
   }
 })
 </script>
@@ -324,5 +383,29 @@ defineExpose({
 
 [data-theme="dark"] .user-menu-divider {
   background: #404040;
+}
+
+/* Admin link styling */
+.admin-link {
+  background: linear-gradient(135deg, #2566af, #3b82f6) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  margin: 0.25rem 0 !important;
+}
+
+.admin-link:hover {
+  background: linear-gradient(135deg, #1a4d87, #2563eb) !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 102, 175, 0.3);
+}
+
+[data-theme="dark"] .admin-link {
+  background: linear-gradient(135deg, #3b82f6, #6366f1) !important;
+}
+
+[data-theme="dark"] .admin-link:hover {
+  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
 }
 </style>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submenu Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            background: #f5f5f5; 
+        }
+        .test-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-step {
+            background: #e8f4fd;
+            padding: 15px;
+            border-left: 4px solid #2563eb;
+            margin: 10px 0;
+        }
+        .success {
+            color: #059669;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>🎛️ Submenu Click-Outside Test</h1>
+        <p>This page is to test our submenu click-outside functionality that we just implemented.</p>
+        
+        <div class="test-step">
+            <h3>✅ What We've Implemented:</h3>
+            <ul>
+                <li><strong>NavDropdown Component</strong>: Enhanced with click-outside functionality</li>
+                <li><strong>TopNav Component</strong>: Updated with proper click-outside handling for user menu</li>
+                <li><strong>App.vue</strong>: Updated global click handler to close all menus</li>
+                <li><strong>Multiple Modes</strong>: NavDropdown supports hover, click, and both modes</li>
+            </ul>
+        </div>
+
+        <div class="test-step">
+            <h3>🧪 How to Test:</h3>
+            <ol>
+                <li>Go back to your main application at <strong>localhost:5173</strong></li>
+                <li><strong>Services Menu</strong>: Click on "Services" - it should open the dropdown</li>
+                <li>Click anywhere outside the dropdown - it should close</li>
+                <li><strong>User Menu</strong>: Click on the user avatar icon - it should open the user menu</li>
+                <li>Click anywhere outside the user menu - it should close</li>
+                <li><strong>Login Modal</strong>: Click "Login/Sign Up" and test the modal click-outside functionality</li>
+            </ol>
+        </div>
+
+        <div class="test-step">
+            <h3>🔧 Technical Details:</h3>
+            <ul>
+                <li><strong>NavDropdown</strong>: Uses <code>mode="both"</code> for hover AND click interaction</li>
+                <li><strong>Click Outside Handler</strong>: Added to both components with proper cleanup</li>
+                <li><strong>Event Propagation</strong>: Uses <code>@click.stop</code> to prevent unwanted closures</li>
+                <li><strong>Template Refs</strong>: Proper DOM element referencing for accurate outside-click detection</li>
+            </ul>
+        </div>
+
+        <div class="test-step success">
+            <h3>🎉 Expected Behavior:</h3>
+            <p>All submenus should now close when you click outside of them, providing a much better user experience!</p>
+        </div>
+    </div>
+
+    <script>
+        console.log('🎛️ Submenu click-outside functionality has been implemented!');
+        console.log('📝 Key changes:');
+        console.log('  - NavDropdown: Enhanced with click-outside handling');
+        console.log('  - TopNav: Updated user menu click-outside logic');
+        console.log('  - App.vue: Global menu closure coordination');
+        console.log('  - Login Modal: Fixed click propagation issues');
+    </script>
+</body>
+</html>

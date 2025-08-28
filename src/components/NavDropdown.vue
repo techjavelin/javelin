@@ -1,14 +1,16 @@
 <template>
   <div 
+    ref="dropdownRef"
     class="nav-dropdown" 
-    @mouseenter="isOpen = true" 
-    @mouseleave="isOpen = false"
+    @mouseenter="handleMouseEnter" 
+    @mouseleave="handleMouseLeave"
   >
     <!-- Main navigation link -->
     <router-link 
       :to="to" 
       class="nav-dropdown-link"
-      :class="{ 'has-dropdown': items && items.length > 0 }"
+      :class="{ 'has-dropdown': items && items.length > 0, 'is-active': isOpen }"
+      @click.prevent="handleLinkClick"
     >
       {{ label }}
       <span v-if="items && items.length > 0" class="dropdown-arrow">▼</span>
@@ -19,6 +21,7 @@
       v-if="items && items.length > 0" 
       class="dropdown-menu" 
       :class="{ 'is-open': isOpen }"
+      @click.stop
     >
       <template v-for="item in items" :key="item.to || item.label">
         <!-- Regular link -->
@@ -64,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   // Main link destination
@@ -92,17 +95,101 @@ const props = defineProps({
   minWidth: {
     type: String,
     default: '220px'
+  },
+  // Interaction mode
+  mode: {
+    type: String,
+    default: 'hover', // 'hover', 'click', 'both'
+    validator: (value) => ['hover', 'click', 'both'].includes(value)
   }
 })
 
-const emit = defineEmits(['item-click'])
+const emit = defineEmits(['item-click', 'open', 'close'])
 
 const isOpen = ref(false)
+const dropdownRef = ref(null)
+let hoverTimer = null
+
+// Handle mouse interactions (for hover mode)
+function handleMouseEnter() {
+  if (props.mode === 'hover' || props.mode === 'both') {
+    clearTimeout(hoverTimer)
+    if (!isOpen.value) {
+      isOpen.value = true
+      emit('open')
+    }
+  }
+}
+
+function handleMouseLeave() {
+  if (props.mode === 'hover' || props.mode === 'both') {
+    hoverTimer = setTimeout(() => {
+      if (isOpen.value) {
+        isOpen.value = false
+        emit('close')
+      }
+    }, 100) // Small delay to prevent flickering
+  }
+}
+
+// Handle click interactions (for click mode)
+function handleLinkClick(event) {
+  if (props.items && props.items.length > 0) {
+    if (props.mode === 'click' || props.mode === 'both') {
+      event.preventDefault()
+      toggleDropdown()
+    } else if (props.mode === 'hover') {
+      // For hover mode, still navigate to the link
+      return true
+    }
+  }
+}
+
+function toggleDropdown() {
+  isOpen.value = !isOpen.value
+  if (isOpen.value) {
+    emit('open')
+  } else {
+    emit('close')
+  }
+}
+
+function closeDropdown() {
+  if (isOpen.value) {
+    isOpen.value = false
+    emit('close')
+  }
+}
+
+// Handle click outside
+function handleClickOutside(event) {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    closeDropdown()
+  }
+}
 
 function handleItemClick(item) {
   emit('item-click', item)
-  isOpen.value = false
+  closeDropdown()
 }
+
+// Setup click outside listener
+onMounted(() => {
+  if (props.mode === 'click' || props.mode === 'both') {
+    document.addEventListener('click', handleClickOutside)
+  }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  clearTimeout(hoverTimer)
+})
+
+// Expose methods for parent component
+defineExpose({
+  closeDropdown,
+  isOpen: () => isOpen.value
+})
 </script>
 
 <style scoped>
@@ -126,6 +213,11 @@ function handleItemClick(item) {
 
 .nav-dropdown-link:hover {
   background: #eaf2fb;
+}
+
+.nav-dropdown-link.is-active {
+  background: #eaf2fb;
+  color: #174a7c;
 }
 
 .dropdown-arrow {

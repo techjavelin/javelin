@@ -110,9 +110,19 @@ function handleCardClick() {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.08;
+  opacity: 0.05;
   z-index: 1;
   border-radius: inherit;
+}
+
+/* Ensure better contrast for cards with backgrounds */
+.card.has-background .card-content {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
 }
 
 .card-content {
@@ -174,14 +184,14 @@ function handleCardClick() {
 .card-title {
   font-size: 1.4rem;
   margin-bottom: 1rem;
-  color: #2566af;
+  color: #1a365d;
   font-weight: 600;
 }
 
 .card-description {
   line-height: 1.6;
   margin-bottom: 1.5rem;
-  color: #666;
+  color: #4a5568;
 }
 
 .card-slot {
@@ -231,6 +241,55 @@ function handleCardClick() {
   }
 }
 
+/* Light mode explicit styles for better contrast */
+[data-theme="light"] .card {
+  background: #ffffff;
+  border-color: #e0e0e0;
+  color: #333333;
+}
+
+[data-theme="light"] .card-title {
+  color: #1a365d;
+}
+
+[data-theme="light"] .card-description {
+  color: #4a5568;
+}
+
+[data-theme="light"] .card-action {
+  color: #2566af;
+  border-color: #2566af;
+}
+
+[data-theme="light"] .card.info {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  color: #333333;
+}
+
+[data-theme="light"] .card.outline {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #2566af;
+  color: #333333;
+}
+
+[data-theme="light"] .card.outline .card-title {
+  color: #2566af;
+}
+
+[data-theme="light"] .card.has-background .card-content {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333333;
+}
+
+[data-theme="light"] .card.has-background .card-title {
+  color: #1a365d;
+}
+
+[data-theme="light"] .card.has-background .card-description {
+  color: #4a5568;
+}
+
 /* Dark mode styles */
 [data-theme="dark"] .card {
   background: #1a1a1a;
@@ -240,6 +299,11 @@ function handleCardClick() {
 
 [data-theme="dark"] .card.has-background::before {
   opacity: 0.04;
+}
+
+[data-theme="dark"] .card.has-background .card-content {
+  background: rgba(26, 26, 26, 0.95);
+  color: #e0e0e0;
 }
 
 [data-theme="dark"] .card:hover {

@@ -1,176 +1,121 @@
 <template>
-  <div class="page-content">
-    <h1>Preferences</h1>
-    <p>Customize your application settings and preferences.</p>
-    
-    <div class="preferences-form">
-      <div class="form-section">
-        <h2>Display Settings</h2>
-        <div class="preference-group">
-          <label class="preference-label">Theme</label>
-          <div class="radio-group">
-            <label class="radio-label">
-              <input type="radio" value="light" v-model="preferences.theme" />
-              <span>Light Mode</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" value="dark" v-model="preferences.theme" />
-              <span>Dark Mode</span>
-            </label>
-            <label class="radio-label">
-              <input type="radio" value="auto" v-model="preferences.theme" />
-              <span>Auto (System)</span>
-            </label>
+  <div id="preferences" class="page-content">
+    <div class="main-content">
+      <h1>Preferences</h1>
+      <p>Customize your experience and manage your privacy settings.</p>
+      
+      <!-- Theme Selection Section -->
+      <div class="preference-section">
+        <h2>Appearance</h2>
+        <div class="preference-item">
+          <label class="preference-label">
+            <span class="label-text">Theme</span>
+            <span class="label-description">Choose your preferred color scheme</span>
+          </label>
+          <div class="theme-options">
+            <button 
+              @click="setTheme('light')" 
+              :class="['theme-option', { active: currentTheme === 'light' }]"
+              aria-label="Light theme"
+            >
+              <div class="theme-preview light"></div>
+              <span>Light</span>
+            </button>
+            <button 
+              @click="setTheme('dark')" 
+              :class="['theme-option', { active: currentTheme === 'dark' }]"
+              aria-label="Dark theme"
+            >
+              <div class="theme-preview dark"></div>
+              <span>Dark</span>
+            </button>
+            <button 
+              @click="setTheme('auto')" 
+              :class="['theme-option', { active: currentTheme === 'auto' }]"
+              aria-label="Auto theme (follows system preference)"
+            >
+              <div class="theme-preview auto"></div>
+              <span>Auto</span>
+            </button>
           </div>
         </div>
-        
-        <div class="preference-group">
-          <label class="preference-label">Language</label>
-          <select v-model="preferences.language">
-            <option value="en">English</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-          </select>
-        </div>
       </div>
-      
-      <div class="form-section">
-        <h2>Notification Preferences</h2>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.emailNotifications" />
-            <span>Email notifications</span>
+
+      <!-- Cookie Compliance Section -->
+      <div class="preference-section">
+        <h2>Privacy & Cookies</h2>
+        <div class="preference-item">
+          <label class="preference-label">
+            <span class="label-text">Cookie Preferences</span>
+            <span class="label-description">Manage how we use cookies and store your preferences</span>
           </label>
+          <div class="cookie-info">
+            <div class="info-card">
+              <h3>Current Settings</h3>
+              <div class="cookie-status">
+                <div class="status-item">
+                  <span class="status-label">Essential Cookies:</span>
+                  <span class="status-value enabled">Always Enabled</span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Analytics Cookies:</span>
+                  <span :class="['status-value', cookieConsent.analytics ? 'enabled' : 'disabled']">
+                    {{ cookieConsent.analytics ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Marketing Cookies:</span>
+                  <span :class="['status-value', cookieConsent.marketing ? 'enabled' : 'disabled']">
+                    {{ cookieConsent.marketing ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </div>
+                <div class="status-item">
+                  <span class="status-label">Functional Cookies:</span>
+                  <span :class="['status-value', cookieConsent.functional ? 'enabled' : 'disabled']">
+                    {{ cookieConsent.functional ? 'Enabled' : 'Disabled' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.pushNotifications" />
-            <span>Push notifications</span>
-          </label>
-        </div>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.marketingEmails" />
-            <span>Marketing emails</span>
-          </label>
-        </div>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.weeklyDigest" />
-            <span>Weekly digest emails</span>
-          </label>
-        </div>
-      </div>
-      
-      <div class="form-section">
-        <h2>Privacy Settings</h2>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.profilePublic" />
-            <span>Make profile public</span>
-          </label>
-        </div>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.analyticsOptOut" />
-            <span>Opt out of analytics tracking</span>
-          </label>
-        </div>
-        <div class="preference-group">
-          <label class="checkbox-label">
-            <input type="checkbox" v-model="preferences.shareUsageData" />
-            <span>Share anonymous usage data to improve the service</span>
-          </label>
-        </div>
-      </div>
-      
-      <div class="form-section">
-        <h2>Data Management</h2>
-        <div class="preference-group">
-          <button type="button" class="btn-secondary" @click="exportData">Export My Data</button>
-          <p class="help-text">Download a copy of all your data in JSON format</p>
-        </div>
-        <div class="preference-group">
-          <button type="button" class="btn-danger" @click="deleteAccount">Delete Account</button>
-          <p class="help-text">Permanently delete your account and all associated data</p>
-        </div>
-      </div>
-      
-      <div class="form-actions">
-        <button type="button" class="btn-primary" @click="savePreferences">Save Preferences</button>
-        <button type="button" class="btn-secondary" @click="resetPreferences">Reset to Defaults</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const preferences = ref({
-  theme: 'light',
-  language: 'en',
-  emailNotifications: true,
-  pushNotifications: false,
-  marketingEmails: false,
-  weeklyDigest: true,
-  profilePublic: false,
-  analyticsOptOut: false,
-  shareUsageData: true
+const currentTheme = ref('light')
+const cookieConsent = ref({
+  essential: true,
+  analytics: false,
+  marketing: false,
+  functional: false
 })
 
-function savePreferences() {
-  // Here you would save to your backend
-  alert('Preferences saved successfully!')
+const setTheme = (theme) => {
+  currentTheme.value = theme
+  const isDark = theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
 }
 
-function resetPreferences() {
-  preferences.value = {
-    theme: 'light',
-    language: 'en',
-    emailNotifications: true,
-    pushNotifications: false,
-    marketingEmails: false,
-    weeklyDigest: true,
-    profilePublic: false,
-    analyticsOptOut: false,
-    shareUsageData: true
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem('cookieConsent')
+    if (saved) {
+      cookieConsent.value = { ...cookieConsent.value, ...JSON.parse(saved) }
+    }
+  } catch (e) {
+    console.warn('Unable to load settings:', e)
   }
-}
-
-function exportData() {
-  // Mock data export
-  const data = {
-    profile: { name: 'John Doe', email: 'john@example.com' },
-    preferences: preferences.value,
-    exportDate: new Date().toISOString()
-  }
-  
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'my-data-export.json'
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-function deleteAccount() {
-  if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-    alert('Account deletion request submitted. You will receive a confirmation email.')
-  }
-}
+})
 </script>
 
 <style scoped>
 .page-content {
   padding: 2rem;
-  text-align: center;
-  min-height: auto;
-  width: 100%;
   max-width: 800px;
   margin: 0 auto;
 }
@@ -188,161 +133,148 @@ function deleteAccount() {
   line-height: 1.6;
 }
 
-.preferences-form {
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: left;
-  background: white;
-  border-radius: 12px;
+.preference-section {
+  margin-bottom: 3rem;
   padding: 2rem;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
 }
 
-.form-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid #eaf2fb;
-}
-
-.form-section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 1rem;
-}
-
-.form-section h2 {
+.preference-section h2 {
   color: #2566af;
   font-size: 1.5rem;
   margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0.5rem;
 }
 
-.preference-group {
-  margin-bottom: 1.5rem;
-}
-
-.preference-label {
-  display: block;
+.label-text {
   font-weight: 600;
   color: #333;
-  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
-.radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.radio-label,
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  font-weight: normal;
-  color: #555;
-  cursor: pointer;
-}
-
-.radio-label input,
-.checkbox-label input {
-  margin-right: 0.75rem;
-}
-
-.preference-group select {
-  width: 100%;
-  max-width: 300px;
-  padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.preference-group select:focus {
-  outline: none;
-  border-color: #2566af;
-}
-
-.help-text {
-  font-size: 0.85rem;
+.label-description {
   color: #666;
-  margin-top: 0.5rem;
-  margin-bottom: 0;
+  font-size: 0.9rem;
+  display: block;
 }
 
-.form-actions {
+.theme-options {
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
-  padding-top: 1rem;
+  flex-wrap: wrap;
 }
 
-.btn-primary {
-  background: #2566af;
-  color: white;
-  border: none;
-  padding: 0.75rem 2rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.btn-primary:hover {
-  background: #174a7c;
-}
-
-.btn-secondary {
-  background: transparent;
-  color: #2566af;
-  border: 2px solid #2566af;
-  padding: 0.75rem 2rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
+.theme-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.btn-secondary:hover {
-  background: #2566af;
-  color: white;
+.theme-option.active {
+  border-color: #2566af;
+  background: #f8faff;
 }
 
-.btn-danger {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 0.75rem 2rem;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s ease;
+.theme-preview {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
 }
 
-.btn-danger:hover {
-  background: #c82333;
+.theme-preview.light {
+  background: #fff;
 }
 
-@media (max-width: 768px) {
-  .main-content {
-    padding: 1rem;
-  }
-  
-  .main-content h1 {
-    font-size: 2rem;
-  }
-  
-  .preferences-form {
-    padding: 1.5rem;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .radio-group {
-    gap: 0.75rem;
-  }
+.theme-preview.dark {
+  background: #333;
+}
+
+.theme-preview.auto {
+  background: linear-gradient(45deg, #fff 50%, #333 50%);
+}
+
+.info-card {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.info-card h3 {
+  color: #2566af;
+  margin-bottom: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-value.enabled {
+  background: #d4edda;
+  color: #155724;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+.status-value.disabled {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+}
+
+/* Dark Mode */
+[data-theme="dark"] .page-content h1 {
+  color: #64b5f6;
+}
+
+[data-theme="dark"] .main-content > p {
+  color: #c0c0c0;
+}
+
+[data-theme="dark"] .preference-section {
+  background: #1e1e1e;
+  border-color: #404040;
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .preference-section h2 {
+  color: #64b5f6;
+  border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .label-text {
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .info-card {
+  background: #2d2d2d;
+  border-color: #444;
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .info-card h3 {
+  color: #64b5f6;
 }
 </style>

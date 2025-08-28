@@ -1,7 +1,54 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import TopNav from './components/TopNav.vue'
+import CookiesWarning from './components/CookiesWarning.vue'
+import { getCurrentUser, signOut, type AuthUser } from 'aws-amplify/auth'
+import '@aws-amplify/ui-vue/styles.css'
+
+import { Amplify } from 'aws-amplify'
+import outputs from '../amplify_outputs.json'
+
+Amplify.configure(outputs)
+
+// Authentication state
+const currentUser = ref<AuthUser | null>(null)
+const isLoggedIn = ref(false)
+
+// Check authentication status on app load
+onMounted(async () => {
+  // Initialize theme management
+  initializeTheme()
+  setupCookieListeners()
+  
+  // Check authentication
+  try {
+    const user = await getCurrentUser()
+    currentUser.value = user
+    isLoggedIn.value = true
+  } catch (error) {
+    // User is not logged in
+    currentUser.value = null
+    isLoggedIn.value = false
+  }
+})
+
+// Handle logout
+async function handleLogout() {
+  try {
+    await signOut()
+    currentUser.value = null
+    isLoggedIn.value = false
+  } catch (error) {
+    console.error('Error signing out:', error)
+  }
+}
+
+// Handle login success (called from TopNav when user logs in)
+function handleLoginSuccess(user: AuthUser) {
+  currentUser.value = user
+  isLoggedIn.value = true
+}
 
 const route = useRoute()
 
@@ -11,39 +58,163 @@ const breadcrumb = computed(() => {
   return `~${segments.length ? '/' + segments.join('/') : ''}`
 })
 
+// Extend window interface for theme storage flag
+declare global {
+  interface Window {
+    themeStorageAllowed: boolean;
+  }
+}
+
 const theme = ref('light')
+
+// Theme management with cookie compliance
 function toggleTheme() {
-  theme.value = theme.value === 'light' ? 'dark' : 'light'
+  const newTheme = theme.value === 'light' ? 'dark' : 'light'
+  setTheme(newTheme)
+}
+
+function setTheme(newTheme: string) {
+  theme.value = newTheme
+  document.documentElement.setAttribute('data-theme', newTheme)
+  
+  // Only store theme if functional cookies are allowed
+  if (window.themeStorageAllowed) {
+    localStorage.setItem('user-theme', newTheme)
+  } else {
+    // Store temporarily in session storage until consent is given
+    sessionStorage.setItem('pending-theme', newTheme)
+    
+    // Show a subtle notification about cookie consent
+    showThemeConsentNotice()
+  }
+}
+
+function showThemeConsentNotice() {
+  // Create a temporary notification
+  const notification = document.createElement('div')
+  notification.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(79, 70, 229, 0.95);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1001;
+      backdrop-filter: blur(10px);
+      animation: slideInRight 0.3s ease-out;
+    ">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M13,9H11V7H13M13,17H11V11H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+        </svg>
+        <span>Accept functional cookies to save theme preferences</span>
+      </div>
+    </div>
+  `
+  
+  // Add CSS animation
+  const style = document.createElement('style')
+  style.textContent = `
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  `
+  document.head.appendChild(style)
+  
+  document.body.appendChild(notification)
+  
+  // Remove notification after 4 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove()
+    }
+  }, 4000)
+}
+
+// Initialize theme on app load
+function initializeTheme() {
+  // Check if functional cookies are allowed
+  const cookieConsent = localStorage.getItem('cookie-consent')
+  let functionalAllowed = false
+  
+  if (cookieConsent) {
+    try {
+      const consent = JSON.parse(cookieConsent)
+      functionalAllowed = consent.functional
+      window.themeStorageAllowed = functionalAllowed
+    } catch (error) {
+      console.error('Error parsing cookie consent:', error)
+    }
+  }
+  
+  if (functionalAllowed) {
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem('user-theme')
+    if (savedTheme) {
+      theme.value = savedTheme
+    } else {
+      // Default to system preference
+      theme.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    }
+  } else {
+    // Use system preference without storing
+    theme.value = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    window.themeStorageAllowed = false
+  }
+  
   document.documentElement.setAttribute('data-theme', theme.value)
 }
 
-const isLoggedIn = ref(false) // This would be connected to your auth system
-const user = ref({ name: 'John Doe', email: 'john@example.com' }) // Mock user data
+// Listen for cookie consent changes
+function setupCookieListeners() {
+  window.addEventListener('theme-storage-enabled', (event: Event) => {
+    // Theme storage was just enabled
+    const customEvent = event as CustomEvent
+    const newTheme = customEvent.detail.theme
+    theme.value = newTheme
+  })
+  
+  window.addEventListener('theme-storage-disabled', (event: Event) => {
+    // Theme storage was disabled
+    const customEvent = event as CustomEvent
+    const systemTheme = customEvent.detail.theme
+    theme.value = systemTheme
+  })
+  
+  window.addEventListener('cookie-consent-updated', (event: Event) => {
+    const customEvent = event as CustomEvent
+    const consent = customEvent.detail
+    window.themeStorageAllowed = consent.functional
+    
+    if (consent.functional) {
+      // Functional cookies were just enabled
+      const pendingTheme = sessionStorage.getItem('pending-theme')
+      if (pendingTheme) {
+        localStorage.setItem('user-theme', pendingTheme)
+        sessionStorage.removeItem('pending-theme')
+      } else {
+        // Save current theme
+        localStorage.setItem('user-theme', theme.value)
+      }
+    } else {
+      // Functional cookies were disabled
+      localStorage.removeItem('user-theme')
+    }
+  })
+}
 
 const topNavRef = ref<InstanceType<typeof TopNav> | null>(null)
-
-function handleLogin() {
-  // This would handle actual login logic
-  isLoggedIn.value = true
-}
-
-function handleLogout() {
-  // This would handle actual logout logic
-  isLoggedIn.value = false
-}
 
 // Close menus when clicking outside
 function handleClickOutside() {
   if (topNavRef.value) {
-    topNavRef.value.closeUserMenu()
+    topNavRef.value.closeAllMenus()
   }
 }
-
-// Set initial theme
-if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  theme.value = 'dark'
-}
-document.documentElement.setAttribute('data-theme', theme.value)
 </script>
 
 <template>
@@ -86,10 +257,10 @@ document.documentElement.setAttribute('data-theme', theme.value)
       ref="topNavRef"
       :theme="theme"
       :is-logged-in="isLoggedIn"
-      :user="user"
+      :user="currentUser"
       @toggle-theme="toggleTheme"
-      @login="handleLogin"
       @logout="handleLogout"
+      @login-success="handleLoginSuccess"
     />
     <!-- Main content area for routed components -->
     <router-view></router-view>
@@ -127,6 +298,9 @@ document.documentElement.setAttribute('data-theme', theme.value)
         </div>
       </div>
     </footer>
+
+    <!-- Cookies Warning Banner -->
+    <CookiesWarning />
   </div>
 </template>
 
@@ -1136,6 +1310,23 @@ document.documentElement.setAttribute('data-theme', theme.value)
   [data-theme="dark"] [style*="background-color: white"] {
     background: #121212 !important;
     background-color: #121212 !important;
+  }
+
+  /* Amplify UI customizations */
+  [data-amplify-theme] {
+    --amplify-components-authenticator-router-background-color: #f7f7f7;
+    --amplify-components-authenticator-router-border-color: #e0e0e0;
+    --amplify-colors-brand-primary-80: #2566af;
+    --amplify-colors-brand-primary-90: #1e5299;
+    --amplify-colors-brand-primary-100: #1a4684;
+  }
+
+  [data-theme="dark"] [data-amplify-theme] {
+    --amplify-components-authenticator-router-background-color: #1a1a1a;
+    --amplify-components-authenticator-router-border-color: #333;
+    --amplify-colors-neutral-10: #1a1a1a;
+    --amplify-colors-neutral-20: #2d2d2d;
+    --amplify-colors-neutral-100: #e0e0e0;
   }
 
 </style>

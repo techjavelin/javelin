@@ -149,6 +149,27 @@ import CardGrid from '../components/CardGrid.vue'
   }
 }
 
+/* Light mode explicit styles */
+[data-theme="light"] .page-content h1 {
+  color: #1a365d;
+}
+
+[data-theme="light"] .page-content > p {
+  color: #4a5568;
+}
+
+[data-theme="light"] .about-section h2 {
+  color: #2566af;
+}
+
+[data-theme="light"] .benefits-list li {
+  color: #4a5568;
+}
+
+[data-theme="light"] .benefits-list li:before {
+  color: #2566af;
+}
+
 /* Dark mode styles */
 [data-theme="dark"] .page-content h1 {
   color: #64b5f6;

@@ -369,6 +369,55 @@ import CardGrid from '../components/CardGrid.vue'
   }
 }
 
+/* Light mode explicit styles for better readability */
+[data-theme="light"] .page-content h1 {
+  color: #1a365d;
+}
+
+[data-theme="light"] .page-content > p {
+  color: #4a5568;
+}
+
+[data-theme="light"] .intro-card h2 {
+  color: #2566af;
+}
+
+[data-theme="light"] .intro-card p {
+  color: #4a5568;
+}
+
+[data-theme="light"] .services-contact h3 {
+  color: #2566af;
+}
+
+[data-theme="light"] .service-description {
+  color: #4a5568;
+}
+
+[data-theme="light"] .service-features h4,
+[data-theme="light"] .sub-service-card h4 {
+  color: #2566af;
+}
+
+[data-theme="light"] .feature-list li {
+  color: #4a5568;
+}
+
+[data-theme="light"] .feature-list li:before {
+  color: #2566af;
+}
+
+[data-theme="light"] .contact-button,
+[data-theme="light"] .service-cta {
+  background: #2566af;
+  color: white;
+}
+
+[data-theme="light"] .contact-button:hover,
+[data-theme="light"] .service-cta:hover {
+  background: #1e5294;
+}
+
 /* Dark mode styles */
 [data-theme="dark"] .page-content h1 {
   color: #64b5f6;

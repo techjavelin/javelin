@@ -1,4 +1,4 @@
-# Javelin SaaS Platform
+# Pulse Client Hub
 
 ## Purpose
 
@@ -11,11 +11,33 @@ Describe who will use this.
 
 ## Project Summary
 
+A secure, extensible client portal for professional and managed services. Features include contract management, project scheduling, asset management, engagement requests, and future vulnerability management. Supports organizations with multiple users and roles, and integrates with PandaDoc, Amplify Gen2, Cedar, and GitHub.
+
+
+
+A secure, extensible client portal for professional and managed services. Features include contract management, project scheduling, asset management, engagement requests, and future vulnerability management. Supports organizations with multiple users and roles, and integrates with PandaDoc, Amplify Gen2, Oso, and GitHub.
+
+
+
 Javelin is a SaaS platform for secure, scalable information and social security services, built by Tech Javelin Ltd. It uses Vue 3, Amplify Gen2, Cognito, AppSync, and DynamoDB. Features include modular composables, admin dashboard, sidebar navigation, strict TypeScript, and Vite build.
 
 
 
 ## Goals
+
+- Enable clients to manage contracts, projects, and assets securely.
+- Support role-based access for organizations and projects.
+- Integrate with external services (PandaDoc, GitHub, vulnerability management).
+- Support dark and light UI themes.
+
+
+
+- Enable clients to manage contracts, projects, and assets securely.
+- Support role-based access for organizations and projects.
+- Integrate with external services (PandaDoc, GitHub, vulnerability management).
+- Support dark and light UI themes.
+
+
 
 - Deliver secure, scalable SaaS services
 - Easy authentication and data management
@@ -26,6 +48,18 @@ Javelin is a SaaS platform for secure, scalable information and social security 
 
 ## Constraints
 
+- All UI must support both dark and light themes.
+- Integrate with existing technologies unless reviewed.
+- Extensible for future services and asset types.
+
+
+
+- All UI must support both dark and light themes.
+- Integrate with existing technologies unless reviewed.
+- Extensible for future services and asset types.
+
+
+
 - Must use Amplify Gen2 (npx ampx)
 - Strict TypeScript
 - Modular composables
@@ -34,6 +68,18 @@ Javelin is a SaaS platform for secure, scalable information and social security 
 
 
 ## Stakeholders
+
+- Clients of professional and managed services
+- Internal service delivery teams
+- Security and compliance teams
+
+
+
+- Clients of professional and managed services
+- Internal service delivery teams
+- Security and compliance teams
+
+
 
 - Tech Javelin Ltd
 - Enterprise clients

@@ -22,3 +22,13 @@ Business logic in src/composables, UI in src/components, admin dashboard in src/
 - src/components/AdminSidebar.vue
 - src/pages/AdminDashboard.vue
 - src/router.ts
+
+
+## Theme Support (Dark/Light)
+
+All UI components and pages must support both dark and light themes. Theme switching should be seamless and accessible from any page. Use CSS variables and modular styles for maintainability.
+
+### Examples
+
+- Vue 3 components with theme-aware styles in src/assets/
+- Theme switcher in top navigation

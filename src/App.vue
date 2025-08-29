@@ -219,8 +219,8 @@ function handleClickOutside() {
 
 <template>
   <div class="javelin-app" @click="handleClickOutside">
-    <!-- Top blue bar -->
-    <div class="top-bar">
+    <!-- Top blue bar: only show on main site -->
+    <div v-if="!route.meta.hideTopNav" class="top-bar">
       <span>Sign-up for updates now!</span>
       <input type="email" placeholder="Your email address..." class="newsletter-input" />
       <button class="newsletter-btn">Subscribe</button>
@@ -252,16 +252,17 @@ function handleClickOutside() {
         </a>
       </div>
     </div>
-    <!-- Navigation bar -->
-    <TopNav
-      ref="topNavRef"
-      :theme="theme"
-      :is-logged-in="isLoggedIn"
-      :user="currentUser"
-      @toggle-theme="toggleTheme"
-      @logout="handleLogout"
-      @login-success="handleLoginSuccess"
-    />
+  <!-- Navigation bar: only show for non-dashboard routes -->
+  <TopNav
+    v-if="!route.meta.hideTopNav"
+    ref="topNavRef"
+    :theme="theme"
+    :is-logged-in="isLoggedIn"
+    :user="currentUser"
+    @toggle-theme="toggleTheme"
+    @logout="handleLogout"
+    @login-success="handleLoginSuccess"
+  />
     <!-- Main content area for routed components -->
     <router-view></router-view>
     <!-- Footer -->

@@ -1,13 +1,10 @@
 # Progress
 
 ## Done
-
-- [x] Initialize project
+- Project initialized
 
 ## Doing
-
-- [ ] Current task
+- Current task in progress
 
 ## Next
-
-- [ ] Upcoming task
+- Upcoming task

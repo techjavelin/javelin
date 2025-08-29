@@ -16,7 +16,7 @@
 
     <!-- Empty State -->
     <div v-else-if="!loading && posts.length === 0" class="empty-state">
-      <div class="empty-icon">📝</div>
+  <div class="empty-icon"><font-awesome-icon :icon="faNewspaper" class="empty-svg-icon" /></div>
       <h3>No blog posts found</h3>
       <p v-if="filters.search">No posts match your search criteria.</p>
       <p v-else>There are no published blog posts yet.</p>
@@ -124,7 +124,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { useBlogPosts } from '../composables/useBlog'
+import { useBlog } from '../composables/blog/useBlog'
 import BlogCard from './BlogCard.vue'
 
 const props = defineProps({
@@ -191,7 +191,7 @@ const {
   hasMore,
   featuredPosts,
   fetchPosts
-} = useBlogPosts()
+} = useBlog()
 
 // Local state
 const localFilters = ref({

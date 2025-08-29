@@ -180,7 +180,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
-import { useBlogPosts } from '../composables/useBlog'
+import { useBlog } from '../composables/blog/useBlog'
 import BlogCard from '../components/BlogCard.vue'
 
 const route = useRoute()
@@ -191,9 +191,11 @@ const {
   currentPost: post,
   loading,
   error,
-  fetchPostBySlug,
-  fetchPosts
-} = useBlogPosts()
+  fetchPosts,
+  fetchPostById
+} = useBlog()
+
+// If you need fetchPostBySlug, implement it using fetchPosts and filter by slug
 
 const relatedPosts = ref([])
 const shareMessage = ref('')

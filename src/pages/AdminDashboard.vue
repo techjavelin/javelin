@@ -1,181 +1,151 @@
 <template>
-  <div class="admin-dashboard-layout">
-    <!-- Sidebar Navigation -->
-    <AdminSidebar @toggle="handleSidebarToggle" />
-    
-    <!-- Main Content Area -->
-    <div class="admin-dashboard" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-      <!-- Header -->
-      <header class="dashboard-header">
-        <div class="header-content">
-          <h1>📊 Dashboard Overview</h1>
-          <div class="user-info">
-            <span class="welcome">Welcome back, {{ currentUser?.signInDetails?.loginId || 'Admin' }}</span>
-            <button @click="handleSignOut" class="sign-out-btn">
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <!-- Main Content -->
-      <main class="dashboard-main">
-        <!-- Quick Stats -->
-        <section class="stats-grid">
+    <DashboardLayout>
+      <template #header>
+        <h1 class="dashboard-title">
+          <font-awesome-icon :icon="['fas', 'tachometer-alt']" class="dashboard-svg-icon" />
+          Dashboard Overview
+        </h1>
+      </template>
+      <section class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon">📝</div>
-            <div class="stat-content">
-              <h3>{{ stats.totalPosts }}</h3>
-              <p>Total Posts</p>
+            <div class="stat-icon">
+              <font-awesome-icon :icon="['fas', 'file-alt']" class="stat-svg-icon no-bg" />
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.value?.totalPosts ?? 0 }}</div>
+              <div class="stat-label">Total Posts</div>
             </div>
           </div>
-          
           <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-content">
-              <h3>{{ stats.totalAuthors }}</h3>
-              <p>Authors</p>
+            <div class="stat-icon">
+              <font-awesome-icon :icon="['fas', 'user']" class="stat-svg-icon no-bg" />
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.value?.totalAuthors ?? 0 }}</div>
+              <div class="stat-label">Authors</div>
             </div>
           </div>
-          
           <div class="stat-card">
-            <div class="stat-icon">📧</div>
-            <div class="stat-content">
-              <h3>{{ stats.totalSubscribers }}</h3>
-              <p>Subscribers</p>
+            <div class="stat-icon">
+              <font-awesome-icon :icon="['fas', 'users']" class="stat-svg-icon no-bg" />
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.value?.totalSubscribers ?? 0 }}</div>
+              <div class="stat-label">Subscribers</div>
             </div>
           </div>
-          
           <div class="stat-card">
-            <div class="stat-icon">👁️</div>
-            <div class="stat-content">
-              <h3>{{ stats.totalViews }}</h3>
-              <p>Total Views</p>
+            <div class="stat-icon">
+              <font-awesome-icon :icon="['fas', 'eye']" class="stat-svg-icon no-bg" />
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ stats.value?.totalViews ?? 0 }}</div>
+              <div class="stat-label">Total Views</div>
+            </div>
+          </div>
+      </section>
+      <div class="dashboard-grid">
+        <!-- Recent Posts -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h2>
+              <font-awesome-icon :icon="['fas', 'newspaper']" class="section-svg-icon" />
+              Recent Posts
+            </h2>
+            <router-link to="/admin/posts" class="section-link">View All</router-link>
+          </div>
+          <div class="posts-list" v-if="!loadingPosts.value && (recentPosts.value?.length ?? 0) > 0">
+            <div v-for="post in (recentPosts.value ?? [])" :key="post.id" class="post-item">
+              <div class="post-info">
+                <h4 class="post-title">{{ post.title }}</h4>
+                <p class="post-meta">
+                  <span class="post-status" :class="`status-${post.status.toLowerCase()}`">
+                    {{ post.status }}
+                  </span>
+                  <span class="post-date">{{ formatDate(post.publishedAt || post.createdAt) }}</span>
+                  <span class="post-views">{{ post.viewCount || 0 }} views</span>
+                </p>
+              </div>
+              <div class="post-actions">
+                <router-link :to="`/blog/${post.slug}`" class="action-btn view">View</router-link>
+                <router-link :to="`/admin/posts/${post.id}/edit`" class="action-btn edit">Edit</router-link>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="loadingPosts" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>Loading posts...</p>
+          </div>
+          <div v-else class="empty-state">
+            <p>No posts found</p>
+            <router-link to="/admin/posts/new" class="create-post-btn">Create First Post</router-link>
+          </div>
+        </section>
+        <!-- Analytics Overview -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h2>
+              <font-awesome-icon :icon="['fas', 'chart-bar']" class="section-svg-icon" />
+              Analytics Overview
+            </h2>
+            <router-link to="/admin/analytics" class="section-link">View Details</router-link>
+          </div>
+          <div class="analytics-content">
+            <div class="chart-placeholder">
+              <div class="chart-icon">
+                <font-awesome-icon :icon="['fas', 'chart-line']" class="chart-svg-icon" />
+              </div>
+              <p>Analytics charts will be implemented here</p>
+              <small>Track views, engagement, and growth over time</small>
+            </div>
+            <div class="analytics-metrics">
+              <div class="metric">
+                <span class="metric-label">This Month</span>
+                <span class="metric-value">{{ stats.value?.monthlyViews ?? 0 }}</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Avg. Read Time</span>
+                <span class="metric-value">{{ stats.value?.avgReadTime ?? 0 }}m</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Bounce Rate</span>
+                <span class="metric-value">{{ stats.value?.bounceRate ?? 0 }}%</span>
+              </div>
             </div>
           </div>
         </section>
-
-        <!-- Dashboard Sections -->
-        <div class="dashboard-grid">
-          <!-- Recent Posts -->
-          <section class="dashboard-section">
-            <div class="section-header">
-              <h2>📝 Recent Posts</h2>
-              <router-link to="/admin/posts" class="section-link">View All</router-link>
-            </div>
-            
-            <div class="posts-list" v-if="!loadingPosts && recentPosts.length > 0">
-              <div v-for="post in recentPosts" :key="post.id" class="post-item">
-                <div class="post-info">
-                  <h4 class="post-title">{{ post.title }}</h4>
-                  <p class="post-meta">
-                    <span class="post-status" :class="`status-${post.status.toLowerCase()}`">
-                      {{ post.status }}
-                    </span>
-                    <span class="post-date">{{ formatDate(post.publishedAt || post.createdAt) }}</span>
-                    <span class="post-views">{{ post.viewCount || 0 }} views</span>
-                  </p>
-                </div>
-                <div class="post-actions">
-                  <router-link :to="`/blog/${post.slug}`" class="action-btn view">View</router-link>
-                  <router-link :to="`/admin/posts/${post.id}/edit`" class="action-btn edit">Edit</router-link>
-                </div>
+        <!-- Recent Activity -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h2>
+              <font-awesome-icon :icon="['fas', 'user-edit']" class="section-svg-icon" />
+              Recent Activity
+            </h2>
+          </div>
+          <div class="activity-feed">
+            <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
+              <div class="activity-icon" :class="activity.type">
+                <font-awesome-icon v-if="activity.type === 'post'" :icon="['fas', 'newspaper']" class="activity-svg-icon" />
+                <font-awesome-icon v-else-if="activity.type === 'subscriber'" :icon="['fas', 'user-check']" class="activity-svg-icon" />
+                <font-awesome-icon v-else-if="activity.type === 'comment'" :icon="['fas', 'comment']" class="activity-svg-icon" />
+                <font-awesome-icon v-else-if="activity.type === 'user'" :icon="['fas', 'user']" class="activity-svg-icon" />
+                <font-awesome-icon v-else :icon="['fas', 'question-circle']" class="activity-svg-icon" />
+              </div>
+              <div class="activity-content">
+                <p class="activity-message">{{ activity.message }}</p>
+                <span class="activity-time">{{ formatRelativeTime(activity.timestamp) }}</span>
               </div>
             </div>
-            
-            <div v-else-if="loadingPosts" class="loading-state">
-              <div class="loading-spinner"></div>
-              <p>Loading posts...</p>
-            </div>
-            
-            <div v-else class="empty-state">
-              <p>No posts found</p>
-              <router-link to="/admin/posts/new" class="create-post-btn">Create First Post</router-link>
-            </div>
-          </section>
-
-          <!-- Analytics Overview -->
-          <section class="dashboard-section">
-            <div class="section-header">
-              <h2>📊 Analytics Overview</h2>
-              <router-link to="/admin/analytics" class="section-link">View Details</router-link>
-            </div>
-            
-            <div class="analytics-content">
-              <div class="chart-placeholder">
-                <div class="chart-icon">📈</div>
-                <p>Analytics charts will be implemented here</p>
-                <small>Track views, engagement, and growth over time</small>
-              </div>
-              
-              <div class="analytics-metrics">
-                <div class="metric">
-                  <span class="metric-label">This Month</span>
-                  <span class="metric-value">{{ stats.monthlyViews }}</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">Avg. Read Time</span>
-                  <span class="metric-value">{{ stats.avgReadTime }}m</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">Bounce Rate</span>
-                  <span class="metric-value">{{ stats.bounceRate }}%</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Recent Activity -->
-          <section class="dashboard-section">
-            <div class="section-header">
-              <h2>🕒 Recent Activity</h2>
-            </div>
-            
-            <div class="activity-feed">
-              <div v-for="activity in recentActivity" :key="activity.id" class="activity-item">
-                <div class="activity-icon" :class="activity.type">
-                  {{ getActivityIcon(activity.type) }}
-                </div>
-                <div class="activity-content">
-                  <p class="activity-message">{{ activity.message }}</p>
-                  <span class="activity-time">{{ formatRelativeTime(activity.timestamp) }}</span>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <!-- User Management -->
-        <section class="dashboard-section full-width user-management-section">
-          <UserManagement />
+          </div>
         </section>
-      </main>
-    </div>
-  </div>
-</template>
-
+      </div>
+      <!-- User Management -->
+      <section class="dashboard-section full-width user-management-section">
+        <UserManagement />
+      </section>
+  </DashboardLayout>
+  </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { signOut, getCurrentUser } from 'aws-amplify/auth'
-import { useBlogPosts } from '../composables/useBlog'
-import UserManagement from '../components/UserManagement.vue'
-import AdminSidebar from '../components/AdminSidebar.vue'
-import amplifyOutputs from '../../amplify_outputs.json'
-
-const router = useRouter()
-
-// Composables
-const {
-  posts: recentPosts,
-  loading: loadingPosts,
-  fetchPosts
-} = useBlogPosts()
-
-// Reactive data
-const currentUser = ref(null)
-const amplifyConfig = ref(null)
-const sidebarCollapsed = ref(false)
 const stats = ref({
   totalPosts: 0,
   totalAuthors: 0,
@@ -184,7 +154,27 @@ const stats = ref({
   monthlyViews: 0,
   avgReadTime: 0,
   bounceRate: 0
-})
+});
+import DashboardLayout from '../layouts/DashboardLayout.vue'
+const currentUser = ref(null)
+const amplifyConfig = ref({})
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { signOut, getCurrentUser } from 'aws-amplify/auth'
+import { useBlog } from '../composables/blog/useBlog'
+// Declare blog composable variables, to be set after Amplify is configured
+const recentPosts = ref([])
+const loadingPosts = ref(false)
+let fetchPosts = async () => {}
+import UserManagement from '../components/UserManagement.vue'
+import AdminSidebar from '../components/AdminSidebar.vue'
+import AppContextMenu from '../components/AppContextMenu.vue'
+import SearchComponent from '../components/SearchComponent.vue'
+import amplifyOutputs from '../../amplify_outputs.json'
+
+const router = useRouter()
+
+// Composables
 
 const recentActivity = ref([
   {
@@ -248,15 +238,7 @@ const formatRelativeTime = (date) => {
   }
 }
 
-const getActivityIcon = (type) => {
-  switch (type) {
-    case 'post': return '📝'
-    case 'subscriber': return '📧'
-    case 'comment': return '💬'
-    case 'user': return '👤'
-    default: return '📋'
-  }
-}
+// Activity icons now use SVGs, so getActivityIcon is no longer needed
 
 const loadDashboardData = async () => {
   try {
@@ -265,18 +247,15 @@ const loadDashboardData = async () => {
       status: 'PUBLISHED', 
       limit: 5 
     })
-    
     // Calculate stats based on loaded data
-    stats.value.totalPosts = recentPosts.value?.length || 0
-    stats.value.totalViews = recentPosts.value?.reduce((total, post) => total + (post.viewCount || 0), 0) || 0
-    
+    stats.value.totalPosts = recentPosts.value.length || 0
+    stats.value.totalViews = recentPosts.value.reduce((total, post) => total + (post.viewCount || 0), 0) || 0
     // Mock data for other stats (in a real app, these would come from your API)
     stats.value.totalAuthors = 3
     stats.value.totalSubscribers = 142
     stats.value.monthlyViews = 1254
     stats.value.avgReadTime = 5.2
     stats.value.bounceRate = 35
-    
   } catch (error) {
     console.error('Error loading dashboard data:', error)
   }
@@ -291,8 +270,12 @@ onMounted(async () => {
   try {
     // Load Amplify configuration
     amplifyConfig.value = amplifyOutputs
-    
     currentUser.value = await getCurrentUser()
+    // Use Amplify-dependent composable only after config
+    const blog = useBlog()
+    recentPosts.value = blog.posts.value
+    loadingPosts.value = blog.loading.value
+    fetchPosts = blog.fetchPosts
     await loadDashboardData()
   } catch (error) {
     console.error('Error loading user or dashboard data:', error)
@@ -303,6 +286,58 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* SVG Icon Styles - Monochrome via CSS variable */
+
+.dashboard-title img,
+.stat-svg-icon,
+.section-svg-icon,
+.chart-svg-icon,
+.activity-svg-icon {
+  height: 1.5em;
+  width: 1.5em;
+  vertical-align: middle;
+  margin-right: 0.5em;
+  color: var(--dashboard-icon-color, #fff);
+}
+
+.stat-svg-icon {
+  height: 1.5em;
+  width: 1.5em;
+  margin-right: 0.25em;
+}
+
+.section-svg-icon {
+  height: 1.2em;
+  width: 1.2em;
+  margin-right: 0.5em;
+}
+
+.chart-svg-icon {
+  height: 2em;
+  width: 2em;
+  margin-right: 0.5em;
+}
+
+.activity-svg-icon {
+  height: 1.2em;
+  width: 1.2em;
+  margin-right: 0.5em;
+}
+
+/* Dark/Light mode icon color */
+.admin-dashboard-layout,
+.admin-dashboard {
+  --dashboard-icon-color: #222;
+  --icon-foreground: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+  .admin-dashboard-layout,
+  .admin-dashboard {
+    --dashboard-icon-color: #fff;
+    --icon-foreground: #222;
+  }
+}
 /* Layout Container */
 .admin-dashboard-layout {
   display: flex;
@@ -331,83 +366,53 @@ onMounted(async () => {
   background: white;
   border-bottom: 1px solid #e9ecef;
   padding: 1rem 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  width: 100%;
 }
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.dashboard-header h1 {
-  margin: 0;
-  color: #333;
-  font-size: 1.5rem;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.welcome {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.sign-out-btn {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s ease;
-}
-
-.sign-out-btn:hover {
-  background: #c82333;
-}
-
-/* Main Content */
-.dashboard-main {
-  padding: 2rem;
-  width: 100%;
-  max-width: none;
-}
-
-/* Stats Grid */
+/* Stat cards horizontal layout and icon styling */
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  justify-content: flex-start;
 }
-
 .stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
+  flex: 1;
+  background: #181e2a;
+  border: 1px solid #222a36;
+  border-radius: 16px;
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 160px;
+}
+.stat-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 16px rgba(52,144,250,0.12);
+}
+.stat-icon {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  justify-content: flex-start;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0;
+  margin-right: 1rem;
+  background: none !important;
+  border-radius: 0 !important;
 }
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+.stat-svg-icon {
+  font-size: 1.5rem;
+  color: #3490fa;
+  background: none !important;
+  border-radius: 0 !important;
+}
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .stat-icon {
@@ -946,6 +951,7 @@ onMounted(async () => {
 /* Dark Mode Support */
 [data-theme="dark"] .admin-dashboard {
   background: #121212;
+  color: #e0e0e0;
 }
 
 [data-theme="dark"] .dashboard-header {
@@ -961,14 +967,53 @@ onMounted(async () => {
 [data-theme="dark"] .dashboard-section {
   background: #1e1e1e;
   border-color: #333;
+  color: #e0e0e0;
 }
 
 [data-theme="dark"] .stat-content h3,
 [data-theme="dark"] .section-header h2 {
-  color: #e0e0e0;
+  color: #90caf9;
 }
 
 [data-theme="dark"] .activity-message {
   color: #e0e0e0;
+}
+
+[data-theme="dark"] .post-title,
+[data-theme="dark"] .post-meta,
+[data-theme="dark"] .post-status,
+[data-theme="dark"] .post-date,
+[data-theme="dark"] .post-views {
+  color: #e0e0e0;
+}
+
+[data-theme="dark"] .action-btn {
+  background: #222;
+  color: #90caf9;
+  border-color: #333;
+}
+[data-theme="dark"] .action-btn.view {
+  background: #2566af;
+  color: #fff;
+}
+[data-theme="dark"] .action-btn:hover {
+  background: #333;
+  color: #64b5f6;
+}
+
+[data-theme="dark"] .section-link {
+  color: #90caf9;
+}
+
+/* Theme variables for future pages */
+:root {
+  --color-bg-light: #fff;
+  --color-bg-dark: #121212;
+  --color-card-light: #f8f9fa;
+  --color-card-dark: #1e1e1e;
+  --color-text-light: #1a365d;
+  --color-text-dark: #e0e0e0;
+  --color-primary: #2566af;
+  --color-primary-dark: #90caf9;
 }
 </style>

@@ -1,97 +1,36 @@
-# Product Context
 
-Describe the product.
+# Javelin Pulse Platform Context
 
-## Overview
+Javelin Pulse is the unified SaaS platform by Tech Javelin Ltd, delivering secure, scalable, and extensible business applications. Each application—such as Pulse Client Hub (client portal) and Pulse SigInt (automated OSINT monitoring)—is a module within the Javelin Pulse ecosystem, sharing a consistent look, feel, and user experience.
 
-Provide a centralized platform for Tech Javelin clients to access information, read news, access saas products, and interact with professional and managed services
+The platform provides a centralized portal for clients to access information, read news, interact with professional and managed services, and manage contracts, projects, and assets. All modules leverage shared authentication, authorization, and UI/UX patterns for seamless navigation and branding.
 
 ## Core Features
-
-- Feature 1
-- Feature 2
+- Contract management
+- Project scheduling
+- Asset upload/download
+- Engagement requests
+- Future vulnerability management
 
 ## Technical Stack
-
-- AWS Amplify Gen2
-- Vue 3 
-
-## Project Description
-
-A client portal for professional and managed services, enabling contract management, project scheduling, asset upload/download, engagement requests, and future vulnerability management.
-
-
-
-A client portal for professional and managed services, enabling contract management, project scheduling, asset upload/download, engagement requests, and future vulnerability management.
-
-
-
-Javelin is a SaaS product by Tech Javelin Ltd, providing secure, scalable information and social security services. Features include authentication, real-time data, admin dashboard, modular UI, and strict TypeScript.
-
-
-
-## Architecture
-
-Pulse Client Hub consists of a Vue 3 SPA frontend (with dark/light theme support), an Amplify Gen2 backend (GraphQL, DynamoDB, Storage APIs), Cedar for authorization, and integrations with PandaDoc and GitHub. Extensible asset/service model for future services.
-
-
-
-Pulse Client Hub consists of a Vue 3 SPA frontend (with dark/light theme support), an Amplify Gen2 backend (GraphQL, DynamoDB, Storage APIs), Oso for authorization, and integrations with PandaDoc and GitHub. Extensible asset/service model for future services.
-
-
-
-Frontend: Vue 3 (Composition API, TypeScript) in src/. Backend: AWS Amplify Gen2 (npx ampx), Cognito for auth, AppSync for GraphQL, DynamoDB for data. Modular composables, admin dashboard, sidebar navigation, strict typing, Vite build, Amplify CLI.
-
-
-
-## Technologies
-
 - Vue 3 (Composition API, TypeScript)
 - Amplify Gen2 (GraphQL, DynamoDB, Storage)
 - Cedar (authorization)
-- PandaDoc
-- GitHub
+- Cognito (authentication)
+- AppSync (GraphQL API)
+- Vite (build)
 
+## Architecture
+Pulse Client Hub consists of a Vue 3 SPA frontend (with dark/light theme support), an Amplify Gen2 backend (GraphQL, DynamoDB, Storage APIs), Cedar for authorization, and integrations with PandaDoc and GitHub. Extensible asset/service model for future services.
 
-
-- Vue 3 (Composition API, TypeScript)
-- Amplify Gen2 (GraphQL, DynamoDB, Storage)
-- Oso (authorization)
-- PandaDoc
-- GitHub
-
-
-
-- Vue.js
-- TypeScript
-- Amplify Gen2
-- GraphQL
-- Cognito
-- DynamoDB
-- Vite
-
-
+Frontend: Vue 3 (Composition API, TypeScript) in src/. Backend: AWS Amplify Gen2, Cognito for auth, AppSync for GraphQL, DynamoDB for data. Modular composables, admin dashboard, sidebar navigation, strict typing, Vite build, Amplify CLI.
 
 ## Libraries and Dependencies
-
 - Vue 3
 - Amplify Gen2
 - Cedar
 - PandaDoc API
 - GitHub API
-
-
-
-- Vue 3
-- Amplify Gen2
-- Oso (Polar)
-- PandaDoc API
-- GitHub API
-
-
-
-- Vue 3
-- AWS Amplify Gen2
 - Amazon Cognito
 - AWS AppSync
 - DynamoDB

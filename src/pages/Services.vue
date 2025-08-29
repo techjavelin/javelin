@@ -1,7 +1,7 @@
 <template>
   <div class="page-content">
-    <h1>Our Services</h1>
-    <p>Tech Javelin is a professional technology consulting firm with extensive experience in the following areas:</p>
+  <h1>Javelin Pulse Services</h1>
+  <p>Javelin Pulse integrates Tech Javelin's professional technology consulting and managed services into a unified SaaS platform. Explore our modular service portfolio, including client portals, OSINT monitoring, and more.</p>
     
     <Card 
       variant="info" 

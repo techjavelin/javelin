@@ -125,7 +125,8 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
-import { useTags, useAnalytics } from '../composables/useBlog'
+import { useTags } from '../composables/blog/useTags'
+import { useAnalytics } from '../composables/blog/useAnalytics'
 
 const props = defineProps({
   post: {
@@ -177,10 +178,8 @@ const props = defineProps({
 
 const emit = defineEmits(['click', 'share'])
 
-const { fetchPostTags } = useTags()
+const { fetchPostTags, tags } = useTags()
 const { logEvent } = useAnalytics()
-
-const tags = computed(() => [])
 
 const handleClick = () => {
   if (props.clickable) {

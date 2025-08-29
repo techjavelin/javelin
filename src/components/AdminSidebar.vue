@@ -6,19 +6,16 @@
       class="sidebar-toggle"
       :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
     >
-      <svg viewBox="0 0 24 24" fill="currentColor">
-        <path v-if="isCollapsed" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
-        <path v-else d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
-      </svg>
+      <font-awesome-icon :icon="isCollapsed ? 'chevron-right' : 'chevron-left'" />
     </button>
 
     <!-- Sidebar Header -->
     <div class="sidebar-header">
       <div class="sidebar-logo" v-if="!isCollapsed">
-        <h2>🎛️ Admin Panel</h2>
+  <h2><font-awesome-icon :icon="faTachometerAlt" class="sidebar-logo-svg" /> Javelin Pulse Admin</h2>
       </div>
       <div class="sidebar-logo-compact" v-else>
-        <span>🎛️</span>
+  <span><font-awesome-icon :icon="faTachometerAlt" class="sidebar-logo-svg" /> JP</span>
       </div>
     </div>
 
@@ -32,7 +29,7 @@
             class="nav-link"
             :class="{ active: $route.path === '/admin' }"
           >
-            <span class="nav-icon">📊</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faTachometerAlt" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Dashboard</span>
           </router-link>
         </li>
@@ -44,21 +41,21 @@
         
         <li class="nav-item">
           <router-link to="/admin/posts" class="nav-link">
-            <span class="nav-icon">📝</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faNewspaper" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Posts</span>
           </router-link>
         </li>
         
         <li class="nav-item">
           <router-link to="/admin/categories" class="nav-link">
-            <span class="nav-icon">📂</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faFolderOpen" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Categories</span>
           </router-link>
         </li>
         
         <li class="nav-item">
           <router-link to="/admin/tags" class="nav-link">
-            <span class="nav-icon">🏷️</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faTags" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Tags</span>
           </router-link>
         </li>
@@ -70,21 +67,21 @@
         
         <li class="nav-item">
           <router-link to="/admin/users" class="nav-link">
-            <span class="nav-icon">👥</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faUsersCog" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">User Management</span>
           </router-link>
         </li>
         
         <li class="nav-item">
           <router-link to="/admin/authors" class="nav-link">
-            <span class="nav-icon">👨‍💼</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faUserEdit" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Authors</span>
           </router-link>
         </li>
         
         <li class="nav-item">
           <router-link to="/admin/subscribers" class="nav-link">
-            <span class="nav-icon">📧</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faUserCheck" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Subscribers</span>
           </router-link>
         </li>
@@ -96,14 +93,14 @@
         
         <li class="nav-item">
           <router-link to="/admin/analytics" class="nav-link">
-            <span class="nav-icon">📈</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faChartBar" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Analytics</span>
           </router-link>
         </li>
         
         <li class="nav-item">
           <router-link to="/admin/reports" class="nav-link">
-            <span class="nav-icon">📋</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faFileAlt" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Reports</span>
           </router-link>
         </li>
@@ -115,14 +112,14 @@
         
         <li class="nav-item">
           <router-link to="/admin/settings" class="nav-link">
-            <span class="nav-icon">⚙️</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faCog" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Settings</span>
           </router-link>
         </li>
         
         <li class="nav-item">
           <router-link to="/admin/backups" class="nav-link">
-            <span class="nav-icon">💾</span>
+            <span class="nav-icon"><font-awesome-icon :icon="faDatabase" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Backups</span>
           </router-link>
         </li>
@@ -132,14 +129,14 @@
     <!-- Quick Actions (Compact) -->
     <div class="sidebar-actions" v-if="!isCollapsed">
       <router-link to="/admin/posts/new" class="quick-action-btn primary">
-        <span class="action-icon">➕</span>
+  <span class="action-icon"><font-awesome-icon :icon="faPlusSquare" class="sidebar-png-icon" /></span>
         <span class="action-text">New Post</span>
       </router-link>
     </div>
 
     <!-- User Info -->
     <div class="sidebar-footer">
-      <div class="user-info" v-if="!isCollapsed">
+      <div class="user-info clickable" v-if="!isCollapsed" @click="userMenuVisible = !userMenuVisible">
         <div class="user-avatar">
           <span>{{ userInitials }}</span>
         </div>
@@ -147,6 +144,7 @@
           <div class="user-name">{{ userName }}</div>
           <div class="user-role">Administrator</div>
         </div>
+        <UserContextMenu :visible="userMenuVisible" />
       </div>
       <div class="user-info-compact" v-else>
         <div class="user-avatar">
@@ -160,6 +158,46 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { getCurrentUser } from 'aws-amplify/auth'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import UserContextMenu from './UserContextMenu.vue'
+const userMenuVisible = ref(false)
+import { library } from '@fortawesome/fontawesome-svg-core'
+import {
+  faTachometerAlt,
+  faNewspaper,
+  faFolderOpen,
+  faTags,
+  faUsersCog,
+  faUserEdit,
+  faUserCheck,
+  faChartBar,
+  faFileAlt,
+  faCog,
+  faDatabase,
+  faPlusSquare,
+  faChevronLeft,
+  faChevronRight
+} from '@fortawesome/free-solid-svg-icons'
+
+library.add(
+  faTachometerAlt,
+  faNewspaper,
+  faFolderOpen,
+  faTags,
+  faUsersCog,
+  faUserEdit,
+  faUserCheck,
+  faChartBar,
+  faFileAlt,
+  faCog,
+  faDatabase,
+  faPlusSquare,
+  faChevronLeft,
+  faChevronRight
+)
+
+// Register FontAwesomeIcon locally
+defineExpose({ FontAwesomeIcon })
 
 // Props
 const props = defineProps({
@@ -233,16 +271,17 @@ onMounted(async () => {
 }
 
 /* Toggle Button */
+
 .sidebar-toggle {
   position: absolute;
   top: 1rem;
   right: -15px;
-  width: 30px;
-  height: 30px;
-  background: #2566af;
-  color: white;
-  border: 2px solid white;
-  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: #e2e8f0;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -251,8 +290,10 @@ onMounted(async () => {
   z-index: 1001;
 }
 
+
 .sidebar-toggle:hover {
-  background: #1a4d87;
+  border-color: #60a5fa;
+  color: #60a5fa;
   transform: scale(1.1);
 }
 

@@ -2,9 +2,9 @@
   <div class="login-page">
     <div class="login-page-content">
       <div class="login-hero">
-        <h1>Welcome to Tech Javelin</h1>
+        <h1>Welcome to Javelin Pulse</h1>
         <p class="hero-subtitle">
-          Access your account to explore our premium technology consulting services and exclusive content.
+          Access your account to explore the Javelin Pulse platform, including premium business applications, technology consulting, and exclusive content—all in a unified, secure ecosystem.
         </p>
         <div class="hero-features">
           <div class="feature-item">

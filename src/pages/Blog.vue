@@ -1,10 +1,9 @@
 <template>
   <div class="page-content">
     <div class="blog-header">
-      <h1>Tech Javelin Blog</h1>
+      <h1>Javelin Pulse Blog</h1>
       <p>
-        Stay up to date with the latest insights on technology, cybersecurity, and IT strategy 
-        from our team of experts at Tech Javelin.
+        Stay up to date with the latest insights on technology, cybersecurity, and IT strategy from the Javelin Pulse platform and Tech Javelin experts.
       </p>
     </div>
 
@@ -120,7 +119,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BlogList from '../components/BlogList.vue'
-import { useNewsletter } from '../composables/useBlog'
+import { useNewsletter } from '../composables/blog/useNewsletter'
 
 const router = useRouter()
 

@@ -2,7 +2,7 @@
   <div class="user-management">
     <!-- Header with Actions -->
     <div class="user-management-header">
-      <h2>👥 User Management</h2>
+  <h2><font-awesome-icon :icon="faEditIcon" class="user-header-svg" /> User Management</h2>
       <div class="header-actions">
         <button @click="showInviteModal = true" class="btn btn-primary">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
@@ -58,7 +58,7 @@
       </div>
 
       <div v-else-if="filteredUsers.length === 0" class="empty-state">
-        <div class="empty-icon">👤</div>
+  <div class="empty-icon"><font-awesome-icon :icon="faEditIcon" class="empty-svg-icon" /></div>
         <h3>No users found</h3>
         <p v-if="searchQuery">Try adjusting your search criteria</p>
         <p v-else>Get started by inviting your first user</p>
@@ -126,18 +126,14 @@
                     class="action-btn edit"
                     title="Edit User"
                   >
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z"/>
-                    </svg>
+                    <font-awesome-icon :icon="faEditIcon" />
                   </button>
                   <button 
                     @click="resetUserPassword(user)" 
                     class="action-btn reset"
                     title="Reset Password"
                   >
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7A2,2 0 0,1 14,9C14,10.11 13.11,11 12,11A2,2 0 0,1 10,9A2,2 0 0,1 12,7Z"/>
-                    </svg>
+                    <font-awesome-icon :icon="faResetIcon" />
                   </button>
                   <button 
                     @click="confirmDeleteUser(user)" 
@@ -145,9 +141,7 @@
                     title="Delete User"
                     :disabled="(user.username || user.Username) === currentUser?.username"
                   >
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/>
-                    </svg>
+                    <font-awesome-icon :icon="faDeleteIcon" />
                   </button>
                 </div>
               </td>
@@ -462,6 +456,10 @@
 </template>
 
 <script setup>
+import { faUserEdit, faRedo, faTrash } from '@fortawesome/free-solid-svg-icons'
+const faEditIcon = { prefix: faUserEdit.prefix, iconName: faUserEdit.iconName }
+const faResetIcon = { prefix: faRedo.prefix, iconName: faRedo.iconName }
+const faDeleteIcon = { prefix: faTrash.prefix, iconName: faTrash.iconName }
 import { ref, computed, onMounted, watch } from 'vue'
 import { getCurrentUser } from 'aws-amplify/auth'
 import { 

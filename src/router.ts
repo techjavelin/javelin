@@ -50,67 +50,75 @@ const routes = [
     path: '/admin', 
     component: AdminDashboard,
     name: 'admin-dashboard',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/posts', 
     component: AdminDashboard, // Placeholder - will create dedicated components later
     name: 'admin-posts',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+
+    // Add missing /admin/posts/new route
+  },
+  {
+    path: '/admin/posts/new',
+    component: AdminDashboard, // Replace with CreatePost component if available
+    name: 'admin-posts-new',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/users', 
     component: AdminDashboard, // This will show the user management section
     name: 'admin-users',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/authors', 
     component: AdminDashboard,
     name: 'admin-authors',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/categories', 
     component: AdminDashboard,
     name: 'admin-categories',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/tags', 
     component: AdminDashboard,
     name: 'admin-tags',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/subscribers', 
     component: AdminDashboard,
     name: 'admin-subscribers',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/analytics', 
     component: AdminDashboard,
     name: 'admin-analytics',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/reports', 
     component: AdminDashboard,
     name: 'admin-reports',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/settings', 
     component: AdminDashboard,
     name: 'admin-settings',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/admin/backups', 
     component: AdminDashboard,
     name: 'admin-backups',
-    meta: { requiresAuth: true, requiresAdmin: true }
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 
     path: '/privacy-policy', 

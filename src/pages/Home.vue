@@ -1,7 +1,8 @@
 <template>
   <div class="main-content">
-    <h1>What We Do</h1>
-    <p>Tech Javelin is a professional technology consulting firm with extensive experience in the following areas</p>
+  <h1>Welcome to Javelin Pulse</h1>
+  <p>Javelin Pulse is the unified SaaS platform by Tech Javelin Ltd, delivering secure, scalable, and extensible business applications. Each module—such as Pulse Client Hub (client portal) and Pulse SigInt (automated OSINT monitoring)—is part of the Javelin Pulse ecosystem, sharing a consistent look, feel, and user experience.</p>
+  <p>Tech Javelin continues to provide professional technology consulting and managed services, now seamlessly integrated into the Javelin Pulse platform.</p>
     
     <CardGrid columns="auto" gap="md">
             <Card

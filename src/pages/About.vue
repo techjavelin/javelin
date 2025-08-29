@@ -1,7 +1,7 @@
 <template>
   <div class="page-content">
-    <h1>About Tech Javelin</h1>
-    <p>Tech Javelin is a professional technology consulting firm with extensive experience in delivering comprehensive technology solutions.</p>
+  <h1>About Javelin Pulse</h1>
+  <p>Javelin Pulse is the unified SaaS platform by Tech Javelin Ltd, integrating professional technology consulting and managed services into a modular ecosystem. Each application—such as Pulse Client Hub and Pulse SigInt—delivers secure, scalable solutions with a consistent user experience.</p>
     
     <section class="about-section">
       <h2>Our Mission</h2>

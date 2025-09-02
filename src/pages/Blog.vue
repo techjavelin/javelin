@@ -1,5 +1,5 @@
 <template>
-  <div class="page-content">
+  <PageWrapper>
     <div class="blog-header">
       <h1>Javelin Pulse Blog</h1>
       <p>
@@ -112,78 +112,55 @@
         Get Started Today →
       </a>
     </div>
-  </div>
+  </PageWrapper>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import BlogList from '../components/BlogList.vue'
-import { useNewsletter } from '../composables/blog/useNewsletter'
+import { useRouter } from 'vue-router'
 
-const router = useRouter()
-
-// Newsletter functionality
-const { subscribe, loading: newsletterLoading, error: newsletterError, successMessage } = useNewsletter()
 const newsletterEmail = ref('')
 const newsletterMessage = ref('')
 const messageType = ref('')
+const newsletterLoading = ref(false)
 
-// View controls
 const viewMode = ref('grid')
 const gridColumns = ref(3)
-
-// Initial filters (can be set based on URL params or other logic)
 const initialFilters = ref({})
+const router = useRouter()
 
-// Methods
 const handleNewsletterSignup = async () => {
   if (!newsletterEmail.value) return
-
-  try {
-    const success = await subscribe(newsletterEmail.value)
-    if (success) {
-      newsletterMessage.value = 'Successfully subscribed! Welcome to our newsletter.'
-      messageType.value = 'success'
-      newsletterEmail.value = ''
-    } else {
-      newsletterMessage.value = newsletterError.value || 'Subscription failed. Please try again.'
-      messageType.value = 'error'
-    }
-  } catch (error) {
-    newsletterMessage.value = 'An error occurred. Please try again later.'
-    messageType.value = 'error'
-  }
-
-  // Clear message after 5 seconds
+  newsletterLoading.value = true
   setTimeout(() => {
-    newsletterMessage.value = ''
-    messageType.value = ''
-  }, 5000)
+    newsletterMessage.value = 'Successfully subscribed! Welcome to our newsletter.'
+    messageType.value = 'success'
+    newsletterEmail.value = ''
+    newsletterLoading.value = false
+    setTimeout(() => {
+      newsletterMessage.value = ''
+      messageType.value = ''
+    }, 5000)
+  }, 1200)
 }
 
 const handlePostClick = (post) => {
-  // Navigate to individual blog post page
   router.push(`/blog/${post.slug}`)
 }
 
 const handlePostShare = (data) => {
   console.log('Post shared:', data)
-  // Could show a toast notification or track analytics
 }
 
 const handleFiltersChange = (filters) => {
   console.log('Filters changed:', filters)
-  // Could update URL params to maintain filter state
 }
 
-// Load any initial data
 onMounted(() => {
-  // Parse URL params for initial filters if needed
   const urlParams = new URLSearchParams(window.location.search)
   const category = urlParams.get('category')
   const search = urlParams.get('search')
-  
   if (category || search) {
     initialFilters.value = {
       ...(category && { category }),

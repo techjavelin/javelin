@@ -1,5 +1,5 @@
 <template>
-  <div class="page-content">
+  <PageWrapper>
   <h1>Javelin Pulse Services</h1>
   <p>Javelin Pulse integrates Tech Javelin's professional technology consulting and managed services into a unified SaaS platform. Explore our modular service portfolio, including client portals, OSINT monitoring, and more.</p>
     
@@ -41,7 +41,6 @@
       </Card>
 
       <Card 
-        variant="service"
         title="Technology Growth Strategy"
         action-text="Learn More →"
         action-url="https://app.hellobonsai.com/f/580d21c4552152d?hide_header=true"
@@ -153,7 +152,7 @@
         </template>
       </Card>
     </CardGrid>
-  </div>
+  </PageWrapper>
 </template>
 
 <script setup>
@@ -184,10 +183,7 @@ import CardGrid from '../components/CardGrid.vue'
   line-height: 1.6;
 }
 
-.intro-card {
-  margin-bottom: 3rem;
-  text-align: center;
-}
+
 
 .intro-card h2 {
   color: #2566af;

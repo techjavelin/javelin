@@ -77,12 +77,9 @@
             <p>Loading posts...</p>
           </div>
           <div v-else class="empty-state">
-            <p>No posts found</p>
             <router-link to="/admin/posts/new" class="create-post-btn">Create First Post</router-link>
           </div>
         </section>
-        <!-- Analytics Overview -->
-        <section class="dashboard-section">
           <div class="section-header">
             <h2>
               <font-awesome-icon :icon="['fas', 'chart-bar']" class="section-svg-icon" />
@@ -113,7 +110,6 @@
               </div>
             </div>
           </div>
-        </section>
         <!-- Recent Activity -->
         <section class="dashboard-section">
           <div class="section-header">
@@ -139,27 +135,31 @@
           </div>
         </section>
       </div>
-      <!-- User Management -->
+            
       <section class="dashboard-section full-width user-management-section">
         <UserManagement />
       </section>
-  </DashboardLayout>
-  </template>
+      </DashboardLayout>
+    </template>
+            
+  
 <script setup>
+import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+// Removed duplicate import of FontAwesomeIcon
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faTachometerAlt, faFileAlt, faUser, faUsers, faEye, faNewspaper, faChartBar, faChartLine, faUserEdit, faComment, faQuestionCircle, faThLarge, faUserCheck } from '@fortawesome/free-solid-svg-icons'
+
+library.add(faTachometerAlt, faFileAlt, faUser, faUsers, faEye, faNewspaper, faChartBar, faChartLine, faUserEdit, faComment, faQuestionCircle, faThLarge, faUserCheck)
+const amplifyConfig = ref({})
+const currentUser = ref(null)
 const stats = ref({
-  totalPosts: 0,
   totalAuthors: 0,
   totalSubscribers: 0,
   totalViews: 0,
-  monthlyViews: 0,
   avgReadTime: 0,
   bounceRate: 0
 });
-import DashboardLayout from '../layouts/DashboardLayout.vue'
-const currentUser = ref(null)
-const amplifyConfig = ref({})
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { signOut, getCurrentUser } from 'aws-amplify/auth'
 import { useBlog } from '../composables/blog/useBlog'
 // Declare blog composable variables, to be set after Amplify is configured
@@ -170,6 +170,8 @@ import UserManagement from '../components/UserManagement.vue'
 import AdminSidebar from '../components/AdminSidebar.vue'
 import AppContextMenu from '../components/AppContextMenu.vue'
 import SearchComponent from '../components/SearchComponent.vue'
+import DashboardLayout from '../layouts/DashboardLayout.vue'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import amplifyOutputs from '../../amplify_outputs.json'
 
 const router = useRouter()
@@ -1006,6 +1008,7 @@ onMounted(async () => {
 }
 
 /* Theme variables for future pages */
+/* Theme variables for light mode */
 :root {
   --color-bg-light: #fff;
   --color-bg-dark: #121212;
@@ -1015,5 +1018,17 @@ onMounted(async () => {
   --color-text-dark: #e0e0e0;
   --color-primary: #2566af;
   --color-primary-dark: #90caf9;
+}
+
+/* Theme variables for dark mode */
+[data-theme="dark"] :root {
+  --color-bg-light: #121212;
+  --color-bg-dark: #fff;
+  --color-card-light: #1e1e1e;
+  --color-card-dark: #f8f9fa;
+  --color-text-light: #e0e0e0;
+  --color-text-dark: #1a365d;
+  --color-primary: #90caf9;
+  --color-primary-dark: #2566af;
 }
 </style>

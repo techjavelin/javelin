@@ -1,5 +1,5 @@
 <template>
-  <div id="preferences" class="page-content">
+  <PageWrapper>
     <div class="main-content">
       <h1>Preferences</h1>
       <p>Customize your experience and manage your privacy settings.</p>
@@ -81,12 +81,11 @@
         </div>
       </div>
     </div>
-  </div>
+  </PageWrapper>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
 const currentTheme = ref('light')
 const cookieConsent = ref({
   essential: true,

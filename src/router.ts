@@ -32,19 +32,9 @@ const routes = [
     name: 'services'
   },
   { 
-    path: '/about', 
-    component: About,
-    name: 'about'
-  },
-  { 
-    path: '/blog', 
-    component: Blog,
-    name: 'blog'
-  },
-  { 
-    path: '/blog/:slug', 
-    component: BlogPost,
-    name: 'blog-post'
+    path: '/services', 
+    component: Services,
+    name: 'services'
   },
   { 
     path: '/admin', 
@@ -52,71 +42,63 @@ const routes = [
     name: 'admin-dashboard',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/posts', 
-    component: AdminDashboard, // Placeholder - will create dedicated components later
+  {
+    path: '/admin/posts',
+    component: () => import('./pages/AdminPosts.vue'),
     name: 'admin-posts',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
-
-    // Add missing /admin/posts/new route
   },
   {
-    path: '/admin/posts/new',
-    component: AdminDashboard, // Replace with CreatePost component if available
-    name: 'admin-posts-new',
-    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
-  },
-  { 
-    path: '/admin/users', 
-    component: AdminDashboard, // This will show the user management section
-    name: 'admin-users',
-    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
-  },
-  { 
-    path: '/admin/authors', 
-    component: AdminDashboard,
-    name: 'admin-authors',
-    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
-  },
-  { 
-    path: '/admin/categories', 
-    component: AdminDashboard,
+    path: '/admin/categories',
+    component: () => import('./pages/AdminCategories.vue'),
     name: 'admin-categories',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/tags', 
-    component: AdminDashboard,
+  {
+    path: '/admin/tags',
+    component: () => import('./pages/AdminTags.vue'),
     name: 'admin-tags',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/subscribers', 
-    component: AdminDashboard,
+  {
+    path: '/admin/users',
+    component: () => import('./pages/AdminUserManagement.vue'),
+    name: 'admin-user-management',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/admin/authors',
+    component: () => import('./pages/AdminAuthors.vue'),
+    name: 'admin-authors',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/admin/subscribers',
+    component: () => import('./pages/AdminSubscribers.vue'),
     name: 'admin-subscribers',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/analytics', 
-    component: AdminDashboard,
+  {
+    path: '/admin/analytics',
+    component: () => import('./pages/AdminAnalytics.vue'),
     name: 'admin-analytics',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/reports', 
-    component: AdminDashboard,
+  {
+    path: '/admin/reports',
+    component: () => import('./pages/AdminReports.vue'),
     name: 'admin-reports',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/settings', 
-    component: AdminDashboard,
+  {
+    path: '/admin/settings',
+    component: () => import('./pages/AdminSettings.vue'),
     name: 'admin-settings',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
-  { 
-    path: '/admin/backups', 
-    component: AdminDashboard,
+  {
+    path: '/admin/backups',
+    component: () => import('./pages/AdminBackups.vue'),
     name: 'admin-backups',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
@@ -152,12 +134,12 @@ const routes = [
     name: 'preferences',
     meta: { requiresAuth: true }
   }
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
+});
 
 // Global route guard for authentication
 router.beforeEach(async (to, from, next) => {

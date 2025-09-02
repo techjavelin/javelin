@@ -18,9 +18,13 @@ import {
 	faQuestionCircle,
 	faThLarge,
 	faTrash,
-	faRedo
+	faRedo,
+	faSun,
+	faMoon
 } from '@fortawesome/free-solid-svg-icons';
 
+import { faTwitter, faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
+import { faLifeRing } from '@fortawesome/free-solid-svg-icons';
 library.add(
 	faSearch,
 	faUsers,
@@ -36,15 +40,23 @@ library.add(
 	faQuestionCircle,
 	faThLarge,
 	faTrash,
-	faRedo
+	faRedo,
+	faSun,
+	faMoon,
+	faTwitter,
+	faLinkedin,
+	faGithub,
+	faLifeRing
 );
-import { Amplify } from "aws-amplify";
+
 import outputs from "../amplify_outputs.json";
 import router from "./router";
-
+import { Amplify } from "aws-amplify";
 Amplify.configure(outputs);
 
+import SocialIcons from './components/SocialIcons.vue';
 const app = createApp(App);
 app.component('font-awesome-icon', FontAwesomeIcon);
+app.component('SocialIcons', SocialIcons);
 app.use(router);
 app.mount("#app");

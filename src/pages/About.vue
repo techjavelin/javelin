@@ -1,72 +1,72 @@
 <template>
-  <div class="page-content">
-  <h1>About Javelin Pulse</h1>
-  <p>Javelin Pulse is the unified SaaS platform by Tech Javelin Ltd, integrating professional technology consulting and managed services into a modular ecosystem. Each application—such as Pulse Client Hub and Pulse SigInt—delivers secure, scalable solutions with a consistent user experience.</p>
-    
-    <section class="about-section">
-      <h2>Our Mission</h2>
-      <Card 
-        variant="info"
-        description="We help organizations take their IT programs to the next level by specializing in running corporate cloud-native IT infrastructure, allowing our clients to focus on what they do best."
-      />
-    </section>
-
-    <section class="about-section">
-      <h2>Our Expertise</h2>
-      <CardGrid columns="3" gap="md">
-        <Card
-          variant="outline"
-          title="Managed IT Services"
-          description="Complete cloud-native IT infrastructure management"
-        />
-        <Card
-          variant="outline"
-          title="Technology Growth Strategy"
-          description="Risk-based approach to technology planning and budgeting"
-        />
-        <Card
-          variant="outline"
-          title="Professional Services"
-          description="Network of skilled professionals in Software, Cybersecurity, Project Management, Product, DevSecOps, and Infrastructure"
-        />
-      </CardGrid>
-    </section>
-
-    <section class="about-section">
-      <h2>Why Choose Tech Javelin?</h2>
-      <CardGrid columns="2" gap="sm">
+  <PageWrapper>
+    <div class="page-content">
+      <h1>About Javelin Pulse</h1>
+      <p>Javelin Pulse is the unified SaaS platform by Tech Javelin Ltd, integrating professional technology consulting and managed services into a modular ecosystem. Each application—such as Pulse Client Hub and Pulse SigInt—delivers secure, scalable solutions with a consistent user experience.</p>
+      <section class="about-section">
+        <h2>Our Mission</h2>
         <Card 
           variant="info"
-          background-image="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3e%3ccircle cx='20' cy='20' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='50' cy='20' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='80' cy='20' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='20' cy='50' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='50' cy='50' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='80' cy='50' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='20' cy='80' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='50' cy='80' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='80' cy='80' r='2' fill='%23e3f2fd'/%3e%3c/svg%3e"
-        >
-          <template #default>
-            <ul class="benefits-list">
-              <li>Extensive experience in technology consulting</li>
-              <li>Cloud-native infrastructure specialization</li>
-              <li>Risk-based planning approach</li>
-            </ul>
-          </template>
-        </Card>
-        <Card 
-          variant="info"
-          background-image="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3e%3ccircle cx='15' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='35' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='55' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='75' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='15' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='35' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='55' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='75' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='15' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='35' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='55' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='75' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3c/svg%3e"
-        >
-          <template #default>
-            <ul class="benefits-list">
-              <li>Comprehensive professional services network</li>
-              <li>Focus on scalable technology solutions</li>
-              <li>Proven track record of success</li>
-            </ul>
-          </template>
-        </Card>
-      </CardGrid>
-    </section>
-  </div>
+          description="We help organizations take their IT programs to the next level by specializing in running corporate cloud-native IT infrastructure, allowing our clients to focus on what they do best."
+        />
+      </section>
+      <section class="about-section">
+        <h2>Our Expertise</h2>
+        <CardGrid columns="3" gap="md">
+          <Card
+            variant="outline"
+            title="Managed IT Services"
+            description="Complete cloud-native IT infrastructure management"
+          />
+          <Card
+            variant="outline"
+            title="Technology Growth Strategy"
+            description="Risk-based approach to technology planning and budgeting"
+          />
+          <Card
+            variant="outline"
+            title="Professional Services"
+            description="Network of skilled professionals in Software, Cybersecurity, Project Management, Product, DevSecOps, and Infrastructure"
+          />
+        </CardGrid>
+      </section>
+      <section class="about-section">
+        <h2>Why Choose Tech Javelin?</h2>
+        <CardGrid columns="2" gap="sm">
+          <Card 
+            variant="info"
+            background-image="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3e%3ccircle cx='20' cy='20' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='50' cy='20' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='80' cy='20' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='20' cy='50' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='50' cy='50' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='80' cy='50' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='20' cy='80' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='50' cy='80' r='2' fill='%23e3f2fd'/%3e%3ccircle cx='80' cy='80' r='2' fill='%23e3f2fd'/%3e%3c/svg%3e"
+          >
+            <template #default>
+              <ul class="benefits-list">
+                <li>Extensive experience in technology consulting</li>
+                <li>Cloud-native infrastructure specialization</li>
+                <li>Risk-based planning approach</li>
+              </ul>
+            </template>
+          </Card>
+          <Card 
+            variant="info"
+            background-image="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3e%3ccircle cx='15' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='35' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='55' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='75' cy='15' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='15' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='35' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='55' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='75' cy='35' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='15' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='35' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='55' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3ccircle cx='75' cy='55' r='1.5' fill='%23e8f4fd'/%3e%3c/svg%3e"
+          >
+            <template #default>
+              <ul class="benefits-list">
+                <li>Comprehensive professional services network</li>
+                <li>Focus on scalable technology solutions</li>
+                <li>Proven track record of success</li>
+              </ul>
+            </template>
+          </Card>
+        </CardGrid>
+      </section>
+    </div>
+  </PageWrapper>
 </template>
 
 <script setup>
 import Card from '../components/Card.vue'
 import CardGrid from '../components/CardGrid.vue'
+import PageWrapper from '../components/PageWrapper.vue'
 </script>
 
 <style scoped>

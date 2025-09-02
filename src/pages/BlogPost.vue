@@ -1,21 +1,21 @@
 <template>
-  <div class="page-content">
+  <PageWrapper>
     <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
+  <div v-if="loading" class="loading-state">
       <div class="loading-spinner"></div>
       <p>Loading blog post...</p>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="error-state">
+  <div v-else-if="error" class="error-state">
       <div class="error-icon">⚠️</div>
       <h3>Blog Post Not Found</h3>
-      <p>{{ error }}</p>
+  <p>{{ error }}</p>
       <router-link to="/blog" class="back-to-blog">← Back to Blog</router-link>
     </div>
 
     <!-- Blog Post Content -->
-    <article v-else-if="post" class="blog-post">
+  <article v-else-if="post" class="blog-post">
       <!-- Post Header -->
       <header class="post-header">
         <nav class="breadcrumb">
@@ -26,7 +26,7 @@
           </span>
         </nav>
 
-        <h1 class="post-title">{{ post.title }}</h1>
+  <h1 class="post-title">{{ post.title }}</h1>
         
         <div class="post-meta">
           <div class="author-info" v-if="post.author">
@@ -172,35 +172,40 @@
           @click="handleRelatedPostClick"
         />
       </div>
+
     </section>
-  </div>
+  </PageWrapper>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+
+import { ref, computed } from 'vue'
 import { marked } from 'marked'
-import { useBlog } from '../composables/blog/useBlog'
 import BlogCard from '../components/BlogCard.vue'
+import { useRoute, useRouter } from 'vue-router'
 
-const route = useRoute()
-const router = useRouter()
-
-// Blog post composable
-const {
-  currentPost: post,
-  loading,
-  error,
-  fetchPosts,
-  fetchPostById
-} = useBlog()
-
-// If you need fetchPostBySlug, implement it using fetchPosts and filter by slug
+const loading = ref(false)
+const error = ref('')
+const post = ref({
+  title: 'Sample Blog Post',
+  publishedAt: '2025-08-29',
+  readTime: 5,
+  viewCount: 123,
+  author: {
+    name: 'Jane Doe',
+    avatarUrl: '',
+    bio: 'Tech writer and security expert.'
+  },
+  categories: [{ name: 'Security' }],
+  tags: [{ id: 1, name: 'Vue', color: '#2566af' }],
+  content: '# Hello World\nThis is a sample blog post.'
+})
 
 const relatedPosts = ref([])
 const shareMessage = ref('')
 
-// Computed properties
+const router = useRouter()
+
 const hasAuthorLinks = computed(() => {
   if (!post.value?.author) return false
   const { website, twitterHandle, linkedinProfile, githubProfile } = post.value.author
@@ -209,25 +214,20 @@ const hasAuthorLinks = computed(() => {
 
 const renderedContent = computed(() => {
   if (!post.value?.content) return ''
-  
-  // Configure marked with options for better security and styling
   marked.setOptions({
     breaks: true,
     gfm: true,
     headerIds: true,
     headerPrefix: 'heading-',
   })
-  
   try {
     return marked.parse(post.value.content)
   } catch (error) {
     console.error('Error parsing markdown:', error)
-    // Fallback to plain text if markdown parsing fails
     return post.value.content
   }
 })
 
-// Methods
 const formatDate = (dateString) => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -240,7 +240,6 @@ const formatDate = (dateString) => {
 const sharePost = async () => {
   const url = window.location.href
   const title = post.value?.title || 'Tech Javelin Blog Post'
-  
   if (navigator.share) {
     try {
       await navigator.share({

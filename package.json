@@ -17,11 +17,13 @@
   "dependencies": {
     "@aws-amplify/ui-vue": "^4.3.3",
     "@fortawesome/fontawesome-svg-core": "^7.0.0",
+    "@fortawesome/free-brands-svg-icons": "^7.0.0",
     "@fortawesome/free-solid-svg-icons": "^7.0.0",
     "@fortawesome/vue-fontawesome": "^3.1.1",
     "@types/marked": "^5.0.2",
     "aws-amplify": "^6.15.5",
     "marked": "^16.2.1",
+    "naive-ui": "^2.42.0",
     "vue": "^3.5.12",
     "vue-router": "^4.5.0"
   },

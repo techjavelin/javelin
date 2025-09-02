@@ -13,6 +13,8 @@
     
     <router-link to="/blog" class="nav-link">Blog</router-link>
     <span class="nav-search">🔍</span>
+  <SocialIcons />
+    <ThemeSwitcher :theme="theme" @toggle-theme="onThemeSwitch" />
     
     <!-- User Context Menu -->
     <div class="user-menu-container" @click.stop="toggleUserMenu" @keydown.enter.space="toggleUserMenu" tabindex="0" aria-haspopup="true" :aria-expanded="userMenuOpen">
@@ -89,6 +91,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import NavDropdown from './NavDropdown.vue'
 import LoginComponent from './LoginComponent.vue'
+import ThemeSwitcher from './ThemeSwitcher.vue'
+import SocialIcons from './SocialIcons.vue'
 
 // Props for user data and theme
 const props = defineProps({
@@ -108,6 +112,11 @@ const props = defineProps({
 
 // Emits for parent component
 const emit = defineEmits(['toggle-theme', 'logout', 'login-success'])
+
+// Theme switcher handler
+function onThemeSwitch(val) {
+  emit('toggle-theme', val)
+}
 
 // Local state
 const userMenuOpen = ref(false)
@@ -200,6 +209,17 @@ defineExpose({
   align-items: center;
   gap: 1.5rem;
   border-bottom: 1px solid #e0e0e0;
+}
+
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+.theme-switcher .fa {
+  font-size: 1.2rem;
+  margin: 0 0.2rem;
+  vertical-align: middle;
 }
 
 .nav-link {

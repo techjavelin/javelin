@@ -6,6 +6,7 @@ import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from
 import { OrganizationAPI } from './api/resource';
 import { Policy, PolicyStatement, PolicyDocument, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType, MethodOptions } from 'aws-cdk-lib/aws-apigateway';
+import { Stack } from 'aws-cdk-lib';
 
 const backend = defineBackend({
   auth,
@@ -16,11 +17,11 @@ const backend = defineBackend({
   deleteUser,
   resetUserPassword,
   createOrganization: OrganizationAPI.create,
-  deleteOrganization: OrganizationAPI.delete,
-  getOrganization: OrganizationAPI.get,
-  inviteUserToOrganization: OrganizationAPI.inviteUser,
-  listOrganizations: OrganizationAPI.list,
-  updateOrganization: OrganizationAPI.update
+  // deleteOrganization: OrganizationAPI.delete,
+  // getOrganization: OrganizationAPI.get,
+  // inviteUserToOrganization: OrganizationAPI.inviteUser,
+  // listOrganizations: OrganizationAPI.list,
+  // updateOrganization: OrganizationAPI.update
 });
 
 // Create a policy for Cognito user management
@@ -83,24 +84,41 @@ const apiConfig: MethodOptions = {
 const organizationPath = sigintRest.root.addResource('organization');
 
 organizationPath.addMethod('POST', new LambdaIntegration(backend.createOrganization.resources.lambda), apiConfig);
-organizationPath.addMethod('GET', new LambdaIntegration(backend.getOrganization.resources.lambda), apiConfig);
-organizationPath.addMethod('PUT', new LambdaIntegration(backend.updateOrganization.resources.lambda), apiConfig);
-organizationPath.addMethod('DELETE', new LambdaIntegration(backend.deleteOrganization.resources.lambda), apiConfig);
+// organizationPath.addMethod('GET', new LambdaIntegration(backend.getOrganization.resources.lambda), apiConfig);
+// organizationPath.addMethod('PUT', new LambdaIntegration(backend.updateOrganization.resources.lambda), apiConfig);
+// organizationPath.addMethod('DELETE', new LambdaIntegration(backend.deleteOrganization.resources.lambda), apiConfig);
 
 // Proxy Paths
-organizationPath.addProxy({
-  anyMethod: true,
-  defaultIntegration: new LambdaIntegration(backend.listOrganizations.resources.lambda),
-  defaultMethodOptions: apiConfig
-});
+// organizationPath.addProxy({
+//   anyMethod: true,
+//   defaultIntegration: new LambdaIntegration(backend.listOrganizations.resources.lambda),
+//   defaultMethodOptions: apiConfig
+// });
 
+// API Policy
 const apiRestPolicy = new Policy(api, 'RestApiPolicy', {
   statements: [
     new PolicyStatement({
       actions: ['execute-api:Invoke'],
       resources: [
-        sigintRest.arnForExecuteApi()
+        sigintRest.arnForExecuteApi('*', '/*', '*')
       ]
     })
   ]
 });
+
+backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
+backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
+
+backend.addOutput({
+  custom: {
+    API: {
+      [sigintRest.restApiName]: {
+        endpoint: sigintRest.url,
+        region: Stack.of(api).region,
+        apiName: sigintRest.restApiName
+      }
+    }
+  }
+});
+

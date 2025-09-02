@@ -52,7 +52,27 @@ library.add(
 import outputs from "../amplify_outputs.json";
 import router from "./router";
 import { Amplify } from "aws-amplify";
-Amplify.configure(outputs);
+import { parseAmplifyConfig } from "aws-amplify/utils";
+
+const amplifyConfig = parseAmplifyConfig(outputs);
+
+Amplify.configure({
+	...amplifyConfig,
+    API: {
+      ...amplifyConfig.API,
+      REST: outputs.custom.API,
+    },
+  },
+  {
+    API: {
+      REST: {
+        retryStrategy: {
+          strategy: 'no-retry', // Overrides default retry strategy
+        },
+      }
+    }
+
+});
 
 import SocialIcons from './components/SocialIcons.vue';
 const app = createApp(App);

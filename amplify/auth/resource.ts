@@ -1,5 +1,5 @@
 import { defineAuth } from '@aws-amplify/backend';
-import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from '../api/resource';
+import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from '../api/admin/resource';
 
 /**
  * Define and configure your auth resource

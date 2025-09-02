@@ -13,10 +13,10 @@ import * as Organization from './sigint/Organization.api';
 
 export const OrganizationAPI = {
   create: Organization.createOrganization,
-  delete: Organization.deleteOrganization,
-  get: Organization.getOrganization,
-  inviteUser: Organization.inviteUserToOrganization,
-  list: Organization.listOrganizations,
-  update: Organization.updateOrganization
+  // delete: Organization.deleteOrganization,
+  // get: Organization.getOrganization,
+  // inviteUser: Organization.inviteUserToOrganization,
+  // list: Organization.listOrganizations,
+  // update: Organization.updateOrganization
 };
 

@@ -1,3 +1,15 @@
 {
-  "recommendations": ["Vue.volar"]
+  "recommendations": [
+    "Vue.volar",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "AmazonWebServices.aws-toolkit-vscode",
+    "GraphQL.vscode-graphql",
+    "bradlc.vscode-tailwindcss",
+    "eamodio.gitlens",
+    "christian-kohler.path-intellisense",
+    "christian-kohler.npm-intellisense",
+    "EditorConfig.EditorConfig",
+    "yzhang.markdown-all-in-one"
+  ]
 }

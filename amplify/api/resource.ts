@@ -1,4 +1,5 @@
-import { defineBackend, Backend, DefineBackendProps } from "@aws-amplify/backend";
+import { defineBackend } from "@aws-amplify/backend";
+import type { Backend, DefineBackendProps } from "@aws-amplify/backend";
 import { aws_apigateway, Stack } from "aws-cdk-lib";
 import {
   AuthorizationType,

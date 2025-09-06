@@ -5,7 +5,8 @@ import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from
 // import { createOrganization, deleteOrganization, getOrganization, inviteUserToOrganization, listOrganizations, updateOrganization } from './api/sigint/Organization.api';
 import { OrganizationAPI } from './api/resource';
 import { Policy, PolicyStatement, PolicyDocument, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
-import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType, MethodOptions } from 'aws-cdk-lib/aws-apigateway';
+import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
+import type { MethodOptions } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 
 const backend = defineBackend({

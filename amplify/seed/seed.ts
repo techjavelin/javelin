@@ -53,6 +53,13 @@ try {
   });
   console.log("ℹ️  Admin user already exists and password is correct");
   adminExists = true;
+  // Always try to add admin to admin group after sign-in check
+  try {
+  await addToUserGroup({ username: "admin@techjavelin.com" }, "admin");
+    console.log("✅ Admin user added to admin group (post sign-in check)");
+  } catch (err) {
+    console.log("ℹ️  Admin group may not exist, skipping group assignment");
+  }
   auth.signOut(); // Sign out after checking
 } catch (signInError) {
   console.log("⚠️  Admin sign-in failed, checking if user exists...");
@@ -132,6 +139,14 @@ try {
   }
 }
 
+// Always try to add admin to admin group after all creation paths
+try {
+  await addToUserGroup({ username: "admin@techjavelin.com" }, "admin");
+  console.log("✅ Admin user added to admin group (final check)");
+} catch (err) {
+  console.log("ℹ️  Admin group may not exist, skipping group assignment");
+}
+
 // Create Regular User (or use existing)
 console.log("👤 Creating regular user...");
 let regularUser;
@@ -144,6 +159,13 @@ try {
     signInFlow: "Password",
   });
   console.log("ℹ️  Regular user already exists and password is correct");
+  // Always try to add user to user group after sign-in check
+  try {
+  await addToUserGroup({ username: "user@example.com" }, "user");
+    console.log("✅ Regular user added to user group (post sign-in check)");
+  } catch (err) {
+    console.log("ℹ️  User group may not exist, skipping group assignment");
+  }
   auth.signOut(); // Sign out after checking
 } catch (signInError) {
   // If sign in fails, try to create the user
@@ -168,6 +190,14 @@ try {
       throw error;
     }
   }
+}
+
+// Always try to add user to user group after all creation paths
+try {
+  await addToUserGroup({ username: "user@example.com" }, "user");
+  console.log("✅ Regular user added to user group (final check)");
+} catch (err) {
+  console.log("ℹ️  User group may not exist, skipping group assignment");
 }
 
 // Seed Blog Data

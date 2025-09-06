@@ -14,7 +14,6 @@ export default defineConfig({
     }
   },
   server: {
-    historyApiFallback: true
   },
   build: {
     target: 'esnext',

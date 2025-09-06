@@ -6,6 +6,7 @@ export const Organization = a.model({
 
   // Relationships
   scopes: a.hasMany('Scope', 'organizationId'),
+  targets: a.hasMany('Target', 'organizationId'),
 
   // Authorization Roles
   admins: a.string().array().required(),

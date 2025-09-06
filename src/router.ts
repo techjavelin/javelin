@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import SigInt from './pages/SigInt.vue'
 import { getCurrentUser } from 'aws-amplify/auth'
 import App from './App.vue'
 import Home from './pages/Home.vue'
@@ -30,6 +31,11 @@ const routes = [
     path: '/services', 
     component: Services,
     name: 'services'
+  },
+  {
+    path: '/pulse',
+    component: () => import('./pages/PulsePlatform.vue'),
+    name: 'pulse-platform'
   },
   { 
     path: '/services', 

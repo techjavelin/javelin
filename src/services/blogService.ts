@@ -20,6 +20,7 @@ export interface BlogPostData {
   seoTitle?: string
   seoKeywords?: string
   tableOfContents?: any
+  viewCount?: number // Add to BlogPostData type/interface
 }
 
 export interface AuthorData {

@@ -35,10 +35,6 @@ export const Target = a.model({
 // Authorization Rules
 .authorization((allow) => [
   allow.group("admin"),
-  allow.ownersDefinedIn('organization.admins').to(['create', 'read', 'update', 'delete']),
-  allow.ownersDefinedIn('scope.admins').to(['create', 'read', 'update', 'delete']),
-  allow.ownersDefinedIn('organization.members').to(['read']),
-  allow.ownersDefinedIn('scope.members').to(['read']),
-  allow.ownersDefinedIn('admins').to(['read', 'update', 'delete']),
+  allow.ownersDefinedIn('admins').to(['create', 'read', 'update', 'delete']),
   allow.ownersDefinedIn('members').to(['read']),
 ]);

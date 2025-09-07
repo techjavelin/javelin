@@ -1,5 +1,5 @@
 <template>
-  <div class="page-content">
+  <PageWrapper>
     <h1>User Profile</h1>
     <p>Manage your profile information and account settings.</p>
     
@@ -49,12 +49,11 @@
         <button type="button" class="btn-secondary" @click="resetProfile">Reset</button>
       </div>
     </div>
-  </div>
+  </PageWrapper>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-
 const profile = ref({
   name: 'John Doe',
   email: 'john@example.com',

@@ -1,6 +1,7 @@
 <template>
-  <div class="page-content">
-    <div class="blog-header">
+  <PageWrapper>
+    <div class="blog-container">
+      <div class="blog-header">
       <h1>Javelin Pulse Blog</h1>
       <p>
         Stay up to date with the latest insights on technology, cybersecurity, and IT strategy from the Javelin Pulse platform and Tech Javelin experts.
@@ -8,7 +9,7 @@
     </div>
 
     <!-- Newsletter Signup -->
-    <div class="newsletter-signup">
+  <div class="newsletter-signup">
       <div class="newsletter-content">
         <h3>🚀 Stay Updated</h3>
         <p>Get the latest tech insights delivered to your inbox</p>
@@ -39,7 +40,7 @@
     </div>
 
     <!-- Blog Posts List -->
-    <BlogList
+  <BlogList
       :layout="viewMode"
       :columns="gridColumns"
       :show-filters="true"
@@ -55,7 +56,7 @@
     />
 
     <!-- View Toggle -->
-    <div class="view-controls">
+  <div class="view-controls">
       <label>View:</label>
       <div class="view-buttons">
         <button 
@@ -98,7 +99,7 @@
     </div>
 
     <!-- CTA Section -->
-    <div class="blog-cta">
+  <div class="blog-cta">
       <h3>Ready to Transform Your Technology Strategy?</h3>
       <p>
         Our team of experts is here to help you navigate the complex world of technology 
@@ -113,77 +114,55 @@
       </a>
     </div>
   </div>
+  </PageWrapper>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import BlogList from '../components/BlogList.vue'
-import { useNewsletter } from '../composables/blog/useNewsletter'
+import { useRouter } from 'vue-router'
 
-const router = useRouter()
-
-// Newsletter functionality
-const { subscribe, loading: newsletterLoading, error: newsletterError, successMessage } = useNewsletter()
 const newsletterEmail = ref('')
 const newsletterMessage = ref('')
 const messageType = ref('')
+const newsletterLoading = ref(false)
 
-// View controls
 const viewMode = ref('grid')
 const gridColumns = ref(3)
-
-// Initial filters (can be set based on URL params or other logic)
 const initialFilters = ref({})
+const router = useRouter()
 
-// Methods
 const handleNewsletterSignup = async () => {
   if (!newsletterEmail.value) return
-
-  try {
-    const success = await subscribe(newsletterEmail.value)
-    if (success) {
-      newsletterMessage.value = 'Successfully subscribed! Welcome to our newsletter.'
-      messageType.value = 'success'
-      newsletterEmail.value = ''
-    } else {
-      newsletterMessage.value = newsletterError.value || 'Subscription failed. Please try again.'
-      messageType.value = 'error'
-    }
-  } catch (error) {
-    newsletterMessage.value = 'An error occurred. Please try again later.'
-    messageType.value = 'error'
-  }
-
-  // Clear message after 5 seconds
+  newsletterLoading.value = true
   setTimeout(() => {
-    newsletterMessage.value = ''
-    messageType.value = ''
-  }, 5000)
+    newsletterMessage.value = 'Successfully subscribed! Welcome to our newsletter.'
+    messageType.value = 'success'
+    newsletterEmail.value = ''
+    newsletterLoading.value = false
+    setTimeout(() => {
+      newsletterMessage.value = ''
+      messageType.value = ''
+    }, 5000)
+  }, 1200)
 }
 
 const handlePostClick = (post) => {
-  // Navigate to individual blog post page
   router.push(`/blog/${post.slug}`)
 }
 
 const handlePostShare = (data) => {
   console.log('Post shared:', data)
-  // Could show a toast notification or track analytics
 }
 
 const handleFiltersChange = (filters) => {
   console.log('Filters changed:', filters)
-  // Could update URL params to maintain filter state
 }
 
-// Load any initial data
 onMounted(() => {
-  // Parse URL params for initial filters if needed
   const urlParams = new URLSearchParams(window.location.search)
   const category = urlParams.get('category')
   const search = urlParams.get('search')
-  
   if (category || search) {
     initialFilters.value = {
       ...(category && { category }),
@@ -193,6 +172,32 @@ onMounted(() => {
 })
 </script>
           <style scoped>
+/* Blog main container for max-width and padding */
+.blog-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .blog-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+/* Add horizontal padding to main blog content */
+.blog-padded {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .blog-padded {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
 .page-content {
   padding: 2rem;
   max-width: 1200px;

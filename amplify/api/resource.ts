@@ -1,27 +1,23 @@
-import { defineFunction } from '@aws-amplify/backend'
+import { defineBackend } from "@aws-amplify/backend";
+import type { Backend, DefineBackendProps } from "@aws-amplify/backend";
+import { aws_apigateway, Stack } from "aws-cdk-lib";
+import {
+  AuthorizationType,
+  CognitoUserPoolsAuthorizer,
+  Cors,
+  LambdaIntegration,
+  RestApi,
+} from "aws-cdk-lib/aws-apigateway";
+import { Policy, PolicyStatement } from "aws-cdk-lib/aws-iam";
 
-// Define user management functions
-export const listUsers = defineFunction({
-  name: 'list-users',
-  entry: '../functions/user-management/list-users/handler.ts'
-})
+import * as Organization from './sigint/Organization.api';
 
-export const createUser = defineFunction({
-  name: 'create-user',
-  entry: '../functions/user-management/create-user/handler.ts'
-})
+export const OrganizationAPI = {
+  create: Organization.createOrganization,
+  // delete: Organization.deleteOrganization,
+  // get: Organization.getOrganization,
+  // inviteUser: Organization.inviteUserToOrganization,
+  // list: Organization.listOrganizations,
+  // update: Organization.updateOrganization
+};
 
-export const updateUser = defineFunction({
-  name: 'update-user',
-  entry: '../functions/user-management/update-user/handler.ts'
-})
-
-export const deleteUser = defineFunction({
-  name: 'delete-user',
-  entry: '../functions/user-management/delete-user/handler.ts'
-})
-
-export const resetUserPassword = defineFunction({
-  name: 'reset-user-password',
-  entry: '../functions/user-management/reset-password/handler.ts'
-})

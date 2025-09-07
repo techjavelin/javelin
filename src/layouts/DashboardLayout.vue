@@ -1,14 +1,43 @@
 <template>
-  <div class="dashboard-layout">
-    <!-- Sidebar Navigation -->
-    <AdminSidebar @toggle="handleSidebarToggle" />
-
-    <!-- Main Content Area -->
+  <div class="dashboard-layout pulse-bg">
+    <AppSidebar :appName="appName">
+      <template #header>
+        <slot name="sidebar-header">
+          <span class="app-title">{{ appName }}</span>
+        </slot>
+      </template>
+      <SidebarCollapsible title="Pulse Apps" :defaultOpen="true">
+        <SidebarLink to="/sigint">
+          <template #icon>
+            <font-awesome-icon :icon="['fas', 'eye']" />
+          </template>
+          SigInt
+        </SidebarLink>
+        <SidebarLink to="/pulse">
+          <template #icon>
+            <font-awesome-icon :icon="['fas', 'chart-line']" />
+          </template>
+          Pulse Platform
+        </SidebarLink>
+        <!-- Add more app links as needed -->
+      </SidebarCollapsible>
+      <SidebarHeading>Other</SidebarHeading>
+      <SidebarLink to="/profile">
+        <template #icon>
+          <font-awesome-icon :icon="['fas', 'user']" />
+        </template>
+        Profile
+      </SidebarLink>
+      <template #footer>
+        <SidebarUserMenu :userName="userName" :userEmail="userEmail">
+          <button @click="onLogout" class="sidebar-logout">Logout</button>
+        </SidebarUserMenu>
+      </template>
+    </AppSidebar>
     <div class="dashboard-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-      <!-- Header -->
       <header class="dashboard-header no-bg">
-        <div class="header-content">
-          <div class="header-left">
+        <div class="header-content" style="display: flex; flex-direction: row; padding-bottom: 10px;">
+          <div class="header-left" style="display: flex; flex-direction: row;">
             <slot name="header">
               <h1 class="dashboard-title">
                 <font-awesome-icon :icon="['fas', 'tachometer-alt']" class="dashboard-svg-icon" />
@@ -16,19 +45,13 @@
               </h1>
             </slot>
           </div>
-          <div class="header-right">
-            <SearchComponent />
-            <!-- AppContextMenu will be replaced with a modal trigger icon -->
-            <button class="app-menu-trigger" @click="showAppMenu = true">
-              <font-awesome-icon :icon="['fas', 'th-large']" />
-            </button>
-            <AppContextMenu v-if="showAppMenu" :visible="true" />
+          <div class="header-right-group" style="display: flex; align-items: center; gap: 1rem;">
+            <ThemeSwitcher :theme="$root.theme" @toggle-theme="$root.toggleTheme" />
           </div>
         </div>
       </header>
-
       <!-- Main Content -->
-      <main class="dashboard-main">
+  <main class="dashboard-main pulse-card">
         <slot />
       </main>
     </div>
@@ -37,82 +60,45 @@
 
 <script setup>
 import { ref } from 'vue'
-const showAppMenu = ref(false)
-import AdminSidebar from '../components/AdminSidebar.vue'
-import AppContextMenu from '../components/AppContextMenu.vue'
-import SearchComponent from '../components/SearchComponent.vue'
+import ThemeSwitcher from '../components/ThemeSwitcher.vue'
+import AppSidebar from '../components/nav/AppSidebar.vue'
+import SidebarCollapsible from '../components/nav/SidebarCollapsible.vue'
+import SidebarHeading from '../components/nav/SidebarHeading.vue'
+import SidebarLink from '../components/nav/SidebarLink.vue'
+import SidebarUserMenu from '../components/nav/SidebarUserMenu.vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 const sidebarCollapsed = ref(false)
-function handleSidebarToggle(collapsed) {
-  sidebarCollapsed.value = collapsed
+const appName = 'Javelin Pulse'
+const userName = 'User Name' // Replace with actual user name from auth
+const userEmail = 'user@email.com' // Replace with actual user email from auth
+function onLogout() {
+  // TODO: Hook up to actual logout logic
+  alert('Logout clicked')
 }
 </script>
 
 <style scoped>
-.dashboard-layout {
-  display: flex;
-  min-height: 100vh;
-  background: #181e2a;
-}
-.dashboard-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.dashboard-header {
-  color: #e2e8f0;
-  padding: 1.5rem 2rem 1rem 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  width: 100%;
-  border-bottom: 1px solid #1a2233;
-  background: transparent;
-  box-shadow: none;
-}
-.dashboard-header.no-bg {
-  background: transparent;
-  box-shadow: none;
-}
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-.header-left {
-  display: flex;
-  align-items: center;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.dashboard-title {
-  font-size: 2rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.dashboard-svg-icon {
-  font-size: 2rem;
-  color: #90caf9;
-}
-.dashboard-main {
-  flex: 1;
-  padding: 2rem 0;
-  background: #181e2a;
-  min-height: 0;
-  height: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  .dashboard-layout {
+    display: flex;
+    flex-direction: row;
+    min-height: 100vh;
+    background: var(--color-bg-light);
+  }
+  .dashboard-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 0;
+    background: var(--color-bg-light);
+    min-height: 0;
+    height: 100%;
+    box-sizing: border-box;
+    margin-left: var(--color-sidebar-width);
+  }
+/* Collapsed sidebar adjustment */
+.sidebar-collapsed.dashboard-content {
+  margin-left: 80px;
 }
 .dashboard-main > * {
   width: 100%;

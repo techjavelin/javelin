@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { Auth } from 'aws-amplify'
+import { getCurrentUser, signIn, signOut } from 'aws-amplify/auth'
 
 export default defineComponent({
   name: 'AmplifyLogin',
@@ -19,7 +19,7 @@ export default defineComponent({
         step.value = 'authenticating'
         error.value = ''
         try {
-          await Auth.signIn(username.value, password.value)
+          await signIn({ username: username.value, password: password.value })
           step.value = 'success'
         } catch (err: any) {
           error.value = err.message || 'Login failed'
@@ -28,6 +28,8 @@ export default defineComponent({
       }
     }
     return { username, password, step, error, handleUsername, handlePassword }
+  // If you need the current user, use inside an async function:
+  // const user = await getCurrentUser()
   },
   template: `
     <div style="font-family:'Fira Mono',monospace; color:#00ff99; font-size:0.95rem;">

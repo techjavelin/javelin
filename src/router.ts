@@ -1,3 +1,4 @@
+import AdminPulsePlatform from './pages/AdminPulsePlatform.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import SigInt from './pages/SigInt.vue'
 import { getCurrentUser } from 'aws-amplify/auth'
@@ -17,6 +18,28 @@ import Profile from './pages/Profile.vue'
 import Preferences from './pages/Preferences.vue'
 
 const routes = [
+  {
+    path: '/admin/pulse-platform',
+    component: AdminPulsePlatform,
+    name: 'admin-pulse-platform',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/about',
+    component: About,
+    name: 'about'
+  },
+  {
+    path: '/blog',
+    component: Blog,
+    name: 'blog'
+  },
+  {
+    path: '/sigint',
+    component: SigInt,
+    name: 'sigint',
+    meta: { requiresAuth: true }
+  },
   { 
     path: '/', 
     component: Home,

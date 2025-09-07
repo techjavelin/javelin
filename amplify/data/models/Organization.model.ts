@@ -19,7 +19,7 @@ export const Organization = a.model({
 })
 // Authorization Rules
 .authorization((allow) => [
-  allow.group("admin"),
+  allow.group("admin").to(['create', 'read', 'update', 'delete']),
   allow.ownersDefinedIn('admins').to(['update']),
   allow.ownersDefinedIn('members').to(['read']),
 ]);

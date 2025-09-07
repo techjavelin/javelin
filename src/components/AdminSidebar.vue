@@ -105,6 +105,16 @@
           </router-link>
         </li>
 
+        <!-- Pulse Platform Admin Section -->
+        <li class="nav-group" v-if="!isCollapsed">
+          <span class="group-title">Pulse Platform</span>
+        </li>
+        <li class="nav-item">
+          <router-link to="/admin/pulse-platform" class="nav-link">
+            <span class="nav-icon"><font-awesome-icon :icon="faTachometerAlt" class="sidebar-png-icon" /></span>
+            <span class="nav-text" v-if="!isCollapsed">Pulse Platform Admin</span>
+          </router-link>
+        </li>
         <!-- System -->
         <li class="nav-group" v-if="!isCollapsed">
           <span class="group-title">System</span>

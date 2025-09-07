@@ -23,30 +23,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+
+import { onMounted, computed } from 'vue'
 import PageWrapper from '@/components/PageWrapper.vue'
-import { getCurrentUser } from 'aws-amplify/auth'
+import { useAuth } from '@/composables/useAuth'
 
-const isSigIntUser = ref(false)
-const isAdminUser = ref(false)
-
-async function checkSigIntGroup() {
-  try {
-    const user = await getCurrentUser()
-    const payload = (user as any)?.signInDetails?.tokenPayload || {}
-    let groups = payload['cognito:groups'] || payload['groups'] || []
-    if (typeof groups === 'string') groups = [groups]
-    console.log('User groups:', groups)
-    isSigIntUser.value = Array.isArray(groups) && groups.includes('pulse-sigint')
-    isAdminUser.value = Array.isArray(groups) && groups.includes('admin')
-  } catch (e) {
-    isSigIntUser.value = false
-    isAdminUser.value = false
-  }
-}
+const { userGroups, loadCurrentUser } = useAuth()
+const isSigIntUser = computed(() => userGroups.value.includes('pulse-sigint'))
+const isAdminUser = computed(() => userGroups.value.includes('admin'))
 
 onMounted(() => {
-  checkSigIntGroup()
+  loadCurrentUser()
 })
 
 function onSigIntLaunch() {

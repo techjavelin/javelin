@@ -3,7 +3,10 @@
     <div v-if="loading">Loading organizations...</div>
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else>
-      <CardGrid>
+      <div v-if="organizations.length === 0">
+        <p>No organizations found.</p>
+      </div>
+      <CardGrid v-else>
         <Card v-for="org in organizations" :key="org.id" :title="org.name">
           <p><strong>Created:</strong> {{ org.createdAt }}</p>
           <div class="actions">
@@ -87,6 +90,9 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
+import PageWrapper from '@/components/PageWrapper.vue'
+import CardGrid from '@/components/CardGrid.vue'
+import Card from '@/components/Card.vue'
 import SigIntOrgForm from '@/components/SigIntOrgForm.vue'
 import SigIntScopeForm from '@/components/SigIntScopeForm.vue'
 import SigIntTargetForm from '@/components/SigIntTargetForm.vue'
@@ -262,12 +268,16 @@ async function fetchOrganizations() {
   loading.value = true
   error.value = null
   try {
+    console.log('[SigInt] Fetching organizations...')
     const { data } = await client.models.Organization.list({})
+    console.log('[SigInt] Organizations fetched:', data)
     organizations.value = data ?? []
   } catch (e: any) {
     error.value = e.message || 'Failed to load organizations.'
+    console.error('[SigInt] Error fetching organizations:', e)
   } finally {
     loading.value = false
+    console.log('[SigInt] Loading state:', loading.value, 'Organizations:', organizations.value)
   }
 }
 
@@ -275,18 +285,33 @@ async function getUserGroups() {
   try {
     const { getCurrentUser } = await import('aws-amplify/auth')
     const user = await getCurrentUser()
+    console.log('[SigInt] Current user:', user)
+    // Log Cognito userId (sub) for debugging
+    if (user && user.userId) {
+      console.log('[SigInt] Cognito userId (sub):', user.userId)
+    } else {
+      console.warn('[SigInt] No Cognito userId found on user object')
+    }
     const payload = (user as any)?.signInDetails?.tokenPayload || {}
+    console.log('[SigInt] User token payload:', payload)
     let groups = payload['cognito:groups'] || payload['groups'] || []
     if (typeof groups === 'string') groups = [groups]
     userGroups.value = Array.isArray(groups) ? groups : []
-  } catch {
+    console.log('[SigInt] Extracted user groups:', userGroups.value)
+  } catch (e) {
+    console.error('[SigInt] Error getting user groups:', e)
     userGroups.value = []
   }
 }
 
 onMounted(() => {
+  console.log('[SigInt] onMounted: fetching organizations and user groups...')
   fetchOrganizations()
   getUserGroups()
+})
+
+watch(userGroups, (groups) => {
+  console.log('[SigInt] User groups changed:', groups)
 })
 
 function viewOrg(org: Schema['Organization']['type']) {

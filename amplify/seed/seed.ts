@@ -12,8 +12,10 @@ import { generateClient } from "aws-amplify/data";
 import { AdminDeleteUserCommand, CognitoIdentityProviderClient } from "@aws-sdk/client-cognito-identity-provider";
 
 // Load Amplify configuration
+
 const url = new URL("../../amplify_outputs.json", import.meta.url);
 const outputs = JSON.parse(await readFile(url, { encoding: "utf8" }));
+console.log("[SEED] Amplify outputs loaded:", outputs);
 Amplify.configure(outputs);
 
 const dataClient = generateClient<Schema>();
@@ -842,12 +844,122 @@ Successful IT infrastructure scaling requires careful planning, the right techno
   auth.signOut();
   console.log("✅ Signed out successfully");
 
+
+
+  // --- SigInt Seed Data ---
+  console.log("\n🔎 Seeding SigInt demo data for each user...");
+
+  // Helper to get Cognito sub (user id) after sign-in
+  async function getCurrentUserSub() {
+    const { getCurrentUser } = await import('aws-amplify/auth');
+    const user = await getCurrentUser();
+    // For Amplify Auth v6+, Cognito sub is user.userId
+    return user?.userId;
+  }
+
+  // List of users to seed orgs for (get their userId first)
+  const sigintUsers = [
+    { username: "admin@techjavelin.com", password: "TechJavelin2025!", orgName: "Pulse Admin Org" },
+    { username: "user@example.com", password: "RegularUser2025!", orgName: "Pulse User Org" },
+  ];
+
+  // Get userIds for both users
+  const userIds: Record<string, string> = {};
+  for (const user of sigintUsers) {
+    try {
+      await auth.signOut();
+      await signInUser({ username: user.username, password: user.password, signInFlow: "Password" });
+      const userId = await getCurrentUserSub();
+      if (!userId) throw new Error(`Could not get Cognito sub for ${user.username}`);
+      userIds[user.username] = userId;
+      console.log(`[SEED] Got userId for ${user.username}: ${userId}`);
+    } catch (err) {
+      console.error(`[SEED] ❌ Error getting userId for ${user.username}:`, err);
+    }
+  }
+
+  // Seed all orgs as admin user
+  try {
+    await auth.signOut();
+    await signInUser({ username: "admin@techjavelin.com", password: "TechJavelin2025!", signInFlow: "Password" });
+    for (const user of sigintUsers) {
+      const userId = userIds[user.username];
+      if (!userId) {
+        console.error(`[SEED] Skipping org for ${user.username} (no userId)`);
+        continue;
+      }
+      console.log(`[SEED] Seeding SigInt data for ${user.username} (sub: ${userId}) as admin`);
+
+      // Create organization for this user
+      const org = await dataClient.models.Organization.create({
+        name: user.orgName,
+        admins: [userId],
+        members: [userId],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, { authMode: "userPool" });
+      if (org.errors && org.errors.length > 0) {
+        console.error(`[SEED] ❌ Error creating org for ${user.username}:`, org.errors);
+        continue;
+      }
+      if (!org.data) {
+        console.error(`[SEED] ❌ Org creation returned null data for ${user.username}`);
+        continue;
+      }
+      console.log(`[SEED] ✅ Created org for ${user.username}`);
+
+      // Create scope for this org
+      const scope = await dataClient.models.Scope.create({
+        name: "Default Scope",
+        description: `Demo scope for ${user.orgName}`,
+        organizationId: org.data.id,
+        admins: [userId],
+        members: [userId],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, { authMode: "userPool" });
+      if (scope.errors && scope.errors.length > 0) {
+        console.error(`[SEED] ❌ Error creating scope for ${user.username}:`, scope.errors);
+        continue;
+      }
+      if (!scope.data) {
+        console.error(`[SEED] ❌ Scope creation returned null data for ${user.username}`);
+        continue;
+      }
+      console.log(`[SEED] ✅ Created scope for ${user.username}`);
+
+      // Create target for this scope
+      const target = await dataClient.models.Target.create({
+        name: "Demo Website",
+        type: "WEBSITE",
+        config: JSON.stringify({ url: "https://pulse.techjavelin.com" }),
+        metadata: JSON.stringify({ description: `Demo target for ${user.orgName}` }),
+        scopeId: scope.data.id,
+        organizationId: org.data.id,
+        admins: [userId],
+        members: [userId],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, { authMode: "userPool" });
+      if (target.errors && target.errors.length > 0) {
+        console.error(`[SEED] ❌ Error creating target for ${user.username}:`, target.errors);
+        continue;
+      }
+      if (!target.data) {
+        console.error(`[SEED] ❌ Target creation returned null data for ${user.username}`);
+        continue;
+      }
+      console.log(`[SEED] ✅ Created target for ${user.username}`);
+    }
+  } catch (err) {
+    console.error(`[SEED] ❌ Error seeding SigInt data as admin:`, err);
+  }
+
 } else {
   console.log("⚠️  Skipping blog data seeding due to authentication issues");
 }
 
-console.log(`
-🎉 Seed process completed!
+console.log(`\n🎉 Seed process completed!
 
 👥 Users created:
    📧 Admin: admin@techjavelin.com
@@ -859,6 +971,9 @@ console.log(`
 📊 Blog data seeded:
    ✅ Authors, Categories, Tags, and Blog Posts created
    ✅ Sample blog content with relationships
+
+🔎 SigInt demo data seeded:
+   ✅ Organization, Scope, and Target created
 
 🚀 Your sandbox is ready for development and testing!
 `);

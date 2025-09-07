@@ -14,6 +14,7 @@ import { Organization } from "./models/Organization.model";
 import { Scope } from "./models/Scope.model";
 import { Target, TargetType } from "./models/Target.model";
 import { UserProfile } from "./models/UserProfile.model";
+import { PulseInviteSubmission } from "./models/PulseInviteSubmission.model";
 
 const schema = a.schema({
   BlogPost,
@@ -30,6 +31,7 @@ const schema = a.schema({
   Target,
   TargetType,
   UserProfile,
+  PulseInviteSubmission,
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -43,5 +45,6 @@ export const data = defineData({
       expiresInDays: 30,
     },
   },
+  logging: true
 });
 

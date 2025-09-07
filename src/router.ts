@@ -16,8 +16,58 @@ import GDPRNotice from './pages/GDPRNotice.vue'
 import TermsConditions from './pages/TermsConditions.vue'
 import Profile from './pages/Profile.vue'
 import Preferences from './pages/Preferences.vue'
+import JavelinPulse from './pages/JavelinPulse.vue'
+import AdminPulseSubmissions from './pages/AdminPulseSubmissions.vue'
 
 const routes = [
+  {
+    path: '/security-demo1',
+    component: () => import('./pages/SecurityDemo1.vue'),
+    name: 'security-demo1',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/security-demo2',
+    component: () => import('./pages/SecurityDemo2.vue'),
+    name: 'security-demo2',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/security-demo3',
+    component: () => import('./pages/SecurityDemo3.vue'),
+    name: 'security-demo3',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/security-demo4',
+    component: () => import('./pages/SecurityDemo4.vue'),
+    name: 'security-demo4',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/demo1',
+    component: () => import('./pages/Demo1.vue'),
+    name: 'demo1',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/demo2',
+    component: () => import('./pages/Demo2.vue'),
+    name: 'demo2',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/demo3',
+    component: () => import('./pages/Demo3.vue'),
+    name: 'demo3',
+    meta: { hideTopNav: false }
+  },
+  {
+    path: '/demo4',
+    component: () => import('./pages/Demo4.vue'),
+    name: 'demo4',
+    meta: { hideTopNav: false }
+  },
   {
     path: '/admin/pulse-platform',
     component: AdminPulsePlatform,
@@ -38,7 +88,7 @@ const routes = [
     path: '/sigint',
     component: SigInt,
     name: 'sigint',
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, hideTopNav: true }
   },
   { 
     path: '/', 
@@ -131,6 +181,12 @@ const routes = [
     name: 'admin-backups',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
+  {
+    path: '/admin/pulse-submissions',
+    component: AdminPulseSubmissions,
+    name: 'admin-pulse-submissions',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
   { 
     path: '/privacy-policy', 
     component: PrivacyPolicy,
@@ -162,6 +218,11 @@ const routes = [
     component: Preferences,
     name: 'preferences',
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/javelin-pulse',
+    component: JavelinPulse,
+    name: 'javelin-pulse'
   }
 ];
 

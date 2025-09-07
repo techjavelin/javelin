@@ -1,92 +1,149 @@
 <template>
-  <PageWrapper title="SigInt Organizations">
-    <div v-if="loading">Loading organizations...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else>
-      <div v-if="organizations.length === 0">
-        <p>No organizations found.</p>
-      </div>
-      <CardGrid v-else>
-        <Card v-for="org in organizations" :key="org.id" :title="org.name">
-          <p><strong>Created:</strong> {{ org.createdAt }}</p>
-          <div class="actions">
-            <button class="btn" @click="viewOrg(org)">View</button>
-            <button v-if="canEdit" class="btn" @click="editOrg(org)">Edit</button>
-            <button v-if="canEdit" class="btn btn-danger" @click="deleteOrg(org)">Delete</button>
+  <div class="sigint-dashboard-layout pulse-bg">
+    <AppSidebar :appName="'Javelin Pulse SigInt'">
+      <template #header>
+        <span class="app-title">SigInt</span>
+      </template>
+      <SidebarCollapsible title="Pulse Apps" :defaultOpen="true">
+        <SidebarLink to="/sigint">
+          <template #icon>
+            <font-awesome-icon :icon="['fas', 'satellite-dish']" />
+          </template>
+          SigInt
+        </SidebarLink>
+        <SidebarLink to="/pulse">
+          <template #icon>
+            <font-awesome-icon :icon="['fas', 'chart-line']" />
+          </template>
+          Pulse Platform
+        </SidebarLink>
+      </SidebarCollapsible>
+      <SidebarHeading>Other</SidebarHeading>
+      <SidebarLink to="/profile">
+        <template #icon>
+          <font-awesome-icon :icon="['fas', 'user']" />
+        </template>
+        Profile
+      </SidebarLink>
+      <template #footer>
+        <SidebarUserMenu :userName="userName" :userEmail="userEmail">
+          <button @click="onLogout" class="sidebar-logout">Logout</button>
+        </SidebarUserMenu>
+      </template>
+    </AppSidebar>
+    <div class="dashboard-content" :class="{ 'sidebar-collapsed': false }">
+      <header class="dashboard-header no-bg">
+        <div class="header-content" style="display: flex; flex-direction: row; padding-bottom: 10px; justify-content: space-between; align-items: center;">
+          <div class="header-left" style="display: flex; flex-direction: row;">
+            <slot name="header">
+              <h1 class="dashboard-title">
+                <font-awesome-icon :icon="['fas', 'satellite-dish']" class="dashboard-svg-icon" />
+                SigInt Dashboard
+              </h1>
+            </slot>
           </div>
-        </Card>
-      </CardGrid>
-      <button v-if="canEdit" class="btn btn-primary" @click="showCreate = true">Add Organization</button>
-    </div>
-    <SigIntOrgForm
-      v-if="showCreate || editingOrg"
-      :org="editingOrg || undefined"
-      :isEdit="!!editingOrg"
-      @submit="onOrgFormSubmit"
-      @cancel="onOrgFormCancel"
-    />
-    <div v-if="viewingOrg" class="org-detail-modal">
-      <h3>{{ viewingOrg.name }}</h3>
-      <p><strong>Admins:</strong> {{ viewingOrg.admins?.join(', ') }}</p>
-      <p><strong>Members:</strong> {{ viewingOrg.members?.join(', ') }}</p>
-      <h4>Scopes</h4>
-      <div v-if="scopesLoading">Loading scopes...</div>
-      <div v-else-if="scopesError" class="error">{{ scopesError }}</div>
-      <div v-else>
-        <ul v-if="scopes.length">
-          <li v-for="scope in scopes" :key="scope.id">
-            <strong>{{ scope.name }}</strong>: {{ scope.description }}
-            <span v-if="canEdit">
-              <button class="btn" @click="editScope(scope)">Edit</button>
-              <button class="btn btn-danger" @click="deleteScope(scope)">Delete</button>
-              <button class="btn btn-secondary" @click="openScopeTargets(scope)">Targets</button>
-            </span>
-          </li>
-        </ul>
-        <div v-else>No scopes found.</div>
-        <button v-if="canEdit" class="btn btn-primary" @click="showScopeForm = true">Add Scope</button>
-      </div>
-      <SigIntScopeForm
-        v-if="showScopeForm || editingScope"
-        :scope="editingScope || undefined"
-        :isEdit="!!editingScope"
-        @submit="onScopeFormSubmit"
-        @cancel="onScopeFormCancel"
-      />
-      <!-- Scope Targets Modal -->
-      <div v-if="viewingScope" class="org-detail-modal">
-        <h4>Targets for {{ viewingScope.name }}</h4>
-        <div v-if="targetsLoading">Loading targets...</div>
-        <div v-else-if="targetsError" class="error">{{ targetsError }}</div>
-        <div v-else>
-          <ul v-if="targets.length">
-            <li v-for="target in targets" :key="target.id">
-              <strong>{{ target.name }}</strong> ({{ target.type }})
-              <span v-if="canEdit">
-                <button class="btn" @click="editTarget(target)">Edit</button>
-                <button class="btn btn-danger" @click="deleteTarget(target)">Delete</button>
-              </span>
-            </li>
-          </ul>
-          <div v-else>No targets found.</div>
-          <button v-if="canEdit" class="btn btn-primary" @click="showTargetForm = true">Add Target</button>
+          <div class="header-right-group" style="display: flex; align-items: center; gap: 1rem;">
+            <ThemeSwitcher :theme="theme" @toggle-theme="toggleTheme" />
+          </div>
         </div>
-        <SigIntTargetForm
-          v-if="showTargetForm || editingTarget"
-          :target="editingTarget || undefined"
-          :isEdit="!!editingTarget"
-          :targetTypes="[...targetTypes]"
-          @submit="onTargetFormSubmit"
-          @cancel="onTargetFormCancel"
+      </header>
+  <main class="dashboard-main pulse-card">
+        <div v-if="loading">Loading organizations...</div>
+        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-else>
+          <div v-if="organizations.length === 0">
+            <p>No organizations found.</p>
+          </div>
+          <CardGrid v-else>
+            <Card v-for="org in organizations" :key="org.id" :title="org.name">
+              <p><strong>Created:</strong> {{ org.createdAt }}</p>
+              <div class="actions">
+                <button class="btn" @click="viewOrg(org)">View</button>
+                <button v-if="canEdit" class="btn" @click="editOrg(org)">Edit</button>
+                <button v-if="canEdit" class="btn btn-danger" @click="deleteOrg(org)">Delete</button>
+              </div>
+            </Card>
+          </CardGrid>
+          <button v-if="canEdit" class="btn btn-primary" @click="showCreate = true">Add Organization</button>
+        </div>
+        <SigIntOrgForm
+          v-if="showCreate || editingOrg"
+          :org="editingOrg || undefined"
+          :isEdit="!!editingOrg"
+          @submit="onOrgFormSubmit"
+          @cancel="onOrgFormCancel"
         />
-        <button class="btn" @click="closeScopeTargets">Close</button>
-      </div>
-      <button class="btn" @click="closeOrgDetail">Close</button>
+        <div v-if="viewingOrg" class="org-detail-modal">
+          <h3>{{ viewingOrg.name }}</h3>
+          <p><strong>Admins:</strong> {{ viewingOrg.admins?.join(', ') }}</p>
+          <p><strong>Members:</strong> {{ viewingOrg.members?.join(', ') }}</p>
+          <h4>Scopes</h4>
+          <div v-if="scopesLoading">Loading scopes...</div>
+          <div v-else-if="scopesError" class="error">{{ scopesError }}</div>
+          <div v-else>
+            <ul v-if="scopes.length">
+              <li v-for="scope in scopes" :key="scope.id">
+                <strong>{{ scope.name }}</strong>: {{ scope.description }}
+                <span v-if="canEdit">
+                  <button class="btn" @click="editScope(scope)">Edit</button>
+                  <button class="btn btn-danger" @click="deleteScope(scope)">Delete</button>
+                  <button class="btn btn-secondary" @click="openScopeTargets(scope)">Targets</button>
+                </span>
+              </li>
+            </ul>
+            <div v-else>No scopes found.</div>
+            <button v-if="canEdit" class="btn btn-primary" @click="showScopeForm = true">Add Scope</button>
+          </div>
+          <SigIntScopeForm
+            v-if="showScopeForm || editingScope"
+            :scope="editingScope || undefined"
+            :isEdit="!!editingScope"
+            @submit="onScopeFormSubmit"
+            @cancel="onScopeFormCancel"
+          />
+          <!-- Scope Targets Modal -->
+          <div v-if="viewingScope" class="org-detail-modal">
+            <h4>Targets for {{ viewingScope.name }}</h4>
+            <div v-if="targetsLoading">Loading targets...</div>
+            <div v-else-if="targetsError" class="error">{{ targetsError }}</div>
+            <div v-else>
+              <ul v-if="targets.length">
+                <li v-for="target in targets" :key="target.id">
+                  <strong>{{ target.name }}</strong> ({{ target.type }})
+                  <span v-if="canEdit">
+                    <button class="btn" @click="editTarget(target)">Edit</button>
+                    <button class="btn btn-danger" @click="deleteTarget(target)">Delete</button>
+                  </span>
+                </li>
+              </ul>
+              <div v-else>No targets found.</div>
+              <button v-if="canEdit" class="btn btn-primary" @click="showTargetForm = true">Add Target</button>
+            </div>
+            <SigIntTargetForm
+              v-if="showTargetForm || editingTarget"
+              :target="editingTarget || undefined"
+              :isEdit="!!editingTarget"
+              :targetTypes="[...targetTypes]"
+              @submit="onTargetFormSubmit"
+              @cancel="onTargetFormCancel"
+            />
+            <button class="btn" @click="closeScopeTargets">Close</button>
+          </div>
+        </div>
+      </main>
     </div>
-  </PageWrapper>
+  </div>
 </template>
 
 <script setup lang="ts">
+import ThemeSwitcher from '@/components/ThemeSwitcher.vue'
+
+const theme = ref('light')
+function toggleTheme(val: string) {
+  theme.value = val
+  document.documentElement.setAttribute('data-theme', val)
+}
+
 import { ref, onMounted, computed, watch } from 'vue'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
@@ -96,6 +153,27 @@ import Card from '@/components/Card.vue'
 import SigIntOrgForm from '@/components/SigIntOrgForm.vue'
 import SigIntScopeForm from '@/components/SigIntScopeForm.vue'
 import SigIntTargetForm from '@/components/SigIntTargetForm.vue'
+import AppSidebar from '@/components/nav/AppSidebar.vue'
+import SidebarCollapsible from '@/components/nav/SidebarCollapsible.vue'
+import SidebarHeading from '@/components/nav/SidebarHeading.vue'
+import SidebarLink from '@/components/nav/SidebarLink.vue'
+import SidebarUserMenu from '@/components/nav/SidebarUserMenu.vue'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
+import { signOut } from 'aws-amplify/auth'
+import { useRouter } from 'vue-router'
+const userName = 'User Name' // Replace with actual user name from auth
+const userEmail = 'user@email.com' // Replace with actual user email from auth
+const router = useRouter()
+async function onLogout() {
+  await signOut()
+  router.push('/')
+}
+
+// Listen for sidebar-logout event from SidebarUserMenu
+if (typeof window !== 'undefined') {
+  window.addEventListener('sidebar-logout', onLogout)
+}
 
 const client = generateClient<Schema>()
 const userGroups = ref<string[]>([])
@@ -354,6 +432,41 @@ function onOrgFormCancel() {
 </script>
 
 <style scoped>
+.sigint-dashboard-layout {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  background: #181e2a;
+}
+.dashboard-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 0;
+  background: #181e2a;
+  min-height: 0;
+  height: 100%;
+  box-sizing: border-box;
+  margin-left: 260px;
+}
+.dashboard-header {
+  background: none;
+  color: #fff;
+  padding: 0 2rem 1rem 2rem;
+}
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.dashboard-main {
+  flex: 1;
+  padding: 0 2rem;
+  color: #fff;
+}
 .btn {
   margin-top: 1rem;
 }

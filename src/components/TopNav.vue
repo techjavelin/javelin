@@ -10,6 +10,12 @@
       to="/services"
       mode="both"
     />
+    <NavDropdown
+      :items="solutionsMenuItems"
+      label="Solutions"
+      to="/javelin-pulse"
+      mode="both"
+    />
     
   <router-link to="/blog" class="nav-link">Blog</router-link>
 
@@ -165,6 +171,11 @@ const servicesMenuItems = [
   { label: 'Managed IT Services', to: '/services#managed-it' },
   { label: 'Technology Strategy', to: '/services#strategy' },
   { label: 'Fractional Leadership', to: '/services#leadership' }
+]
+
+// Solutions menu configuration
+const solutionsMenuItems = [
+  { label: 'Javelin Pulse', to: '/javelin-pulse' }
 ]
 
 // Methods

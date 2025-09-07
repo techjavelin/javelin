@@ -115,6 +115,12 @@
             <span class="nav-text" v-if="!isCollapsed">Pulse Platform Admin</span>
           </router-link>
         </li>
+        <li class="nav-item">
+          <router-link to="/admin/pulse-submissions" class="nav-link">
+            <span class="nav-icon"><font-awesome-icon :icon="faEnvelopeOpenText" class="sidebar-png-icon" /></span>
+            <span class="nav-text" v-if="!isCollapsed">Pulse Invite Submissions</span>
+          </router-link>
+        </li>
         <!-- System -->
         <li class="nav-group" v-if="!isCollapsed">
           <span class="group-title">System</span>
@@ -186,7 +192,8 @@ import {
   faDatabase,
   faPlusSquare,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faEnvelopeOpenText
 } from '@fortawesome/free-solid-svg-icons'
 
 library.add(
@@ -203,7 +210,8 @@ library.add(
   faDatabase,
   faPlusSquare,
   faChevronLeft,
-  faChevronRight
+  faChevronRight,
+  faEnvelopeOpenText
 )
 
 // Register FontAwesomeIcon locally

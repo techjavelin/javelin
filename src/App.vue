@@ -218,15 +218,15 @@ function handleClickOutside() {
 </script>
 
 <template>
-  <div class="javelin-app" @click="handleClickOutside">
+  <div class="javelin-app" @click="handleClickOutside" style="background: var(--color-bg-light); color: var(--color-text-light);">
     <!-- Top blue bar: only show on main site -->
-    <div v-if="!route.meta.hideTopNav" class="top-bar">
+    <div v-if="!route.meta.hideTopNav" class="top-bar bg-card" style="color: var(--color-text-light);">
       <span>Sign-up for updates now!</span>
       <input type="email" placeholder="Your email address..." class="newsletter-input" />
-      <button class="newsletter-btn">Subscribe</button>
+      <button class="newsletter-btn btn">Subscribe</button>
     </div>
     <!-- Logo row -->
-    <div class="logo-row">
+    <div class="logo-row bg-card" style="color: var(--color-text-light);">
       <img src="https://techjavelin.com/wp-content/uploads/2022/10/cropped-Tech-Javelin-Ltd-logos_transparent.png" alt="Tech Javelin Logo" class="logo-img" />
       <span class="logo-title">Tech Javelin</span>
     </div>

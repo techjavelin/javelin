@@ -41,7 +41,13 @@ import PageWrapper from '../components/PageWrapper.vue'
 
 <style scoped>
 .main-content {
-  padding: 2rem;
+  padding: 2rem 2rem;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .main-content {
+    padding: 1rem 1rem;
+  }
   text-align: center;
   background: #f7f7f7;
   min-height: auto;

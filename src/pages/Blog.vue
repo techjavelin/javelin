@@ -1,6 +1,7 @@
 <template>
   <PageWrapper>
-    <div class="blog-header">
+    <div class="blog-container">
+      <div class="blog-header">
       <h1>Javelin Pulse Blog</h1>
       <p>
         Stay up to date with the latest insights on technology, cybersecurity, and IT strategy from the Javelin Pulse platform and Tech Javelin experts.
@@ -8,7 +9,7 @@
     </div>
 
     <!-- Newsletter Signup -->
-    <div class="newsletter-signup">
+  <div class="newsletter-signup">
       <div class="newsletter-content">
         <h3>🚀 Stay Updated</h3>
         <p>Get the latest tech insights delivered to your inbox</p>
@@ -39,7 +40,7 @@
     </div>
 
     <!-- Blog Posts List -->
-    <BlogList
+  <BlogList
       :layout="viewMode"
       :columns="gridColumns"
       :show-filters="true"
@@ -55,7 +56,7 @@
     />
 
     <!-- View Toggle -->
-    <div class="view-controls">
+  <div class="view-controls">
       <label>View:</label>
       <div class="view-buttons">
         <button 
@@ -98,7 +99,7 @@
     </div>
 
     <!-- CTA Section -->
-    <div class="blog-cta">
+  <div class="blog-cta">
       <h3>Ready to Transform Your Technology Strategy?</h3>
       <p>
         Our team of experts is here to help you navigate the complex world of technology 
@@ -112,6 +113,7 @@
         Get Started Today →
       </a>
     </div>
+  </div>
   </PageWrapper>
 </template>
 
@@ -170,6 +172,32 @@ onMounted(() => {
 })
 </script>
           <style scoped>
+/* Blog main container for max-width and padding */
+.blog-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .blog-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+/* Add horizontal padding to main blog content */
+.blog-padded {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .blog-padded {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
 .page-content {
   padding: 2rem;
   max-width: 1200px;

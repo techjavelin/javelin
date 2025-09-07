@@ -1,21 +1,20 @@
 <template>
   <PageWrapper>
-  <h1>Javelin Pulse Services</h1>
-  <p>Javelin Pulse integrates Tech Javelin's professional technology consulting and managed services into a unified SaaS platform. Explore our modular service portfolio, including client portals, OSINT monitoring, and more.</p>
-    
-    <Card 
-      variant="info" 
-      class="intro-card"
-      background-image="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3e%3cpath d='M0 0 L20 0 L20 20 L0 20 Z M40 0 L60 0 L60 20 L40 20 Z M80 0 L100 0 L100 20 L80 20 Z M20 20 L40 20 L40 40 L20 40 Z M60 20 L80 20 L80 40 L60 40 Z M0 40 L20 40 L20 60 L0 60 Z M40 40 L60 40 L60 60 L40 60 Z M80 40 L100 40 L100 60 L80 60 Z' fill='%23f0f8ff' opacity='0.3'/%3e%3c/svg%3e"
-    >
-      <h2>Our Service Portfolio</h2>
-      <p>
-        With decades of experience in enterprise technology and software development, Tech Javelin 
-        provides comprehensive consulting services to help your business achieve its technology goals.
-      </p>
-    </Card>
-    
-    <CardGrid columns="2" gap="lg" class="main-services-grid">
+    <div class="services-container">
+      <h1>Javelin Pulse Services</h1>
+      <p>Javelin Pulse integrates Tech Javelin's professional technology consulting and managed services into a unified SaaS platform. Explore our modular service portfolio, including client portals, OSINT monitoring, and more.</p>
+      <Card 
+        variant="info" 
+        class="intro-card"
+        background-image="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3e%3cpath d='M0 0 L20 0 L20 20 L0 20 Z M40 0 L60 0 L60 20 L40 20 Z M80 0 L100 0 L100 20 L80 20 Z M20 20 L40 20 L40 40 L20 40 Z M60 20 L80 20 L80 40 L60 40 Z M0 40 L20 40 L20 60 L0 60 Z M40 40 L60 40 L60 60 L40 60 Z M80 40 L100 40 L100 60 L80 60 Z' fill='%23f0f8ff' opacity='0.3'/%3e%3c/svg%3e"
+      >
+        <h2>Our Service Portfolio</h2>
+        <p>
+          With decades of experience in enterprise technology and software development, Tech Javelin 
+          provides comprehensive consulting services to help your business achieve its technology goals.
+        </p>
+      </Card>
+      <CardGrid columns="2" gap="lg" class="main-services-grid">
       <Card 
         variant="service"
         title="Managed IT Services"
@@ -151,7 +150,8 @@
           </div>
         </template>
       </Card>
-    </CardGrid>
+      </CardGrid>
+    </div>
   </PageWrapper>
 </template>
 
@@ -161,6 +161,20 @@ import CardGrid from '../components/CardGrid.vue'
 </script>
 
 <style scoped>
+/* Services main container for max-width and padding */
+.services-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  .services-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
 .page-content {
   padding: 2rem;
   text-align: center;

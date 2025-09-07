@@ -56,6 +56,21 @@ const showModal = ref(false)
 </script>
 
 <style scoped>
+/* Add horizontal padding to main content */
+.pulse-hero,
+.pulse-cta,
+.pulse-features {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+@media (max-width: 600px) {
+  .pulse-hero,
+  .pulse-cta,
+  .pulse-features {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
 /* Feature cards layout */
 .pulse-features {
   display: flex;

@@ -118,8 +118,10 @@
 </template>
 
 <script setup>
+
 import { ref, onMounted } from 'vue'
 import BlogList from '../components/BlogList.vue'
+import PageWrapper from '../components/PageWrapper.vue'
 import { useRouter } from 'vue-router'
 
 const newsletterEmail = ref('')

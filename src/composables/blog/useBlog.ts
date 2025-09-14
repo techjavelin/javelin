@@ -4,7 +4,29 @@ import type { Schema } from '../../../amplify/data/resource';
 
 type BlogPost = Schema['BlogPost']['type'];
 
+
 export function useBlog() {
+  // Fetch a blog post by slug
+  const fetchPostBySlug = async (slug: string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const { data } = await client.models.BlogPost.list({
+        filter: { slug: { eq: slug } },
+        limit: 1
+      });
+      currentPost.value = data && data.length > 0 ? data[0] : null;
+      if (!currentPost.value) {
+        error.value = 'Blog post not found.';
+      }
+      return currentPost.value;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch post by slug';
+      return null;
+    } finally {
+      loading.value = false;
+    }
+  };
   const client = generateClient<Schema>();
   const posts = ref<BlogPost[]>([]);
   const currentPost = ref<BlogPost | null>(null);
@@ -116,6 +138,7 @@ export function useBlog() {
     error,
     fetchPosts,
     fetchPostById,
+    fetchPostBySlug,
     createPost,
     updatePost,
     deletePost,

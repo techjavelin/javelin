@@ -3,10 +3,9 @@ import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
 import { inviteUserByEmail } from './cognitoInvite'
 
-const client = generateClient<Schema>()
-
 // Backend logic: invite user, then create org after confirmation
 export async function inviteOrganization(orgName: string, primaryEmail: string) {
+  const client = generateClient<Schema>()
   // 1. Create the user in Cognito and get their sub (userId)
   const userId = await inviteUserByEmail(primaryEmail)
 

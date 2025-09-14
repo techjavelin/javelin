@@ -1,3 +1,10 @@
+import router from "./router";
+import SocialIcons from './components/SocialIcons.vue';
+
+
+
+
+
 import "./assets/theme.css";
 import "./assets/main.css";
 import { createApp } from "vue";
@@ -23,7 +30,6 @@ import {
 	faSun,
 	faMoon
 } from '@fortawesome/free-solid-svg-icons';
-
 import { faTwitter, faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faLifeRing } from '@fortawesome/free-solid-svg-icons';
 library.add(
@@ -50,32 +56,12 @@ library.add(
 	faLifeRing
 );
 
-import outputs from "../amplify_outputs.json";
-import router from "./router";
 import { Amplify } from "aws-amplify";
+import outputs from "../amplify_outputs.json";
 import { parseAmplifyConfig } from "aws-amplify/utils";
 
 const amplifyConfig = parseAmplifyConfig(outputs);
-
-Amplify.configure({
-	...amplifyConfig,
-    API: {
-      ...amplifyConfig.API,
-      REST: outputs.custom.API,
-    },
-  },
-  {
-    API: {
-      REST: {
-        retryStrategy: {
-          strategy: 'no-retry', // Overrides default retry strategy
-        },
-      }
-    }
-
-});
-
-import SocialIcons from './components/SocialIcons.vue';
+Amplify.configure(amplifyConfig);
 const app = createApp(App);
 app.component('font-awesome-icon', FontAwesomeIcon);
 app.component('SocialIcons', SocialIcons);

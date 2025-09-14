@@ -2,9 +2,8 @@ import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
 
-const client = generateClient<Schema>()
-
 export function useOrganizations() {
+  const client = generateClient<Schema>()
   const organizations = ref<Schema['Organization']['type'][]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)

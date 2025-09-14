@@ -85,6 +85,12 @@ const routes = [
     name: 'blog'
   },
   {
+    path: '/blog/:slug',
+    component: BlogPost,
+    name: 'blog-post',
+    props: true
+  },
+  {
     path: '/sigint',
     component: SigInt,
     name: 'sigint',
@@ -125,6 +131,12 @@ const routes = [
     path: '/admin/posts',
     component: () => import('./pages/AdminPosts.vue'),
     name: 'admin-posts',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/admin/posts/new',
+    component: () => import('./pages/AdminPosts.vue'), // Replace with AdminPostNew.vue if you create one
+    name: 'admin-posts-new',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   {

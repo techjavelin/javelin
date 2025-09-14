@@ -179,10 +179,16 @@
 
 <script setup>
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { marked } from 'marked'
 import BlogCard from '../components/BlogCard.vue'
+import PageWrapper from '../components/PageWrapper.vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useBlog } from '../composables/blog/useBlog'
+
+const { fetchPostBySlug, fetchPosts } = useBlog()
+
+const route = useRoute()
 
 const loading = ref(false)
 const error = ref('')
@@ -275,14 +281,16 @@ const handleRelatedPostClick = (relatedPost) => {
 
 const loadRelatedPosts = async () => {
   if (!post.value) return
-  
   try {
     // Get posts with similar categories or tags
-    const { data: posts } = await fetchPosts({
+    const result = await fetchPosts({
       status: 'PUBLISHED',
       limit: 3
     })
-    
+    let posts = []
+    if (result && typeof result === 'object' && Array.isArray(result.data)) {
+      posts = result.data
+    }
     // Filter out current post and get first 3
     relatedPosts.value = posts
       .filter(p => p.id !== post.value.id)

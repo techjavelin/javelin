@@ -123,9 +123,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useBlog } from '../composables/blog/useBlog'
 import BlogCard from './BlogCard.vue'
+import { onMounted } from 'vue'
+import { watch } from 'vue'
+import { useBlog } from '../composables/blog/useBlog'
+import { computed } from 'vue'
+import { ref } from 'vue'
+
+import { faNewspaper } from '@fortawesome/free-solid-svg-icons'
 
 const props = defineProps({
   layout: {
@@ -183,15 +188,26 @@ const props = defineProps({
 
 const emit = defineEmits(['post-click', 'post-share', 'filters-change'])
 
-// Blog posts composable
-const {
-  posts,
-  loading,
-  error,
-  hasMore,
-  featuredPosts,
-  fetchPosts
-} = useBlog()
+
+let posts, loading, error, hasMore, featuredPosts, fetchPosts
+try {
+  const blog = useBlog()
+  posts = blog.posts
+  loading = blog.loading
+  error = blog.error
+  hasMore = blog.hasMore || ref(false)
+  featuredPosts = blog.featuredPosts || ref([])
+  fetchPosts = blog.fetchPosts
+} catch (err) {
+  // Log and expose error for template
+  console.error('Error in useBlog composable:', err)
+  error = ref(err?.message || 'Unknown error in blog setup')
+  posts = ref([])
+  loading = ref(false)
+  hasMore = ref(false)
+  featuredPosts = ref([])
+  fetchPosts = async () => {}
+}
 
 // Local state
 const localFilters = ref({

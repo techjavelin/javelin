@@ -5,6 +5,7 @@ import type { Schema } from '../../../amplify/data/resource';
 type Tag = Schema['Tag']['type'];
 type PostTag = Schema['PostTag']['type'];
 
+
 export function useTags() {
   const client = generateClient<Schema>();
   const tags = ref<Tag[]>([]);

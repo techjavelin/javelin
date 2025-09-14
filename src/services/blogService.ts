@@ -62,6 +62,7 @@ export interface CommentData {
 export const blogPostService = {
   // Create a new blog post
   async create(postData: BlogPostData) {
+    const client = generateClient<Schema>()
     try {
       const result = await client.models.BlogPost.create({
         ...postData,
@@ -85,6 +86,7 @@ export const blogPostService = {
     limit?: number
     nextToken?: string
   } = {}) {
+    const client = generateClient<Schema>()
     try {
       const filter: any = {}
       
@@ -115,6 +117,7 @@ export const blogPostService = {
 
   // Get a single blog post by ID
   async getById(id: string) {
+    const client = generateClient<Schema>()
     try {
       const result = await client.models.BlogPost.get({ id })
       return result
@@ -126,6 +129,7 @@ export const blogPostService = {
 
   // Get a single blog post by slug
   async getBySlug(slug: string) {
+    const client = generateClient<Schema>()
     try {
       const result = await client.models.BlogPost.list({
         filter: { slug: { eq: slug } },
@@ -140,6 +144,7 @@ export const blogPostService = {
 
   // Update a blog post
   async update(id: string, updates: Partial<BlogPostData>) {
+    const client = generateClient<Schema>()
     try {
       const result = await client.models.BlogPost.update({
         id,
@@ -155,6 +160,7 @@ export const blogPostService = {
 
   // Delete a blog post
   async delete(id: string) {
+    const client = generateClient<Schema>()
     try {
       const result = await client.models.BlogPost.delete({ id })
       return result
@@ -166,6 +172,7 @@ export const blogPostService = {
 
   // Increment view count
   async incrementView(id: string) {
+    const client = generateClient<Schema>()
     try {
       // First get the current post
       const post = await this.getById(id)

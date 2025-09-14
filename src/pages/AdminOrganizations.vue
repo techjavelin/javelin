@@ -14,14 +14,11 @@
           <input v-model="name" type="text" placeholder="Acme Corp" required />
         </div>
         <div class="form-row">
-          <label>Admin Emails (comma separated)</label>
-          <input v-model="adminsInput" type="text" placeholder="admin1@example.com, admin2@example.com" required />
+          <label>Initial Admin Email</label>
+          <input v-model="adminEmail" type="email" placeholder="admin@example.com" required />
         </div>
-        <div class="form-row optional">
-          <label>Member Emails (optional)</label>
-          <input v-model="membersInput" type="text" placeholder="member1@example.com, member2@example.com" />
-        </div>
-        <button class="primary" :disabled="creating || !name || !adminsInput">{{ creating ? 'Creating...' : 'Create Organization' }}</button>
+        <p class="hint">An invitation email will be sent. Additional admins/members can be added later.</p>
+        <button class="primary" :disabled="creating || !name || !adminEmail">{{ creating ? 'Creating...' : 'Create & Invite' }}</button>
         <p v-if="error" class="error">{{ error }}</p>
         <p v-if="createdMessage" class="success">{{ createdMessage }}</p>
       </form>
@@ -78,28 +75,20 @@ library.add(faBuilding, faList, faSync)
 
 const { organizations, loading, error, creating, fetchOrganizations, createOrganization } = useOrganizations()
 const name = ref('')
-const adminsInput = ref('')
-const membersInput = ref('')
+const adminEmail = ref('')
 const createdMessage = ref('')
 
 onMounted(() => {
   fetchOrganizations()
 })
 
-function parseList(v: string) {
-  return v.split(',').map(s => s.trim()).filter(Boolean)
-}
-
 async function handleCreate() {
   createdMessage.value = ''
-  const admins = parseList(adminsInput.value)
-  const members = parseList(membersInput.value)
-  const result = await createOrganization({ name: name.value, admins, members })
+  const result = await createOrganization({ name: name.value, adminEmail: adminEmail.value })
   if (result) {
-    createdMessage.value = `Organization '${result.name}' created.`
+    createdMessage.value = `Organization '${result.name}' created and invite sent to ${adminEmail.value}.`
     name.value = ''
-    adminsInput.value = ''
-    membersInput.value = ''
+    adminEmail.value = ''
   }
 }
 

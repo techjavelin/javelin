@@ -25,3 +25,10 @@ export const resetUserPassword = defineFunction({
   name: 'reset-user-password',
   entry: '../../functions/user-management/reset-password/handler.ts'
 })
+
+// Invite (or ensure) an admin user for an organization. This wraps create + add to groups
+// but is organization-context aware via payload (handled in function implementation).
+export const inviteAdminUser = defineFunction({
+  name: 'invite-admin-user',
+  entry: '../../functions/user-management/invite-admin-user/handler.ts'
+})

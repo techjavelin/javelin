@@ -1,5 +1,5 @@
 import { defineAuth } from '@aws-amplify/backend';
-import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from '../api/admin/resource';
+import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser } from '../api/admin/resource';
 
 /**
  * Define and configure your auth resource
@@ -26,5 +26,6 @@ export const auth = defineAuth({
     allow.resource(updateUser).to(["manageUsers"]),
     allow.resource(deleteUser).to(["manageUsers"]),
     allow.resource(resetUserPassword).to(["manageUsers"]),
+    allow.resource(inviteAdminUser).to(["manageUsers"]),
   ]
 });

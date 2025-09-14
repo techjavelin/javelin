@@ -23,19 +23,37 @@ export function useOrganizations() {
     }
   }
 
-  async function createOrganization(input: { name: string; admins: string[]; members?: string[] }) {
+  async function createOrganization(input: { name: string; adminEmail: string }) {
     creating.value = true
     error.value = null
     try {
-      if (!input.name || !input.admins?.length) throw new Error('Name and at least one admin required')
+      if (!input.name || !input.adminEmail) throw new Error('Name and admin email required')
+      const adminEmail = input.adminEmail.trim().toLowerCase()
       const { data } = await client.models.Organization.create({
         name: input.name,
-        admins: input.admins,
-        members: input.members || [],
+        admins: [adminEmail],
+        members: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
-      if (data) organizations.value = [data, ...organizations.value]
+      if (data) {
+        organizations.value = [data, ...organizations.value]
+        // Call invite function (fire-and-forget but we can await to report errors)
+        try {
+          await fetch(import.meta.env.VITE_ADMIN_API_BASE + '/invite-admin-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: adminEmail,
+              organizationId: data.id,
+              organizationName: data.name,
+              sendEmail: true
+            })
+          })
+        } catch (invErr: any) {
+          console.warn('Invite admin failed', invErr)
+        }
+      }
       return data
     } catch (e: any) {
       error.value = e.message || 'Failed to create organization.'

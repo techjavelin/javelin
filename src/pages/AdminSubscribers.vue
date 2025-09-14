@@ -71,7 +71,7 @@
             <td class="topics">{{ (s.topics || []).join(', ') || '—' }}</td>
             <td>{{ s.subscribedAt ? formatDate(s.subscribedAt): '—' }}</td>
             <td class="row-actions">
-              <button class="btn-sm" @click="toggleSubscription(s)">{{ s.isSubscribed ? 'Unsubscribe':'Resubscribe' }}</button>
+              <button class="btn-sm" @click="toggleSubscription(s.id, s.isSubscribed)">{{ s.isSubscribed ? 'Unsubscribe':'Resubscribe' }}</button>
               <button class="btn-sm danger" @click="remove(s)">Delete</button>
             </td>
           </tr>
@@ -146,9 +146,6 @@ async function add() {
   }
 }
 
-async function toggleSubscriptionWrapped(s) {
-  await toggleSubscription(s.id, s.isSubscribed)
-}
 
 async function remove(s) {
   if (!confirm('Delete subscriber?')) return
@@ -169,7 +166,7 @@ function computeMetrics() {
 onMounted(async () => { await fetchSubscribers(); computeMetrics() })
 watch(subscribers, () => computeMetrics(), { deep: true })
 
-function toggleSubscription(s) { toggleSubscriptionWrapped(s) }
+// Removed duplicate toggleSubscription function; template now calls composable directly
 </script>
 <style scoped>
 .header-row { display:flex; justify-content:space-between; align-items:center; }

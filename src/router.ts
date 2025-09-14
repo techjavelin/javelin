@@ -2,6 +2,8 @@ import AdminPulsePlatform from './pages/AdminPulsePlatform.vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import SigInt from './pages/SigInt.vue'
 import { getCurrentUser } from 'aws-amplify/auth'
+import { useRoles } from './composables/useRoles'
+import { useAuth } from './composables/useAuth'
 import App from './App.vue'
 import Home from './pages/Home.vue'
 import Login from './pages/Login.vue'
@@ -264,6 +266,38 @@ const routes = [
     component: JavelinPulse,
     name: 'javelin-pulse'
   }
+  ,{
+    path: '/pentester',
+    component: () => import('./pages/PentesterDashboard.vue'),
+    name: 'pentester-dashboard',
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  },{
+    path: '/pentester/engagements',
+    component: () => import('./pages/Engagements.vue'),
+    name: 'pentester-engagements',
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  },{
+    path: '/pentester/engagements/new',
+    component: () => import('./pages/NewEngagement.vue'),
+    name: 'pentester-engagements-new',
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  },{
+    path: '/pentester/engagements/:id',
+    component: () => import('./pages/EngagementDetail.vue'),
+    name: 'pentester-engagement-detail',
+    props: true,
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  },{
+    path: '/pentester/findings/new',
+    component: () => import('./pages/NewFinding.vue'),
+    name: 'pentester-finding-new',
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  },{
+    path: '/pentester/vuln-library',
+    component: () => import('./pages/VulnerabilityLibrary.vue'),
+    name: 'pentester-vuln-library',
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  }
 ];
 
 const router = createRouter({
@@ -275,22 +309,33 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
+  const requiresPentester = to.matched.some(record => record.meta.requiresPentester)
   
-  if (requiresAuth || requiresAdmin) {
+  if (requiresAuth || requiresAdmin || requiresPentester) {
     try {
-      const user = await getCurrentUser()
-      
-      if (requiresAdmin) {
-        // Check if user is admin (simple check by email for now)
-        const isAdmin = (user as any)?.signInDetails?.loginId === 'admin@techjavelin.com'
-        
-        if (!isAdmin) {
-          console.warn('Admin access required')
-          next('/login')
-          return
-        }
+      // Ensure Amplify session valid first (throws if not authenticated)
+      await getCurrentUser()
+
+      // Load / hydrate auth state (ensures userGroups populated)
+      const { currentUser, loadCurrentUser } = useAuth()
+      if (!currentUser.value) {
+        try { await loadCurrentUser() } catch (e) { /* handled below if needed */ }
       }
-      
+
+      const { isAdmin, isPentester } = useRoles()
+
+      if (requiresAdmin && !isAdmin.value) {
+        console.warn('Admin access required')
+        next('/login')
+        return
+      }
+
+      if (requiresPentester && !isPentester.value) {
+        console.warn('Pentester access required')
+        next('/login')
+        return
+      }
+
       next()
     } catch (error) {
       console.log('User not authenticated, redirecting to login')

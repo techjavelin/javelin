@@ -1108,6 +1108,124 @@ Successful IT infrastructure scaling requires careful planning, the right techno
   auth.signOut();
   console.log("✅ Signed out successfully");
 
+    // --- Pentester User Setup ---
+    console.log("🔐 Ensuring pentester user exists...");
+    const pentesterEmail = 'pentester@techjavelin.com';
+    const pentesterPassword = 'Pentester2025!';
+    let pentesterUserId: string | undefined;
+    try {
+      await signInUser({ username: pentesterEmail, password: pentesterPassword, signInFlow: 'Password' });
+      console.log('ℹ️ Pentester user already exists');
+    } catch {
+      try {
+        const pentester = await createAndSignUpUser({ username: pentesterEmail, password: pentesterPassword, signInAfterCreation: true, signInFlow: 'Password', userAttributes: { givenName: 'Pen', familyName: 'Tester' } });
+        console.log('✅ Pentester user created');
+        try { await addToUserGroup(pentester, 'pentester'); console.log('✅ Pentester user added to pentester group'); } catch (ge) { console.warn('⚠️ Failed adding pentester to group', ge); }
+      } catch (pe) {
+        console.error('❌ Failed to create pentester user', pe);
+      }
+    }
+    // capture userId (sub)
+    try {
+      const { getCurrentUser } = await import('aws-amplify/auth');
+      const u = await getCurrentUser();
+      pentesterUserId = (u as any)?.userId;
+    } catch {}
+    await auth.signOut();
+
+    // --- Seed Pentest Domain Sample Data ---
+    console.log('\n🛡️ Seeding pentest domain sample data...');
+    try {
+      await signInUser({ username: pentesterEmail, password: pentesterPassword, signInFlow: 'Password' });
+      const { getCurrentUser } = await import('aws-amplify/auth');
+      const cu = await getCurrentUser();
+      pentesterUserId = (cu as any)?.userId || pentesterUserId;
+
+      // Create a placeholder organization if none exists (reuse earlier orgs if present)
+      const orgsForPentest = await dataClient.models.Organization.list({ authMode: 'userPool' });
+      let orgId: string | undefined = orgsForPentest.data?.[0]?.id;
+      if (!orgId) {
+        const orgRes = await dataClient.models.Organization.create({
+          name: 'Pentest Demo Org',
+          admins: pentesterUserId ? [pentesterUserId] : [],
+          members: pentesterUserId ? [pentesterUserId] : []
+        }, { authMode: 'userPool' });
+        orgId = orgRes.data?.id;
+        if (orgRes.data) console.log('✅ Created Pentest Demo Org');
+      }
+
+  // Application(s)
+  let appId: string | undefined;
+      try {
+        const apps = await dataClient.models.Application.list({ authMode: 'userPool' });
+        appId = apps.data?.[0]?.id;
+        if (!appId && orgId) {
+          const appRes = await dataClient.models.Application.create({
+            organizationId: orgId,
+            name: 'Demo Web Portal',
+            kind: 'WEB_APP',
+            dataSensitivity: 'MODERATE',
+            repoUrl: 'https://github.com/techjavelin/demo-web'
+          } as any, { authMode: 'userPool' });
+          appId = appRes.data?.id;
+          if (appRes.data) console.log('✅ Created demo Application');
+        }
+      } catch (appErr) { console.warn('⚠️ Application seeding issue', appErr); }
+
+      // Engagement
+      if (orgId && appId && pentesterUserId) {
+        try {
+          const existingEng = await dataClient.models.Engagement.list({ authMode: 'userPool' });
+          const hasDemo = existingEng.data?.some(e => e?.code === 'DEMO-ENG-1');
+          if (!hasDemo) {
+            const engRes = await dataClient.models.Engagement.create({
+              organizationId: orgId,
+              code: 'DEMO-ENG-1',
+              title: 'Initial Security Assessment',
+              phase: 'PLANNING',
+              status: 'ACTIVE',
+              pentesters: [pentesterUserId],
+              scopeNotes: 'Scope: public web portal; exclude billing backend.'
+            } as any, { authMode: 'userPool' });
+            if (engRes.data) {
+              console.log('✅ Created demo Engagement DEMO-ENG-1');
+              // Link application via join model
+              try {
+                await dataClient.models.ApplicationEngagement.create({
+                  applicationId: appId!,
+                  engagementId: engRes.data.id,
+                  organizationId: orgId,
+                  createdBy: pentesterUserId
+                } as any, { authMode: 'userPool' });
+                console.log('🔗 Linked application to engagement (many-to-many)');
+              } catch (linkErr) { console.warn('⚠️ Failed to create ApplicationEngagement link', linkErr); }
+            }
+          }
+        } catch (engErr) { console.warn('⚠️ Engagement seeding issue', engErr); }
+      }
+
+      // Vulnerability Template
+      try {
+        const vtList = await dataClient.models.VulnerabilityTemplate.list({ authMode: 'userPool' });
+        const hasTemplate = vtList.data?.some(v => v?.title === 'Sensitive Data Exposure');
+        if (!hasTemplate) {
+          const vtRes = await dataClient.models.VulnerabilityTemplate.create({
+            title: 'Sensitive Data Exposure',
+              category: 'CONFIG',
+              severity: 'HIGH',
+              isGlobal: false,
+              description: 'Sensitive data exposed via verbose error messages.',
+              remediation: 'Disable detailed stack traces in production and implement generic error pages.'
+          } as any, { authMode: 'userPool' });
+          if (vtRes.data) console.log('✅ Created sample VulnerabilityTemplate');
+        }
+      } catch (vtErr) { console.warn('⚠️ Template seeding issue', vtErr); }
+
+    } catch (pentestSeedErr) {
+      console.warn('⚠️ Pentest domain seed skipped (auth error)', pentestSeedErr);
+    }
+    await auth.signOut();
+
 
 
   // --- SigInt Seed Data ---

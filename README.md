@@ -178,3 +178,72 @@ See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more inform
 ## License
 
 This library is licensed under the MIT-0 License. See the LICENSE file.
+
+## Pentester Portal (Pulse)
+
+The Pentester Portal extends the platform for security testing workflows. It introduces domain models, routes, and integration links enabling testers to manage assets, engagements, and findings, and to prepare artifacts (e.g. Pandadoc documents) for client-facing reporting.
+
+### Domain Models (Amplify Data)
+All models live under `amplify/data/models/` and are registered via `amplify/data/resource.ts`.
+
+| Model | Purpose | Key Fields |
+|-------|---------|------------|
+| `PentesterProfile` | Tester identity & capability metadata | `userId`, `availability`, `skills[]`, `certifications[]` |
+| `Application` | Asset under test | `organizationId`, `name`, `kind`, `sensitivity`, `repoUrl` |
+| `Engagement` | Testing lifecycle entity | `organizationId`, `applicationId`, `code`, `phase`, `status`, `pentesters[]` |
+| `VulnerabilityTemplate` | Reusable vuln descriptions | `title`, `category`, `severity`, `isGlobal`, optional markdown fields |
+| `VulnerabilityFinding` | Concrete finding for an engagement | `engagementId`, `templateId`, `status`, `severity`, `evidence` |
+| `ArtifactLink` | External system linkage | `provider`, `externalId`, `name`, `description`, `documentType`, `status`, `metadata` |
+
+### Enums
+Defined alongside models for strict typing: `PentesterAvailability`, `ApplicationKind`, `DataSensitivity`, `EngagementPhase`, `EngagementStatus`, `VulnerabilityCategory`, `Severity`, `FindingStatus`, `ArtifactProvider`, `DocumentType`, `ArtifactStatus`.
+
+### Authorization Summary
+Current rule set favors rapid iteration over fine-grained constraints:
+* Admin group: full access across models.
+* Pentester group: create/read/update most pentester models; owner-based update/delete on certain resources (e.g., `VulnerabilityTemplate` via `createdBy`).
+* Authenticated users: read-only visibility for selected models (`Engagement`, `VulnerabilityTemplate`, `ArtifactLink`).
+
+Future enhancements (not yet implemented):
+* Restrict engagement mutation to assigned pentesters.
+* Visibility flag on findings (INTERNAL vs CLIENT) to gate exposure.
+* Soft-delete / archival patterns for completed engagements.
+
+### Frontend Routes
+Pentester routes (all `requiresAuth` + `requiresPentester` meta; admins implicitly satisfy pentester):
+```
+/pentester                      -> Dashboard (overview, shortcuts)
+/pentester/engagements          -> Engagement listing
+/pentester/engagements/new      -> Engagement creation form (scaffold)
+/pentester/engagements/:id      -> Engagement detail placeholder
+/pentester/findings/new         -> New finding placeholder
+/pentester/vuln-library         -> Vulnerability template list / management
+```
+
+Navigation exposure: `AdminSidebar.vue` dynamically shows a Pentester section for users with `admin` or `pentester` role.
+
+### Composables
+Implemented composables under `src/composables/`:
+* `useEngagements` – list (with client-side filters: `organizationId`, `phase`, `status`), create, update, delete.
+* `useVulnerabilityTemplates` – list, create, update, delete (supports required `isGlobal`).
+* `useRoles` – central role helpers (`isAdmin`, `isPentester`).
+* `useError` – normalization helper used by the above composables.
+
+### Integration Stub: Pandadoc
+File: `src/services/pandadoc.ts` provides placeholder helpers:
+* `createPandadocArtifact` – creates an `ArtifactLink` with `provider=PANDADOC` (now using first-class `name` / `description`).
+* `updatePandadocArtifactStatus`
+* `listPandadocArtifactsForEngagement`
+
+Replace the stub with real Pandadoc API calls (OAuth or API key) and map external lifecycle (`DRAFT`, `SENT`, `COMPLETED`, etc.) onto `ArtifactStatus`.
+
+### Design Rationale
+Why `ArtifactLink` vs distinct document models? To unify linkage across multiple external providers (Pandadoc, QuickBooks, future ticketing systems) while deferring specialized schemas. Common attributes (`name`, `description`, lifecycle `status`) are promoted; provider-specific properties remain in `metadata` until they warrant elevation.
+
+### Next Potential Enhancements
+* Engagement-scoped metrics (findings by severity, open vs resolved).
+* CVSS calculator integration for `VulnerabilityTemplate` / `VulnerabilityFinding`.
+* Batch import/export of templates (YAML/JSON).
+* Automated report generation pipeline referencing templates + findings + artifact metadata.
+
+---

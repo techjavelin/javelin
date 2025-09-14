@@ -146,6 +146,31 @@
             <span class="nav-text" v-if="!isCollapsed">Backups</span>
           </router-link>
         </li>
+
+        <!-- Pentester Portal (visible to pentester or admin) -->
+        <template v-if="showPentesterSection">
+          <li class="nav-group" v-if="!isCollapsed">
+            <span class="group-title">Pentester</span>
+          </li>
+          <li class="nav-item">
+            <router-link to="/pentester" class="nav-link">
+              <span class="nav-icon"><font-awesome-icon :icon="faTachometerAlt" class="sidebar-png-icon" /></span>
+              <span class="nav-text" v-if="!isCollapsed">Pentester Dashboard</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/pentester/engagements" class="nav-link">
+              <span class="nav-icon"><font-awesome-icon :icon="faFileAlt" class="sidebar-png-icon" /></span>
+              <span class="nav-text" v-if="!isCollapsed">Engagements</span>
+            </router-link>
+          </li>
+          <li class="nav-item">
+            <router-link to="/pentester/vuln-library" class="nav-link">
+              <span class="nav-icon"><font-awesome-icon :icon="faTags" class="sidebar-png-icon" /></span>
+              <span class="nav-text" v-if="!isCollapsed">Vuln Library</span>
+            </router-link>
+          </li>
+        </template>
       </ul>
     </nav>
 
@@ -180,6 +205,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoles } from '../composables/useRoles'
 import { getCurrentUser } from 'aws-amplify/auth'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import UserContextMenu from './UserContextMenu.vue'
@@ -249,6 +275,10 @@ const userInitials = computed(() => {
   const name = userName.value
   return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
 })
+
+// Roles
+const { isPentester, isAdmin } = useRoles()
+const showPentesterSection = computed(() => isPentester.value || isAdmin.value)
 
 // Methods
 const toggleSidebar = () => {

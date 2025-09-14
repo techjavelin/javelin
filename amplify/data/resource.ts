@@ -22,6 +22,13 @@ import { Feature } from "./models/Feature.model";
 import { EntitlementPlan } from "./models/EntitlementPlan.model";
 import { OrganizationEntitlement } from "./models/OrganizationEntitlement.model";
 import { EntitlementAudit } from "./models/EntitlementAudit.model";
+import { PentesterProfile } from "./models/PentesterProfile.model";
+import { Application } from "./models/Application.model";
+import { Engagement } from "./models/Engagement.model";
+import { ApplicationEngagement } from "./models/ApplicationEngagement.model";
+import { VulnerabilityTemplate } from "./models/VulnerabilityTemplate.model";
+import { VulnerabilityFinding } from "./models/VulnerabilityFinding.model";
+import { ArtifactLink } from "./models/ArtifactLink.model";
 
 const schema = a.schema({
   BlogPost,
@@ -46,6 +53,13 @@ const schema = a.schema({
   EntitlementPlan,
   OrganizationEntitlement,
   EntitlementAudit,
+  PentesterProfile,
+  Application,
+  Engagement,
+  ApplicationEngagement,
+  VulnerabilityTemplate,
+  VulnerabilityFinding,
+  ArtifactLink,
 });
 
 export type Schema = ClientSchema<typeof schema>;

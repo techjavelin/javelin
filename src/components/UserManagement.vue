@@ -95,8 +95,8 @@
                 {{ getUserEmail(user) }}
               </td>
               <td class="user-status">
-                <span :class="['status-badge', getUserStatus(user).toLowerCase()]">
-                  {{ getUserStatus(user) }}
+                <span :class="['status-badge', getUserStatusClass(user.userStatus)]">
+                  {{ formatUserStatus(user.userStatus) }}
                 </span>
               </td>
               <td class="user-created">
@@ -557,21 +557,7 @@ const totalPages = computed(() => {
 })
 
 // Helper functions
-function getUserStatus(user) {
-  if (!user) return 'Unknown'
-  
-  if (user.userStatus === 'CONFIRMED' && user.enabled !== false) {
-    return 'Enabled'
-  } else if (user.userStatus === 'CONFIRMED' && user.enabled === false) {
-    return 'Disabled'
-  } else if (user.userStatus === 'UNCONFIRMED') {
-    return 'Unconfirmed'
-  } else if (user.userStatus === 'FORCE_CHANGE_PASSWORD') {
-    return 'Pending Password'
-  }
-  
-  return user.userStatus || 'Unknown'
-}
+// Removed local getUserStatus in favor of shared service helpers (formatUserStatus / getUserStatusClass)
 
 function getUserGroups(user) {
   return user.groups || []
@@ -982,6 +968,21 @@ onMounted(async () => {
 .status-badge.unconfirmed {
   background: #fef3c7;
   color: #92400e;
+}
+
+.status-badge.status-pending {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-badge.status-archived {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.status-badge.status-unknown {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 /* Groups */

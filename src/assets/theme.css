@@ -98,10 +98,27 @@ a:hover {
 .card {
   background: var(--color-card-light);
   color: var(--color-text-light);
-  border-radius: 10px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.08);
+  padding: 2rem 1.75rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.card:hover {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+}
+
+/* Dark theme cards refinements (retain existing variable swap) */
+[data-theme="dark"] .card {
+  background: var(--color-card-light); /* already swapped to dark variant via vars */
+  color: var(--color-text-light);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+[data-theme="dark"] .card:hover {
+  box-shadow: 0 10px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.08);
 }
 
 input, select, textarea {

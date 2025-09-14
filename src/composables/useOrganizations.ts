@@ -31,14 +31,16 @@ export function useOrganizations() {
       const adminEmail = input.adminEmail.trim().toLowerCase()
       const { data } = await client.models.Organization.create({
         name: input.name,
-        admins: [adminEmail],
+        admins: [], // will be populated upon activation
         members: [],
+        invitedAdminEmail: adminEmail,
+        status: 'PENDING',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
       if (data) {
         organizations.value = [data, ...organizations.value]
-        // Call invite function (fire-and-forget but we can await to report errors)
+  // Call invite function (fire-and-forget). User will be added as admin and org activated after verification.
         try {
           await fetch(import.meta.env.VITE_ADMIN_API_BASE + '/invite-admin-user', {
             method: 'POST',

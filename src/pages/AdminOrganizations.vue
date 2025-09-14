@@ -43,6 +43,8 @@
         <thead>
           <tr>
             <th>Name</th>
+            <th>Status</th>
+            <th>Invited Admin</th>
             <th>Admins</th>
             <th>Members</th>
             <th>Created</th>
@@ -52,6 +54,14 @@
         <tbody>
           <tr v-for="org in organizations" :key="org.id">
             <td>{{ org.name }}</td>
+            <td>
+              <span :class="['status-pill', org.status === 'ACTIVE' ? 'active' : 'pending']">{{ org.status || 'PENDING' }}</span>
+            </td>
+            <td>
+              <span v-if="org.invitedAdminEmail && !org.admins.length" class="invited-email">{{ org.invitedAdminEmail }}</span>
+              <span v-else-if="org.invitedAdminEmail && org.admins.includes(org.invitedAdminEmail)" class="activated-email">{{ org.invitedAdminEmail }}</span>
+              <span v-else>—</span>
+            </td>
             <td><span class="badge" v-for="a in org.admins" :key="a">{{ a }}</span></td>
             <td><span class="badge secondary" v-for="m in org.members || []" :key="m">{{ m }}</span></td>
             <td>{{ formatDate(org.createdAt) }}</td>
@@ -86,7 +96,7 @@ async function handleCreate() {
   createdMessage.value = ''
   const result = await createOrganization({ name: name.value, adminEmail: adminEmail.value })
   if (result) {
-    createdMessage.value = `Organization '${result.name}' created and invite sent to ${adminEmail.value}.`
+  createdMessage.value = `Organization '${result.name}' created in PENDING state. Invite sent to ${adminEmail.value}. It will activate when the user verifies.`
     name.value = ''
     adminEmail.value = ''
   }
@@ -117,6 +127,11 @@ button.primary[disabled] { opacity:.6; cursor: not-allowed; }
 .org-table th, .org-table td { padding:.55rem .6rem; border-bottom:1px solid var(--color-border); vertical-align:top; }
 .badge { display:inline-block; background: var(--color-accent); color:#fff; padding:.15rem .5rem; border-radius:12px; font-size:.7rem; margin:0 .25rem .25rem 0; }
 .badge.secondary { background: var(--color-border-strong); color:var(--color-text); }
+.status-pill { display:inline-block; padding:.2rem .55rem; border-radius:12px; font-size:.65rem; font-weight:600; letter-spacing:.5px; }
+.status-pill.pending { background: var(--color-border-strong); color: var(--color-text-dim); }
+.status-pill.active { background: #2d995b; color:#fff; }
+.invited-email { font-size:.7rem; background: var(--color-border-strong); padding:.15rem .4rem; border-radius:10px; }
+.activated-email { font-size:.7rem; background:#2d995b; color:#fff; padding:.15rem .4rem; border-radius:10px; }
 .loading-state, .empty-state { text-align:center; padding:1.5rem 0; color: var(--color-text-dim); }
 .loading-spinner { width:28px; height:28px; border:3px solid var(--color-border); border-top-color: var(--color-accent); border-radius:50%; margin:0 auto .75rem; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

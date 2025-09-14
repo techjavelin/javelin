@@ -32,3 +32,8 @@ export const inviteAdminUser = defineFunction({
   name: 'invite-admin-user',
   entry: '../../functions/user-management/invite-admin-user/handler.ts'
 })
+
+export const activateOrganizationAdmin = defineFunction({
+  name: 'activate-organization-admin',
+  entry: '../../functions/user-management/activate-organization-admin/handler.ts'
+})

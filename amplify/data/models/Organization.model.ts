@@ -4,12 +4,16 @@ export const Organization = a.model({
   // Basic Information
   name: a.string().required(),
 
+  // Lifecycle Status
+  status: a.enum(['PENDING','ACTIVE']).default('PENDING'),
+  invitedAdminEmail: a.string(),
+
   // Relationships
   scopes: a.hasMany('Scope', 'organizationId'),
   targets: a.hasMany('Target', 'organizationId'),
 
   // Authorization Roles
-  admins: a.string().array().required(),
+  admins: a.string().array().required(), // initially empty until activation
   members: a.string().array(),
 
   // Metadata
@@ -19,7 +23,10 @@ export const Organization = a.model({
 })
 // Authorization Rules
 .authorization((allow) => [
+  // Only platform admins can create organizations
   allow.group("admin").to(['create', 'read', 'update', 'delete']),
-  allow.ownersDefinedIn('admins').to(['update']),
+  // Once activated, admins listed on record manage it
+  allow.ownersDefinedIn('admins').to(['update', 'read']),
+  // Members still read
   allow.ownersDefinedIn('members').to(['read']),
 ]);

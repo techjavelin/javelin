@@ -122,6 +122,12 @@
             <span class="nav-text" v-if="!isCollapsed">Pulse Invite Submissions</span>
           </router-link>
         </li>
+        <li class="nav-item">
+          <router-link to="/admin/organizations" class="nav-link">
+            <span class="nav-icon"><font-awesome-icon :icon="faUsersCog" class="sidebar-png-icon" /></span>
+            <span class="nav-text" v-if="!isCollapsed">Organizations</span>
+          </router-link>
+        </li>
         <!-- System -->
         <li class="nav-group" v-if="!isCollapsed">
           <span class="group-title">System</span>

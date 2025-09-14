@@ -80,6 +80,24 @@
             <router-link to="/admin/posts/new" class="create-post-btn">Create First Post</router-link>
           </div>
         </section>
+        <!-- Organizations Preview -->
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h2>
+              <font-awesome-icon :icon="['fas','building']" class="section-svg-icon" />
+              Organizations
+            </h2>
+            <router-link to="/admin/organizations" class="section-link">Manage</router-link>
+          </div>
+          <div v-if="orgLoading" class="loading-state small"><div class="loading-spinner" />Loading organizations...</div>
+          <div v-else-if="organizations.length === 0" class="empty-state small">No organizations yet. Create one to get started.</div>
+          <ul v-else class="org-preview-list">
+            <li v-for="org in organizations.slice(0,5)" :key="org.id" class="org-item">
+              <strong>{{ org.name }}</strong>
+              <span class="org-meta">Admins: {{ org.admins?.length || 0 }} • Members: {{ org.members?.length || 0 }}</span>
+            </li>
+          </ul>
+        </section>
           <div class="section-header">
             <h2>
               <font-awesome-icon :icon="['fas', 'chart-bar']" class="section-svg-icon" />
@@ -162,6 +180,7 @@ const stats = ref({
 });
 import { signOut, getCurrentUser } from 'aws-amplify/auth'
 import { useBlog } from '../composables/blog/useBlog'
+import { useOrganizations } from '../composables/useOrganizations'
 // Declare blog composable variables, to be set after Amplify is configured
 const recentPosts = ref([])
 const loadingPosts = ref(false)
@@ -267,6 +286,10 @@ const handleSidebarToggle = (collapsed) => {
   sidebarCollapsed.value = collapsed
 }
 
+// Organizations preview reactive refs
+const organizations = ref([])
+const orgLoading = ref(false)
+
 // Initialize
 onMounted(async () => {
   try {
@@ -279,6 +302,12 @@ onMounted(async () => {
     loadingPosts.value = blog.loading.value
     fetchPosts = blog.fetchPosts
     await loadDashboardData()
+    // Load organizations preview
+  const orgs = useOrganizations()
+  orgLoading.value = true
+  await orgs.fetchOrganizations({ force: true })
+  organizations.value = orgs.organizations.value
+  orgLoading.value = orgs.loading.value
   } catch (error) {
     console.error('Error loading user or dashboard data:', error)
     // Redirect to login if not authenticated

@@ -206,6 +206,12 @@ const routes = [
     name: 'admin-pulse-submissions',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
+  {
+    path: '/admin/organizations',
+    component: () => import('./pages/AdminOrganizations.vue'),
+    name: 'admin-organizations',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
   { 
     path: '/privacy-policy', 
     component: PrivacyPolicy,

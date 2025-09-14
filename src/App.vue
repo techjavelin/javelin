@@ -485,32 +485,71 @@ function handleClickOutside() {
   /* Top bar styles */
   .top-bar {
     background: #2566af;
-    color: white;
-    padding: 0.3rem 1rem;
+    color: #fff;
+    padding: 0.35rem 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     font-size: 0.85rem;
+    line-height: 1;
+    flex-wrap: nowrap;
+  }
+  .top-bar form.newsletter-form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
   }
   .newsletter-input {
-    padding: 0.2rem 0.4rem;
-    border: none;
-    border-radius: 3px;
-    margin-left: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 6px;
     font-size: 0.85rem;
+    line-height: 1;
+    height: 2rem;
+    color: #fff;
+    width: 200px;
+    margin: 0; /* Override global input margin */
+  }
+  .newsletter-input::placeholder {
+    color: rgba(0,0,0,0.45);
+  }
+  .newsletter-input:focus {
+    outline: none;
+    border-color: #174a7c;
+    background: #fff;
+    color: #174a7c;
   }
   .newsletter-btn {
-    padding: 0.2rem 0.8rem;
-    background: #174a7c;
-    color: white;
-    border: none;
-    border-radius: 3px;
+    padding: 0.45rem 1rem;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #90caf9;
+    color: #0a2540;
+    border: 1px solid #90caf9;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 1;
+    transition: background 0.2s, color 0.2s, transform 0.15s;
+    margin: 0; /* Prevent vertical misalignment */
   }
   .newsletter-btn:hover {
-    background: #0d3558;
+    background: #64b5f6;
+  }
+  .newsletter-btn:active {
+    transform: translateY(1px);
+  }
+  .newsletter-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
   }
 
   /* Logo and social row */
@@ -700,8 +739,8 @@ function handleClickOutside() {
   }
 
   [data-theme="dark"] .top-bar {
-    background: #1e1e1e;
-    border-bottom-color: #333;
+    background: #161e27;
+    border-bottom-color: #222;
   }
 
   [data-theme="dark"] .top-bar a {
@@ -710,6 +749,27 @@ function handleClickOutside() {
 
   [data-theme="dark"] .top-bar a:hover {
     color: #64b5f6;
+  }
+  /* Dark mode newsletter form */
+  [data-theme="dark"] .newsletter-input {
+    border-color: rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.08);
+    color: #e0e0e0;
+  }
+  [data-theme="dark"] .newsletter-input:focus {
+    border-color: #64b5f6;
+    background: rgba(100,181,246,0.15);
+  }
+  [data-theme="dark"] .newsletter-input::placeholder {
+    color: rgba(255,255,255,0.55);
+  }
+  [data-theme="dark"] .newsletter-btn {
+    background: #2566af;
+    border-color: #2566af;
+    color: #fff;
+  }
+  [data-theme="dark"] .newsletter-btn:hover {
+    background: #1e4f86;
   }
 
   [data-theme="dark"] .main-nav {
@@ -973,8 +1033,8 @@ function handleClickOutside() {
     color: #e0e0e0;
   }
 
-  [data-theme="dark"] .card-body,
-  [data-theme="dark"] .card-content {
+  [data-theme="dark"] .card-body {
+  /* [data-theme="dark"] .card-content { */
     background: #1e1e1e;
     color: #e0e0e0;
   }
@@ -1233,7 +1293,7 @@ function handleClickOutside() {
     scrollbar-color: #404040 #1a1a1a;
   }
 
-  [data-theme="dark"] div,
+  /* Narrowed: avoid forcing all divs to dark background (was causing black boxes) */
   [data-theme="dark"] section,
   [data-theme="dark"] article,
   [data-theme="dark"] main,

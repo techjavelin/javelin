@@ -202,22 +202,31 @@ defineExpose({
   color: #2566af;
   text-decoration: none;
   font-weight: 500;
-  padding: 0.3rem 0.75rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  padding: 0.3rem 0.5rem;
+  position: relative;
   font-size: 0.9rem;
+  line-height: 1.2;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  transition: color .25s ease;
+  background: transparent !important;
+  border-radius: 0 !important;
 }
-
-.nav-dropdown-link:hover {
-  background: #eaf2fb;
+.nav-dropdown-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width .25s ease;
 }
-
-.nav-dropdown-link.is-active {
-  background: #eaf2fb;
-  color: #174a7c;
+.nav-dropdown-link:hover::after,
+.nav-dropdown-link:focus-visible::after,
+.nav-dropdown-link.is-active::after {
+  width: 100%;
 }
 
 .dropdown-arrow {
@@ -321,11 +330,12 @@ defineExpose({
 /* Dark mode styles */
 [data-theme="dark"] .nav-dropdown-link {
   color: #e0e0e0;
+  background: transparent !important;
+  border-radius: 0 !important;
 }
-
 [data-theme="dark"] .nav-dropdown-link:hover {
-  background: #333;
   color: #64b5f6;
+  background: transparent;
 }
 
 [data-theme="dark"] .dropdown-menu {

@@ -138,4 +138,68 @@ watch(() => props.show, (val) => {
 .cta-primary:hover {
   background: #1e40af;
 }
+
+/* Dark theme overrides */
+:global([data-theme="dark"]) .modal-backdrop {
+  background: rgba(0,0,0,0.75);
+}
+
+:global([data-theme="dark"]) .modal-content {
+  background: #1e1e1e;
+  color: #e0e0e0;
+  box-shadow: 0 4px 28px rgba(0,0,0,0.6), 0 0 0 1px #333;
+  border: 1px solid #333;
+}
+
+:global([data-theme="dark"]) .modal-content h2 {
+  color: #f5f5f5;
+}
+
+:global([data-theme="dark"]) .modal-close {
+  color: #a0afc0;
+}
+:global([data-theme="dark"]) .modal-close:hover {
+  color: #64b5f6;
+}
+
+:global([data-theme="dark"]) .form-row label {
+  color: #cfd8dc;
+}
+
+:global([data-theme="dark"]) .form-row input,
+:global([data-theme="dark"]) .form-row textarea {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #e0e0e0;
+}
+:global([data-theme="dark"]) .form-row input:focus,
+:global([data-theme="dark"]) .form-row textarea:focus {
+  border-color: #64b5f6;
+  box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.25);
+  outline: none;
+}
+
+:global([data-theme="dark"]) .invite-success {
+  color: #10b981;
+}
+:global([data-theme="dark"]) .invite-error {
+  color: #ef5350;
+}
+
+:global([data-theme="dark"]) .cta-primary {
+  background: #2566af;
+  color: #fff;
+  border: 1px solid #2566af;
+}
+:global([data-theme="dark"]) .cta-primary:hover {
+  background: #1e4f86;
+}
+
+:global([data-theme="dark"]) .cta-btn[disabled],
+:global([data-theme="dark"]) .cta-btn:disabled {
+  background: #2d2d2d;
+  color: #666;
+  border-color: #2d2d2d;
+  cursor: not-allowed;
+}
 </style>

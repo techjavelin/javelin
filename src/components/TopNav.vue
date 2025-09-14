@@ -225,12 +225,12 @@ defineExpose({
 <style scoped>
 /* Main navigation */
 .main-nav {
-  background: #f7f7f7;
+  background: transparent;
   padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid transparent;
 }
 
 .theme-switcher {
@@ -248,14 +248,24 @@ defineExpose({
   color: #2566af;
   text-decoration: none;
   font-weight: 500;
-  padding: 0.3rem 0.75rem;
-  border-radius: 4px;
-  transition: background 0.2s;
+  padding: 0.3rem 0.5rem;
+  position: relative;
   font-size: 0.9rem;
+  line-height: 1.2;
+  transition: color .25s ease;
 }
-
-.nav-link:hover {
-  background: #eaf2fb;
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width .25s ease;
+}
+.nav-link:hover::after, .nav-link:focus-visible::after, .router-link-active.nav-link::after {
+  width: 100%;
 }
 
 .nav-search {
@@ -411,7 +421,7 @@ defineExpose({
 }
 
 [data-theme="dark"] .nav-link:hover {
-  background: #333;
+  background: transparent;
   color: #64b5f6;
 }
 

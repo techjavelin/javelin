@@ -1,39 +1,44 @@
 <template>
   <div class="dashboard-layout pulse-bg">
-    <AppSidebar :appName="appName">
-      <template #header>
-        <slot name="sidebar-header">
-          <span class="app-title">{{ appName }}</span>
-        </slot>
-      </template>
-      <SidebarCollapsible title="Pulse Apps" :defaultOpen="true">
-        <SidebarLink to="/sigint">
-          <template #icon>
-            <font-awesome-icon :icon="['fas', 'eye']" />
-          </template>
-          SigInt
-        </SidebarLink>
-        <SidebarLink to="/pulse">
-          <template #icon>
-            <font-awesome-icon :icon="['fas', 'chart-line']" />
-          </template>
-          Pulse Platform
-        </SidebarLink>
-        <!-- Add more app links as needed -->
-      </SidebarCollapsible>
-      <SidebarHeading>Other</SidebarHeading>
-      <SidebarLink to="/profile">
-        <template #icon>
-          <font-awesome-icon :icon="['fas', 'user']" />
+    <!-- Sidebar: use AdminSidebar for /admin routes, otherwise generic AppSidebar -->
+    <template v-if="isAdminRoute">
+      <AdminSidebar @toggle="handleAdminSidebarToggle" />
+    </template>
+    <template v-else>
+      <AppSidebar :appName="appName">
+        <template #header>
+          <slot name="sidebar-header">
+            <span class="app-title">{{ appName }}</span>
+          </slot>
         </template>
-        Profile
-      </SidebarLink>
-      <template #footer>
-        <SidebarUserMenu :userName="userName" :userEmail="userEmail">
-          <button @click="onLogout" class="sidebar-logout">Logout</button>
-        </SidebarUserMenu>
-      </template>
-    </AppSidebar>
+        <SidebarCollapsible title="Pulse Apps" :defaultOpen="true">
+          <SidebarLink to="/sigint">
+            <template #icon>
+              <font-awesome-icon :icon="['fas', 'eye']" />
+            </template>
+            SigInt
+          </SidebarLink>
+          <SidebarLink to="/pulse">
+            <template #icon>
+              <font-awesome-icon :icon="['fas', 'chart-line']" />
+            </template>
+            Pulse Platform
+          </SidebarLink>
+        </SidebarCollapsible>
+        <SidebarHeading>Other</SidebarHeading>
+        <SidebarLink to="/profile">
+          <template #icon>
+            <font-awesome-icon :icon="['fas', 'user']" />
+          </template>
+          Profile
+        </SidebarLink>
+        <template #footer>
+          <SidebarUserMenu :userName="userName" :userEmail="userEmail">
+            <button @click="onLogout" class="sidebar-logout">Logout</button>
+          </SidebarUserMenu>
+        </template>
+      </AppSidebar>
+    </template>
     <div class="dashboard-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
       <header class="dashboard-header no-bg">
         <div class="header-content" style="display: flex; flex-direction: row; padding-bottom: 10px;">
@@ -50,8 +55,7 @@
           </div>
         </div>
       </header>
-      <!-- Main Content -->
-  <main class="dashboard-main pulse-card">
+      <main class="dashboard-main pulse-card">
         <slot />
       </main>
     </div>
@@ -59,22 +63,32 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import AppSidebar from '../components/nav/AppSidebar.vue'
 import SidebarCollapsible from '../components/nav/SidebarCollapsible.vue'
 import SidebarHeading from '../components/nav/SidebarHeading.vue'
 import SidebarLink from '../components/nav/SidebarLink.vue'
 import SidebarUserMenu from '../components/nav/SidebarUserMenu.vue'
+import AdminSidebar from '../components/AdminSidebar.vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
+const route = useRoute()
+const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 
 const sidebarCollapsed = ref(false)
 const appName = 'Javelin Pulse'
-const userName = 'User Name' // Replace with actual user name from auth
-const userEmail = 'user@email.com' // Replace with actual user email from auth
+const userName = 'User Name' // TODO: Replace with actual user name from auth
+const userEmail = 'user@email.com' // TODO: Replace with actual user email from auth
+
 function onLogout() {
   // TODO: Hook up to actual logout logic
   alert('Logout clicked')
+}
+
+function handleAdminSidebarToggle(val) {
+  sidebarCollapsed.value = val
 }
 </script>
 

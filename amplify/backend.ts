@@ -2,6 +2,7 @@ import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from './api/admin/resource';
+import { storage } from './storage/resource';
 // import { createOrganization, deleteOrganization, getOrganization, inviteUserToOrganization, listOrganizations, updateOrganization } from './api/sigint/Organization.api';
 import { OrganizationAPI } from './api/resource';
 import { Policy, PolicyStatement, PolicyDocument, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
@@ -12,6 +13,7 @@ import { Stack } from 'aws-cdk-lib';
 const backend = defineBackend({
   auth,
   data,
+  storage,
   listUsers,
   createUser,
   updateUser,

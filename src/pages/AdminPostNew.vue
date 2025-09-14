@@ -29,16 +29,53 @@
             <span>Featured</span>
             <input type="checkbox" v-model="featuredPost" />
           </label>
+          <label>
+            <span>Categories</span>
+            <TokenMultiSelect
+              v-model="selectedCategoryIds"
+              :items="categories"
+              placeholder="Search categories..."
+            />
+          </label>
+          <label>
+            <span>Tags</span>
+            <TokenMultiSelect
+              v-model="selectedTagIds"
+              :items="tags"
+              placeholder="Search tags..."
+            />
+          </label>
         </div>
 
-        <label class="block">
-          <span>Summary</span>
-          <textarea v-model="summary" rows="2" class="input textarea" />
-        </label>
-        <label class="block">
-          <span>Content *</span>
-          <textarea v-model="content" rows="10" class="input textarea" required />
-        </label>
+        <div class="editor-block">
+          <label class="block-label">Summary</label>
+          <MarkdownEditor
+            v-model="summary"
+            placeholder="Short summary (optional markdown)"
+            :char-count="true"
+            autosave-key="post:new:summary"
+            show-outline-toggle
+            enable-images
+            enable-tables
+            enable-hr
+            enable-tasks
+          />
+        </div>
+        <div class="editor-block">
+          <label class="block-label">Content *</label>
+          <MarkdownEditor
+            v-model="content"
+            placeholder="Write your post content in Markdown..."
+            autosave-key="post:new:content"
+            show-outline
+            show-outline-toggle
+            show-stats
+            enable-images
+            enable-tables
+            enable-hr
+            enable-tasks
+          />
+        </div>
 
         <div class="actions">
           <router-link to="/admin/posts" class="btn btn-secondary">Cancel</router-link>
@@ -57,9 +94,15 @@
 import { ref, watch } from 'vue';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import { useBlog } from '../composables/blog/useBlog';
+import MarkdownEditor from '../components/MarkdownEditor.vue';
+import { useCategories } from '../composables/blog/useCategories';
+import { useTags } from '../composables/blog/useTags';
+import TokenMultiSelect from '../components/TokenMultiSelect.vue';
 import { useToasts } from '../composables/useToasts';
 
 const { createPost, loading, error } = useBlog();
+const { categories, fetchCategories } = useCategories();
+const { tags, fetchTags } = useTags();
 
 const title = ref('');
 const slug = ref('');
@@ -68,6 +111,8 @@ const summary = ref('');
 const status = ref<'DRAFT' | 'PUBLISHED'>('DRAFT');
 const featuredPost = ref(false);
 const submitting = ref(false);
+const selectedCategoryIds = ref<string[]>([]);
+const selectedTagIds = ref<string[]>([]);
 
 watch(title, (t) => {
   if (!slug.value || slug.value === slugFrom(title.value)) {
@@ -81,6 +126,10 @@ function slugFrom(t: string) {
 
 const { add: addToast } = useToasts();
 
+// Fetch taxonomy data once
+fetchCategories();
+fetchTags();
+
 async function handleCreate() {
   if (!title.value || !slug.value || !content.value) return;
   submitting.value = true;
@@ -93,6 +142,7 @@ async function handleCreate() {
       status: status.value,
       featuredPost: featuredPost.value,
       publishedAt: status.value === 'PUBLISHED' ? new Date().toISOString() : undefined
+      , categoryIds: selectedCategoryIds.value, tagIds: selectedTagIds.value
     });
     if (created) {
       addToast({ title: 'Post Created', message: 'Your new post was created successfully.', type: 'success' });
@@ -118,4 +168,7 @@ label span { display:block; font-size:0.7rem; font-weight:600; text-transform:up
 .textarea { resize:vertical; min-height:140px; }
 .actions { display:flex; gap:0.75rem; justify-content:flex-end; align-items:center; margin-top:0.5rem; }
 .error { color:#dc2626; font-size:0.8rem; }
+.multi-select { min-height: 70px; }
+.editor-block { display:flex; flex-direction:column; gap:0.4rem; }
+.block-label { font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
 </style>

@@ -1,12 +1,12 @@
 import { ref } from 'vue';
-import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../amplify/data/resource';
+import { getClient } from '../../amplifyClient';
 
 
 type Author = Schema['Author']['type'];
 
 export function useAuthors() {
-  const client = generateClient<Schema>();
+  const client = getClient();
   const authors = ref<Author[]>([]);
   const currentAuthor = ref<Author | null>(null);
   const loading = ref(false);

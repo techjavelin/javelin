@@ -1,6 +1,6 @@
 import { ref } from 'vue';
-import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../amplify/data/resource';
+import { getClient } from '../../amplifyClient';
 
 type Tag = Schema['Tag']['type'];
 type PostTag = Schema['PostTag']['type'];
@@ -11,7 +11,8 @@ const _tags = ref<Tag[]>([]);
 const _postTags = ref<PostTag[]>([]);
 const _loading = ref(false);
 const _error = ref<string | null>(null);
-const client = generateClient<Schema>();
+// Lazy client accessor to ensure Amplify has been configured
+const client = getClient();
 
 export function useTags() {
   const tags = _tags;

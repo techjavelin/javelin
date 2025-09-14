@@ -1,9 +1,9 @@
 import { ref } from 'vue'
-import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
+import { getClient } from '../amplifyClient'
 
 export function usePulseInviteAdmin() {
-  const client = generateClient<Schema>()
+  const client = getClient()
   const submissions = ref<Schema['PulseInviteSubmission']['type'][]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)

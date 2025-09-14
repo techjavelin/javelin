@@ -29,16 +29,53 @@
             <span>Featured</span>
             <input type="checkbox" v-model="featuredPost" />
           </label>
+          <label>
+            <span>Categories</span>
+            <TokenMultiSelect
+              v-model="selectedCategoryIds"
+              :items="categories"
+              placeholder="Search categories..."
+            />
+          </label>
+          <label>
+            <span>Tags</span>
+            <TokenMultiSelect
+              v-model="selectedTagIds"
+              :items="tags"
+              placeholder="Search tags..."
+            />
+          </label>
         </div>
 
-        <label class="block">
-          <span>Summary</span>
-          <textarea v-model="summary" rows="2" class="input textarea" />
-        </label>
-        <label class="block">
-          <span>Content *</span>
-          <textarea v-model="content" rows="12" class="input textarea" required />
-        </label>
+        <div class="editor-block">
+          <label class="block-label">Summary</label>
+          <MarkdownEditor
+            v-model="summary"
+            placeholder="Short summary (optional markdown)"
+            :char-count="true"
+            :autosave-key="`post:${id}:summary`"
+            show-outline-toggle
+            enable-images
+            enable-tables
+            enable-hr
+            enable-tasks
+          />
+        </div>
+        <div class="editor-block">
+          <label class="block-label">Content *</label>
+          <MarkdownEditor
+            v-model="content"
+            placeholder="Edit your post content in Markdown..."
+            :autosave-key="`post:${id}:content`"
+            show-outline
+            show-outline-toggle
+            show-stats
+            enable-images
+            enable-tables
+            enable-hr
+            enable-tasks
+          />
+        </div>
 
         <div class="actions">
           <router-link to="/admin/posts" class="btn btn-secondary">Back</router-link>
@@ -62,6 +99,10 @@ import { ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DashboardLayout from '../layouts/DashboardLayout.vue';
 import { useBlog } from '../composables/blog/useBlog';
+import MarkdownEditor from '../components/MarkdownEditor.vue';
+import { useCategories } from '../composables/blog/useCategories';
+import { useTags } from '../composables/blog/useTags';
+import TokenMultiSelect from '../components/TokenMultiSelect.vue';
 import { useToasts } from '../composables/useToasts';
 
 const route = useRoute();
@@ -69,6 +110,8 @@ const router = useRouter();
 const id = route.params.id as string;
 
 const { fetchPostById, updatePost, currentPost, error, loading } = useBlog();
+const { categories, fetchCategories, fetchPostCategories } = useCategories();
+const { tags, fetchTags, fetchPostTags } = useTags();
 
 const title = ref('');
 const slug = ref('');
@@ -78,6 +121,8 @@ const status = ref<'DRAFT' | 'PUBLISHED'>('DRAFT');
 const featuredPost = ref(false);
 const submitting = ref(false);
 const loaded = ref(false);
+const selectedCategoryIds = ref<string[]>([]);
+const selectedTagIds = ref<string[]>([]);
 
 watch([() => currentPost.value], () => {
   if (currentPost.value) {
@@ -87,6 +132,7 @@ watch([() => currentPost.value], () => {
     summary.value = (currentPost.value as any).summary || '';
     status.value = (currentPost.value.status as any) || 'DRAFT';
     featuredPost.value = !!currentPost.value.featuredPost;
+    // Relations will be fetched separately; left arrays intact until loaded
   }
 });
 
@@ -100,6 +146,15 @@ onMounted(async () => {
     router.replace('/admin/posts');
     return;
   }
+  // fetch categories/tags lists if not present
+  fetchCategories();
+  await Promise.all([fetchTags()]);
+  const [existingTags, existingCategories] = await Promise.all([
+    fetchPostTags(id),
+    fetchPostCategories(id)
+  ]);
+  selectedTagIds.value = existingTags.map(t => t.tagId);
+  selectedCategoryIds.value = existingCategories.map(c => c.categoryId);
   loaded.value = true;
 });
 
@@ -117,6 +172,7 @@ async function handleSave() {
       status: status.value,
       featuredPost: featuredPost.value,
       publishedAt: status.value === 'PUBLISHED' ? new Date().toISOString() : undefined
+      , categoryIds: selectedCategoryIds.value, tagIds: selectedTagIds.value
     });
     addToast({ title: 'Post Updated', message: 'Changes saved successfully.', type: 'success' });
     router.push('/admin/posts');
@@ -141,4 +197,7 @@ label span { display:block; font-size:0.7rem; font-weight:600; text-transform:up
 .actions { display:flex; gap:0.75rem; justify-content:flex-end; align-items:center; margin-top:0.5rem; }
 .error { color:#dc2626; font-size:0.8rem; }
 .loading-row { padding: 2rem 1rem; text-align:center; color: var(--color-text-light); }
+.multi-select { min-height: 70px; }
+.editor-block { display:flex; flex-direction:column; gap:0.4rem; }
+.block-label { font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
 </style>

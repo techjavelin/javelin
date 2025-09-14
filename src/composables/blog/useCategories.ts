@@ -1,18 +1,21 @@
 import { ref, computed } from 'vue';
-import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../amplify/data/resource';
+import { getClient } from '../../amplifyClient';
 
 type Category = Schema['Category']['type'];
+type PostCategory = Schema['PostCategory']['type'];
 
-const client = generateClient<Schema>();
+const client = getClient();
 
 // Singleton state so list persists across admin pages
 const categories = ref<Category[]>([]);
+const _postCategories = ref<PostCategory[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
 
 export function useCategories() {
   const rootCategories = computed(() => categories.value.filter(c => !c.parentId));
+  const postCategories = _postCategories;
   const byId = (id: string) => categories.value.find(c => c.id === id);
 
   async function fetchCategories(options?: { force?: boolean }) {
@@ -80,12 +83,27 @@ export function useCategories() {
     } finally { loading.value = false; }
   }
 
+  async function fetchPostCategories(postId: string) {
+    loading.value = true; error.value = null;
+    try {
+      const { data } = await client.models.PostCategory.list();
+      const filtered = (data || []).filter(pc => pc.postId === postId);
+      postCategories.value = filtered;
+      return filtered;
+    } catch (e: any) {
+      error.value = e.message || 'Failed to fetch post categories';
+      return [];
+    } finally { loading.value = false; }
+  }
+
   return {
     categories,
     rootCategories,
+    postCategories,
     loading,
     error,
     fetchCategories,
+    fetchPostCategories,
     createCategory,
     updateCategory,
     deleteCategory,

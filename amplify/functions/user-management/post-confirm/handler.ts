@@ -1,4 +1,5 @@
 import type { PostConfirmationTriggerHandler } from 'aws-lambda'
+import { logger } from '../../logger'
 import { Amplify } from 'aws-amplify'
 import outputs from '../../../../amplify_outputs.json'
 import { generateClient } from 'aws-amplify/data'
@@ -11,12 +12,18 @@ const client = generateClient<Schema>()
 export const handler: PostConfirmationTriggerHandler = async (event) => {
   try {
     const email = (event.request.userAttributes.email || '').trim().toLowerCase()
-    if (!email) return event
+    if (!email) {
+      logger.warn('PostConfirm missing email attribute')
+      return event
+    }
 
     // List organizations (limit reasonably high). In future, add index or query optimization.
     const orgs = await client.models.Organization.list({ limit: 200 })
     const pending = (orgs.data || []).filter(o => o.status === 'PENDING' && (o.invitedAdminEmail || '').toLowerCase() === email)
-    if (!pending.length) return event
+    if (!pending.length) {
+      logger.debug('PostConfirm no pending org for email', { email })
+      return event
+    }
 
     const target = pending[0] // first match strategy
 
@@ -28,8 +35,9 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
       activatedAt: new Date().toISOString(),
       activatedBy: email
     })
+    logger.info('PostConfirm org auto-activated', { organizationId: target.id, email })
   } catch (err) {
-    console.error('PostConfirm activation failed', err)
+    logger.error('PostConfirm activation failed', { error: err })
   }
   return event
 }

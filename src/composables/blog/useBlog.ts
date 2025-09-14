@@ -1,31 +1,26 @@
 import { ref, computed } from 'vue';
 import type { Schema } from '../../../amplify/data/resource';
-import { getClient } from '../../amplifyClient';
+import { getClient, withUserAuth } from '../../amplifyClient';
+import { useApi } from '../useApi';
 
 type BlogPost = Schema['BlogPost']['type'];
 
 
 export function useBlog() {
+  const { withErrorToast } = useApi();
   // Fetch a blog post by slug
   const fetchPostBySlug = async (slug: string) => {
-    loading.value = true;
-    error.value = null;
+    loading.value = true; error.value = null;
     try {
-      const { data } = await client.models.BlogPost.list({
-        filter: { slug: { eq: slug } },
-        limit: 1
-      });
-      currentPost.value = data && data.length > 0 ? data[0] : null;
-      if (!currentPost.value) {
-        error.value = 'Blog post not found.';
-      }
+  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.list(withUserAuth({ filter: { slug: { eq: slug } }, limit: 1 }) as any));
+      const data = (result as any).data || [];
+      currentPost.value = data.length ? data[0] : null;
+      if (!currentPost.value) error.value = 'Blog post not found.';
       return currentPost.value;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch post by slug';
       return null;
-    } finally {
-      loading.value = false;
-    }
+    } finally { loading.value = false; }
   };
   const client = getClient();
   const posts = ref<BlogPost[]>([]);
@@ -34,44 +29,37 @@ export function useBlog() {
   const error = ref<string | null>(null);
 
   const fetchPosts = async (options?: { force?: boolean }) => {
-    if (!options?.force && posts.value.length > 0) {
-      return; // avoid duplicate fetch unless forced
-    }
-    loading.value = true;
-    error.value = null;
+    if (!options?.force && posts.value.length > 0) return;
+    loading.value = true; error.value = null;
     try {
-      const { data } = await client.models.BlogPost.list();
-      posts.value = data || [];
+  const result = await withErrorToast('Load Posts', async () => client.models.BlogPost.list(withUserAuth() as any));
+      posts.value = (result as any).data || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch posts';
-    } finally {
-      loading.value = false;
-    }
+    } finally { loading.value = false; }
   };
 
   const fetchPostById = async (id: string) => {
-    loading.value = true;
-    error.value = null;
+    loading.value = true; error.value = null;
     try {
-      const { data } = await client.models.BlogPost.get({ id });
-      currentPost.value = data || null;
+  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.get({ id }, withUserAuth()));
+      const data = (result as any).data || null;
+      currentPost.value = data;
       return data;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch post';
       return null;
-    } finally {
-      loading.value = false;
-    }
+    } finally { loading.value = false; }
   };
 
   async function replacePostCategories(postId: string, categoryIds: string[] = []) {
     try {
-      const { data: existing } = await client.models.PostCategory.list({ filter: { postId: { eq: postId } }, limit: 500 });
+  const { data: existing } = await client.models.PostCategory.list(withUserAuth({ filter: { postId: { eq: postId } }, limit: 500 }) as any);
       if (existing) {
-        await Promise.all(existing.map(link => client.models.PostCategory.delete({ id: (link as any).id } as any)));
+  await Promise.all(existing.map(link => client.models.PostCategory.delete({ id: (link as any).id }, withUserAuth()) as any));
       }
       if (categoryIds.length) {
-        await Promise.all(categoryIds.map(categoryId => client.models.PostCategory.create({ postId, categoryId })));
+  await Promise.all(categoryIds.map(categoryId => client.models.PostCategory.create({ postId, categoryId }, withUserAuth())));
       }
     } catch (err) {
       console.error('Failed to replace post categories', err);
@@ -80,12 +68,12 @@ export function useBlog() {
 
   async function replacePostTags(postId: string, tagIds: string[] = []) {
     try {
-      const { data: existing } = await client.models.PostTag.list({ filter: { postId: { eq: postId } }, limit: 500 });
+  const { data: existing } = await client.models.PostTag.list(withUserAuth({ filter: { postId: { eq: postId } }, limit: 500 }) as any);
       if (existing) {
-        await Promise.all(existing.map(link => client.models.PostTag.delete({ id: (link as any).id } as any)));
+  await Promise.all(existing.map(link => client.models.PostTag.delete({ id: (link as any).id }, withUserAuth()) as any));
       }
       if (tagIds.length) {
-        await Promise.all(tagIds.map(tagId => client.models.PostTag.create({ postId, tagId })));
+  await Promise.all(tagIds.map(tagId => client.models.PostTag.create({ postId, tagId }, withUserAuth())));
       }
     } catch (err) {
       console.error('Failed to replace post tags', err);
@@ -93,30 +81,30 @@ export function useBlog() {
   }
 
   const createPost = async (input: Partial<BlogPost> & { categoryIds?: string[], tagIds?: string[] }) => {
-    loading.value = true;
-    error.value = null;
+    loading.value = true; error.value = null;
     try {
-      if (!input.title || !input.slug || !input.content) {
-        throw new Error('Missing required fields: title, slug, content');
-      }
-      const { data } = await client.models.BlogPost.create({
-        title: input.title,
-        slug: input.slug,
-        content: input.content,
-        authorId: input.authorId ?? '',
-        status: input.status || 'DRAFT',
-        featuredPost: input.featuredPost || false,
-        summary: input.summary,
-        excerpt: input.excerpt,
-        publishedAt: input.publishedAt,
-        metaDescription: input.metaDescription,
-        readTime: input.readTime,
-        viewCount: input.viewCount,
-        updatedAt: input.updatedAt,
-        owner: input.owner,
+      const data = await withErrorToast('Create Post', async () => {
+        if (!input.title || !input.slug || !input.content) throw new Error('Missing required fields: title, slug, content');
+        const { data } = await client.models.BlogPost.create({
+          title: input.title,
+          slug: input.slug,
+            content: input.content,
+          authorId: input.authorId ?? '',
+          status: input.status || 'DRAFT',
+          featuredPost: input.featuredPost || false,
+          summary: input.summary,
+          excerpt: input.excerpt,
+          publishedAt: input.publishedAt,
+          metaDescription: input.metaDescription,
+          readTime: input.readTime,
+          viewCount: input.viewCount,
+          updatedAt: input.updatedAt,
+          owner: input.owner,
+        }, withUserAuth());
+        if (!data) throw new Error('Create post returned empty result');
+        return data;
       });
       if (data) {
-        // manage category/tag relations after base post creation
         if (input.categoryIds) await replacePostCategories(data.id, input.categoryIds);
         if (input.tagIds) await replacePostTags(data.id, input.tagIds);
         posts.value = [...posts.value, data];
@@ -125,21 +113,22 @@ export function useBlog() {
     } catch (err: any) {
       error.value = err.message || 'Failed to create post';
       return null;
-    } finally {
-      loading.value = false;
-    }
+    } finally { loading.value = false; }
   };
 
   const updatePost = async (id: string, updates: Partial<BlogPost> & { categoryIds?: string[], tagIds?: string[] }) => {
-    loading.value = true;
-    error.value = null;
+    loading.value = true; error.value = null;
     try {
-      const { categoryIds, tagIds, ...baseUpdates } = updates as any;
-      const { data } = await client.models.BlogPost.update({ id, ...baseUpdates });
-      const idx = posts.value.findIndex(post => post.id === id);
-      if (idx !== -1 && data) posts.value[idx] = data;
-      if (currentPost.value && currentPost.value.id === id && data) currentPost.value = data;
+      const data = await withErrorToast('Update Post', async () => {
+        const { categoryIds, tagIds, ...baseUpdates } = updates as any;
+  const { data } = await client.models.BlogPost.update({ id, ...baseUpdates }, withUserAuth());
+        return data;
+      });
       if (data) {
+        const { categoryIds, tagIds } = updates as any;
+        const idx = posts.value.findIndex(post => post.id === id);
+        if (idx !== -1) posts.value[idx] = data;
+        if (currentPost.value && currentPost.value.id === id) currentPost.value = data;
         if (categoryIds) await replacePostCategories(id, categoryIds);
         if (tagIds) await replacePostTags(id, tagIds);
       }
@@ -147,25 +136,20 @@ export function useBlog() {
     } catch (err: any) {
       error.value = err.message || 'Failed to update post';
       return null;
-    } finally {
-      loading.value = false;
-    }
+    } finally { loading.value = false; }
   };
 
   const deletePost = async (id: string) => {
-    loading.value = true;
-    error.value = null;
+    loading.value = true; error.value = null;
     try {
-      await client.models.BlogPost.delete({ id });
+  await withErrorToast('Delete Post', async () => client.models.BlogPost.delete({ id }, withUserAuth()));
       posts.value = posts.value.filter(post => post.id !== id);
       if (currentPost.value && currentPost.value.id === id) currentPost.value = null;
       return true;
     } catch (err: any) {
       error.value = err.message || 'Failed to delete post';
       return false;
-    } finally {
-      loading.value = false;
-    }
+    } finally { loading.value = false; }
   };
 
   const publishedPosts = computed(() => posts.value.filter(post => post.status === 'PUBLISHED'));

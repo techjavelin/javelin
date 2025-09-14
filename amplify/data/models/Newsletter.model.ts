@@ -8,6 +8,9 @@ export const Newsletter = a.model({
   unsubscribedAt: a.datetime(),
   frequency: a.enum(['WEEKLY', 'MONTHLY']),
   topics: a.string().array(),
+  // status workflow: PENDING (awaiting confirmation) -> ACTIVE (confirmed) -> UNSUBSCRIBED
+  status: a.enum(['PENDING','ACTIVE','UNSUBSCRIBED']),
+  confirmationToken: a.string(), // last issued token (optional traceability)
 }).authorization((allow) => [
   allow.publicApiKey().to(['create']),
   allow.owner().to(['create', 'read', 'update', 'delete']),

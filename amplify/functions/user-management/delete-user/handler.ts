@@ -1,5 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
+import { logger } from '../../logger'
 import { CognitoIdentityProviderClient, AdminDeleteUserCommand } from '@aws-sdk/client-cognito-identity-provider'
+import { getUserPoolId } from '../../getUserPoolId'
 
 const client = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION })
 
@@ -14,27 +16,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({})
-    }
+    logger.debug('Delete user OPTIONS preflight')
+    return { statusCode: 200, headers, body: JSON.stringify({}) }
   }
 
   try {
-    // Verify user is authenticated and has admin permissions
-    const userPoolId = process.env.AMPLIFY_AUTH_USER_POOL_ID
-    if (!userPoolId) {
-      throw new Error('User Pool ID not configured')
-    }
+    // Resolve user pool id centrally (event-aware)
+    const userPoolId = getUserPoolId(event)
 
     const username = event.pathParameters?.username
     if (!username) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Username is required in path' })
-      }
+      logger.warn('Delete user missing username param')
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Username is required in path' }) }
     }
 
     // Delete user
@@ -43,19 +36,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       Username: username
     })
 
-    await client.send(deleteCommand)
+  await client.send(deleteCommand)
+  logger.info('User deleted', { username })
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: 'User deleted successfully',
-        username: username
-      })
-    }
+    return { statusCode: 200, headers, body: JSON.stringify({ message: 'User deleted successfully', username }) }
 
   } catch (error) {
-    console.error('Error deleting user:', error)
+    logger.error('Error deleting user', { error })
     
     let statusCode = 500
     let errorMessage = 'Failed to delete user'
@@ -67,13 +54,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }
     }
 
-    return {
-      statusCode,
-      headers,
-      body: JSON.stringify({
-        error: errorMessage,
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
+    return { statusCode, headers, body: JSON.stringify({ error: errorMessage, message: error instanceof Error ? error.message : 'Unknown error' }) }
   }
 }

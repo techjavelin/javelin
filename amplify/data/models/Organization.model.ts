@@ -5,7 +5,8 @@ export const Organization = a.model({
   name: a.string().required(),
 
   // Lifecycle Status
-  status: a.enum(['PENDING','ACTIVE']).default('PENDING'),
+  // Amplify enum types currently don't support inline .default(); creation logic will set 'PENDING' explicitly
+  status: a.enum(['PENDING','ACTIVE']),
   invitedAdminEmail: a.string(),
   createdBy: a.string(),
   activatedAt: a.datetime(),
@@ -28,6 +29,9 @@ export const Organization = a.model({
 .authorization((allow) => [
   // Only platform admins can create organizations
   allow.group("admin").to(['create', 'read', 'update', 'delete']),
+  // Allow any signed-in user to read (broad visibility). If you need to restrict later,
+  // replace with a narrower rule or introduce a view model.
+  allow.authenticated().to(['read']),
   // Once activated, admins listed on record manage it
   allow.ownersDefinedIn('admins').to(['update', 'read']),
   // Members still read

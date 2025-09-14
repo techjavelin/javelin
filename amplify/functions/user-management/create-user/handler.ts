@@ -1,10 +1,12 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
+import { logger } from '../../logger'
 import { 
   CognitoIdentityProviderClient, 
   AdminCreateUserCommand, 
   AdminAddUserToGroupCommand,
   MessageActionType
 } from '@aws-sdk/client-cognito-identity-provider'
+import { getUserPoolId } from '../../getUserPoolId'
 
 const client = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION })
 
@@ -43,36 +45,24 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({})
-    }
+    logger.debug('Create user OPTIONS preflight')
+    return { statusCode: 200, headers, body: JSON.stringify({}) }
   }
 
   try {
-    // Verify user is authenticated and has admin permissions
-    const userPoolId = process.env.AMPLIFY_AUTH_USER_POOL_ID
-    if (!userPoolId) {
-      throw new Error('User Pool ID not configured')
-    }
+    // Resolve user pool id centrally
+    const userPoolId = getUserPoolId()
 
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Request body is required' })
-      }
+      logger.warn('Create user missing body')
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Request body is required' }) }
     }
 
     const { email, givenName, familyName, groups = [], temporaryPassword, sendWelcomeEmail = true } = JSON.parse(event.body)
 
     if (!email) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Email is required' })
-      }
+      logger.warn('Create user missing email')
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email is required' }) }
     }
 
     // Generate temporary password if not provided
@@ -98,11 +88,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       Username: email,
       UserAttributes: userAttributes,
       TemporaryPassword: finalTemporaryPassword,
-      MessageAction: sendWelcomeEmail ? MessageActionType.RESEND : MessageActionType.SUPPRESS,
+      // Only set SUPPRESS to skip initial email; omit RESEND for initial create
+      ...(sendWelcomeEmail ? {} : { MessageAction: MessageActionType.SUPPRESS }),
       DesiredDeliveryMediums: ['EMAIL']
     })
 
-    const response = await client.send(createCommand)
+  const response = await client.send(createCommand)
+  logger.info('User created in Cognito', { email })
 
     // Add user to groups
     if (groups.length > 0) {
@@ -115,24 +107,16 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           })
           await client.send(addToGroupCommand)
         } catch (error) {
-          console.error(`Error adding user to group ${groupName}:`, error)
+          logger.error('Error adding user to group', { groupName, error, email })
         }
       }
     }
 
-    return {
-      statusCode: 201,
-      headers,
-      body: JSON.stringify({
-        message: 'User created successfully',
-        user: response.User,
-        groups: groups,
-        temporaryPassword: finalTemporaryPassword
-      })
-    }
+    logger.info('Create user success', { email, groupsCount: groups.length })
+    return { statusCode: 201, headers, body: JSON.stringify({ message: 'User created successfully', user: response.User, groups, temporaryPassword: finalTemporaryPassword }) }
 
   } catch (error) {
-    console.error('Error creating user:', error)
+    logger.error('Error creating user', { error })
     
     // Handle specific Cognito errors
     let statusCode = 500
@@ -148,13 +132,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }
     }
 
-    return {
-      statusCode,
-      headers,
-      body: JSON.stringify({
-        error: errorMessage,
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
+    return { statusCode, headers, body: JSON.stringify({ error: errorMessage, message: error instanceof Error ? error.message : 'Unknown error' }) }
   }
 }

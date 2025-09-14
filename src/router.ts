@@ -27,6 +27,21 @@ const routes = [
     meta: { hideTopNav: false }
   },
   {
+    path: '/subscribe',
+    component: () => import('./pages/NewsletterSubscribe.vue'),
+    name: 'newsletter-subscribe'
+  },
+  {
+    path: '/subscribe/confirm',
+    component: () => import('./pages/SubscribeConfirm.vue'),
+    name: 'newsletter-subscribe-confirm'
+  },
+  {
+    path: '/unsubscribe',
+    component: () => import('./pages/Unsubscribe.vue'),
+    name: 'newsletter-unsubscribe'
+  },
+  {
     path: '/security-demo2',
     component: () => import('./pages/SecurityDemo2.vue'),
     name: 'security-demo2',
@@ -165,12 +180,6 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   {
-    path: '/admin/authors',
-    component: () => import('./pages/AdminAuthors.vue'),
-    name: 'admin-authors',
-    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
-  },
-  {
     path: '/admin/subscribers',
     component: () => import('./pages/AdminSubscribers.vue'),
     name: 'admin-subscribers',
@@ -210,6 +219,12 @@ const routes = [
     path: '/admin/organizations',
     component: () => import('./pages/AdminOrganizations.vue'),
     name: 'admin-organizations',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/admin/entitlements',
+    component: () => import('./pages/AdminEntitlements.vue'),
+    name: 'admin-entitlements',
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   { 

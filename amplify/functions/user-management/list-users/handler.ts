@@ -1,5 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
+import { logger } from '../../logger'
 import { CognitoIdentityProviderClient, ListUsersCommand, AdminListGroupsForUserCommand } from '@aws-sdk/client-cognito-identity-provider'
+import { getUserPoolId } from '../../getUserPoolId'
 
 const client = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION })
 
@@ -14,19 +16,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({})
-    }
+    logger.debug('List users OPTIONS preflight')
+    return { statusCode: 200, headers, body: JSON.stringify({}) }
   }
 
   try {
     // Verify user is authenticated and has admin permissions
-    const userPoolId = process.env.AMPLIFY_AUTH_USER_POOL_ID
-    if (!userPoolId) {
-      throw new Error('User Pool ID not configured')
-    }
+  const userPoolId = getUserPoolId(event)
 
     // Parse query parameters for pagination
     const limit = event.queryStringParameters?.limit ? parseInt(event.queryStringParameters.limit) : 60
@@ -39,7 +35,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       PaginationToken: paginationToken
     })
 
-    const response = await client.send(listCommand)
+  const response = await client.send(listCommand)
+  logger.debug('Fetched users page', { usersCount: (response.Users || []).length, hasMore: !!response.PaginationToken })
     const users = response.Users || []
 
     // Get groups for each user
@@ -56,7 +53,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             Groups: groupsResponse.Groups?.map(g => g.GroupName) || []
           }
         } catch (error) {
-          console.error(`Error fetching groups for user ${user.Username}:`, error)
+          logger.error('Error fetching user groups', { user: user.Username, error })
           return {
             ...user,
             Groups: []
@@ -65,25 +62,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       })
     )
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        users: usersWithGroups,
-        paginationToken: response.PaginationToken,
-        total: users.length
-      })
-    }
+    logger.info('List users success', { usersReturned: usersWithGroups.length })
+    return { statusCode: 200, headers, body: JSON.stringify({ users: usersWithGroups, paginationToken: response.PaginationToken, total: users.length }) }
 
   } catch (error) {
-    console.error('Error listing users:', error)
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({
-        error: 'Failed to list users',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
+    logger.error('Error listing users', { error })
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to list users', message: error instanceof Error ? error.message : 'Unknown error' }) }
   }
 }

@@ -41,112 +41,376 @@ async function deleteUser(username: string): Promise<boolean> {
 
 console.log("🌱 Starting seed process...");
 
-// Create Admin User (or delete and recreate if password is wrong)
-console.log("👤 Creating admin user...");
-let adminUser;
-let adminExists = false;
-
-try {
-  // Try to sign in first to check if user already exists with correct password
-  await signInUser({
-    username: "admin@techjavelin.com",
-    password: "TechJavelin2025!",
-    signInFlow: "Password",
-  });
-  console.log("ℹ️  Admin user already exists and password is correct");
-  adminExists = true;
-  // Always try to add admin to admin group after sign-in check
+// --- Ensure admin user exists & signed in BEFORE entitlement seeding (because entitlement models require admin group for writes) ---
+let __adminBootstrapDone = false;
+async function ensureAdminBootstrap() {
+  if (__adminBootstrapDone) return;
+  const adminUsername = 'admin@techjavelin.com';
+  const adminPassword = 'TechJavelin2025!';
   try {
-  await addToUserGroup({ username: "admin@techjavelin.com" }, "admin");
-    console.log("✅ Admin user added to admin group (post sign-in check)");
-  } catch (err) {
-    console.log("ℹ️  Admin group may not exist, skipping group assignment");
+    await signInUser({ username: adminUsername, password: adminPassword, signInFlow: 'Password' });
+    console.log('🔐 Admin user sign-in successful (pre-entitlement bootstrap)');
+  } catch (e) {
+    console.log('ℹ️ Admin pre-bootstrap sign-in failed; attempting creation...');
+    try {
+      const newAdmin = await createAndSignUpUser({
+        username: adminUsername,
+        password: adminPassword,
+        signInAfterCreation: true,
+        signInFlow: 'Password',
+        userAttributes: { givenName: 'Tech', familyName: 'Javelin' }
+      });
+      console.log('✅ Admin user created during bootstrap');
+      try { await addToUserGroup(newAdmin, 'admin'); console.log('✅ Admin user added to admin group (bootstrap)'); } catch { console.log('ℹ️ Could not add admin to group during bootstrap (group may not exist yet)'); }
+    } catch (ce) {
+      console.error('❌ Failed to create admin during bootstrap; entitlement seeding may fail due to auth rules.', ce);
+    }
   }
-  auth.signOut(); // Sign out after checking
-} catch (signInError) {
-  console.log("⚠️  Admin sign-in failed, checking if user exists...");
-  
-  // Try to create the user - this will fail if user exists with wrong password
+  __adminBootstrapDone = true;
+}
+
+await ensureAdminBootstrap();
+
+// --- Entitlement Catalog Seeding (idempotent) ---
+async function seedEntitlements() {
+  console.log("🧩 Seeding entitlement catalog...");
   try {
-    adminUser = await createAndSignUpUser({
-      username: "admin@techjavelin.com",
-      password: "TechJavelin2025!",
-      signInAfterCreation: false,
-      signInFlow: "Password",
-      userAttributes: {
-        givenName: "Tech",
-        familyName: "Javelin",
-      },
-    });
-    console.log("✅ Admin user created successfully");
-    
-    // Add admin to admin group (if groups exist)
-    if (adminUser) {
-      try {
-        await addToUserGroup(adminUser, "admin");
-        console.log("✅ Admin user added to admin group");
-      } catch (err) {
-        console.log("ℹ️  Admin group may not exist, skipping group assignment");
-      }
+    // Guard: make sure model proxies exist (schema deployed)
+    if (!dataClient.models?.Product) {
+      console.error('❌ Product model not available on dataClient. Ensure sandbox is restarted with latest schema (npx ampx sandbox).');
+      return;
     }
-  } catch (createError) {
-    const error = createError as Error;
-    if (error.name === "UsernameExistsError" || error.message.includes("already exists") || error.message.includes("Cannot modify an already provided email")) {
-      console.log("🔄 Admin user exists but password is wrong, deleting and recreating...");
-      
-      // Delete the existing user
-      const deleted = await deleteUser("admin@techjavelin.com");
-      
-      if (deleted) {
-        console.log("✅ Deleted existing admin user");
-        
-        // Wait a moment for deletion to propagate
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Create the user again with the correct password
-        try {
-          adminUser = await createAndSignUpUser({
-            username: "admin@techjavelin.com",
-            password: "TechJavelin2025!",
-            signInAfterCreation: false,
-            signInFlow: "Password",
-            userAttributes: {
-              givenName: "Tech",
-              familyName: "Javelin",
-            },
-          });
-          console.log("✅ Admin user recreated successfully with correct password");
-          
-          // Add admin to admin group (if groups exist)
-          if (adminUser) {
-            try {
-              await addToUserGroup(adminUser, "admin");
-              console.log("✅ Admin user added to admin group");
-            } catch (err) {
-              console.log("ℹ️  Admin group may not exist, skipping group assignment");
-            }
-          }
-        } catch (recreateError) {
-          console.error("❌ Error recreating admin user:", recreateError);
-          throw recreateError;
-        }
+    // Simple existence checks by listing a few items
+    const existingProducts = await dataClient.models.Product.list({ authMode: 'userPool' });
+    if (existingProducts.data && existingProducts.data.length > 0) {
+      console.log('ℹ️ Entitlement catalog appears seeded (products exist). Skipping.');
+      return;
+    }
+
+    // Service Levels
+    const serviceLevels = [
+      { key: 'FREE', name: 'Free', description: 'Free tier', rank: 1 },
+      { key: 'PRO', name: 'Pro', description: 'Professional tier', rank: 2 },
+      { key: 'ENT', name: 'Enterprise', description: 'Enterprise tier', rank: 3 }
+    ];
+    const slMap: Record<string, string> = {};
+    for (const sl of serviceLevels) {
+      const res = await dataClient.models.ServiceLevel.create(sl, { authMode: 'userPool' });
+      if (res.data) {
+        slMap[sl.key] = res.data.id;
+        console.log(`✅ ServiceLevel: ${sl.key}`);
       } else {
-        console.log("❌ Could not delete existing admin user, skipping recreation");
-        adminExists = true; // Mark as existing to avoid further issues
+        console.warn('⚠️ Failed to create service level', sl.key, res.errors);
       }
-    } else {
-      console.error("❌ Error creating admin user:", error);
-      throw error;
     }
+
+    // Product
+    const productRes = await dataClient.models.Product.create({ key: 'PULSE', name: 'Pulse Platform', description: 'Pulse security intelligence platform' }, { authMode: 'userPool' });
+    if (!productRes.data) {
+      console.error('❌ Failed to create product PULSE', productRes.errors);
+      return;
+    }
+    const pulseProductId = productRes.data.id;
+    console.log('✅ Product: PULSE');
+
+    // Features (example subset)
+    const featureDefs = [
+      { key: 'PULSE_DASHBOARD', name: 'Pulse Dashboard', productId: pulseProductId, defaultInServiceLevels: ['FREE','PRO','ENT'], description: 'Core dashboard overview' },
+      { key: 'ADV_REPORTS', name: 'Advanced Reports', productId: pulseProductId, defaultInServiceLevels: ['PRO','ENT'], description: 'Advanced analytical reporting' },
+      { key: 'PRIORITY_SUPPORT', name: 'Priority Support', productId: pulseProductId, defaultInServiceLevels: ['ENT'], description: 'Priority SLA support' }
+    ];
+    const featureKeys: Record<string,string> = {};
+    for (const f of featureDefs) {
+      const res = await dataClient.models.Feature.create(f, { authMode: 'userPool' });
+      if (res.data) {
+        featureKeys[f.key] = f.key;
+        console.log(`✅ Feature: ${f.key}`);
+      } else {
+        console.warn('⚠️ Failed to create feature', f.key, res.errors);
+      }
+    }
+
+    // Plans (map service levels directly)
+    const planDefs = [
+      {
+        key: 'PULSE_FREE', name: 'Pulse Free', productId: pulseProductId,
+        serviceLevelId: slMap['FREE'], featureKeys: ['PULSE_DASHBOARD'], addOnFeatureKeys: [], isDefault: true
+      },
+      {
+        key: 'PULSE_PRO', name: 'Pulse Pro', productId: pulseProductId,
+        serviceLevelId: slMap['PRO'], featureKeys: ['PULSE_DASHBOARD','ADV_REPORTS'], addOnFeatureKeys: [], isDefault: true
+      },
+      {
+        key: 'PULSE_ENT', name: 'Pulse Enterprise', productId: pulseProductId,
+        serviceLevelId: slMap['ENT'], featureKeys: ['PULSE_DASHBOARD','ADV_REPORTS','PRIORITY_SUPPORT'], addOnFeatureKeys: [], isDefault: true
+      }
+    ];
+    const planIds: Record<string,string> = {};
+    for (const p of planDefs) {
+      const res = await dataClient.models.EntitlementPlan.create(p, { authMode: 'userPool' });
+      if (res.data) {
+        planIds[p.key] = res.data.id;
+        console.log(`✅ Plan: ${p.key}`);
+      } else {
+        console.warn('⚠️ Failed to create plan', p.key, res.errors);
+      }
+    }
+
+    // Assign default FREE plan to existing organizations (if any)
+    const orgs = await dataClient.models.Organization.list({ authMode: 'userPool' });
+    if (orgs.data) {
+      for (const org of orgs.data) {
+        if (!org) continue;
+        // Check if entitlement exists already
+        const existingEnts = await dataClient.models.OrganizationEntitlement.list({ filter: { organizationId: { eq: org.id } }, authMode: 'userPool' });
+        if (existingEnts.data && existingEnts.data.length > 0) {
+          console.log(`ℹ️ Org ${org.name} already has entitlement(s)`);
+          continue;
+        }
+        const entRes = await dataClient.models.OrganizationEntitlement.create({
+          organizationId: org.id,
+          entitlementPlanId: planIds['PULSE_FREE'],
+          status: 'ACTIVE',
+          effectiveFrom: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }, { authMode: 'userPool' });
+        if (entRes.data) console.log(`✅ Assigned FREE plan to org ${org.name}`); else console.warn('⚠️ Failed to assign plan to org', org.name, entRes.errors);
+      }
+    }
+
+    console.log('🎯 Entitlement catalog seeding complete');
+  } catch (err) {
+    console.error('❌ Entitlement seeding failed', err);
   }
 }
 
-// Always try to add admin to admin group after all creation paths
-try {
-  await addToUserGroup({ username: "admin@techjavelin.com" }, "admin");
-  console.log("✅ Admin user added to admin group (final check)");
-} catch (err) {
-  console.log("ℹ️  Admin group may not exist, skipping group assignment");
+await seedEntitlements();
+
+// --- Additional Test Orgs & Entitlements (after base catalog) ---
+async function seedTestEntitlementOrganizations() {
+  console.log("🧪 Seeding test organizations & entitlement scenarios...");
+  try {
+    if (!dataClient.models?.EntitlementPlan || !dataClient.models?.OrganizationEntitlement || !dataClient.models?.Organization) {
+      console.log('ℹ️ Entitlement-related models not available (schema likely not deployed yet) – skipping test entitlement org seeding.');
+      return;
+    }
+    // Ensure plans exist (catalog might have been skipped if already seeded)
+    const plansRes = await dataClient.models.EntitlementPlan.list({ authMode: 'userPool' });
+    if (!plansRes.data || plansRes.data.length === 0) {
+      console.log('ℹ️ No entitlement plans found; skipping test entitlement org seeding.');
+      return;
+    }
+    const planIdByKey: Record<string,string> = {};
+    for (const p of plansRes.data) { if (p) planIdByKey[p.key] = p.id; }
+
+    const adminEmail = 'admin@techjavelin.com';
+    // Try to sign-in as admin to ensure auth context (ignore errors silently)
+    try { await signInUser({ username: adminEmail, password: 'TechJavelin2025!', signInFlow: 'Password' }); } catch {}
+
+    // Helper: fetch (or create) org by name
+    async function getOrCreateOrg(name: string, adminUserId?: string) {
+      const existing = await dataClient.models.Organization.list({ authMode: 'userPool' });
+      const found = existing.data?.find(o => o?.name === name);
+      if (found) return found;
+      // Fallback: create with placeholder admins/members if user id unknown
+      const orgRes = await dataClient.models.Organization.create({
+        name,
+        admins: adminUserId ? [adminUserId] : [],
+        members: adminUserId ? [adminUserId] : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }, { authMode: 'userPool' });
+      if (!orgRes.data) {
+        console.warn('⚠️ Failed to create test org', name, orgRes.errors);
+        return undefined;
+      }
+      console.log(`✅ Created test org: ${name}`);
+      return orgRes.data;
+    }
+
+    // Attempt to discover admin userId (Cognito sub) by creating a temp self org or via existing org membership
+    let adminUserId: string | undefined;
+    try {
+      const { getCurrentUser } = await import('aws-amplify/auth');
+      const u = await getCurrentUser();
+      adminUserId = (u as any)?.userId;
+    } catch {}
+
+    const testMatrix: Array<{ name: string; planKey: string; add?: string[]; remove?: string[]; extraExpired?: boolean; }> = [
+      { name: 'Pulse Free Test Org', planKey: 'PULSE_FREE' },
+      { name: 'Pulse Pro Test Org', planKey: 'PULSE_PRO', extraExpired: true },
+      { name: 'Pulse Ent Test Org', planKey: 'PULSE_ENT' },
+      { name: 'Pulse Free+Overrides Org', planKey: 'PULSE_FREE', add: ['ADV_REPORTS'] },
+      { name: 'Pulse Pro-Overrides Org', planKey: 'PULSE_PRO', remove: ['ADV_REPORTS'] }
+    ];
+
+    const entitlementSummaries: Array<{ org: string; plan: string; overridesAdd?: string[]; overridesRemove?: string[]; historyExpired?: boolean; orgId: string; }> = [];
+
+    for (const cfg of testMatrix) {
+      const org = await getOrCreateOrg(cfg.name, adminUserId);
+      if (!org) continue;
+
+      // Check if ACTIVE entitlement already exists
+      const existingEnts = await dataClient.models.OrganizationEntitlement.list({
+        filter: { organizationId: { eq: org.id } },
+        authMode: 'userPool'
+      });
+      const hasActive = existingEnts.data?.some(e => e?.status === 'ACTIVE');
+      if (hasActive) {
+        console.log(`ℹ️ Org ${cfg.name} already has an ACTIVE entitlement – skipping new ACTIVE record.`);
+        continue;
+      }
+
+      const planId = planIdByKey[cfg.planKey];
+      if (!planId) {
+        console.warn(`⚠️ Plan key ${cfg.planKey} not found; skipping org ${cfg.name}`);
+        continue;
+      }
+
+      const now = new Date();
+      const entRes = await dataClient.models.OrganizationEntitlement.create({
+        organizationId: org.id,
+        entitlementPlanId: planId,
+        status: 'ACTIVE',
+        effectiveFrom: now.toISOString(),
+        overrides_addFeatures: cfg.add?.length ? cfg.add : undefined,
+        overrides_removeFeatures: cfg.remove?.length ? cfg.remove : undefined,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      }, { authMode: 'userPool' });
+      if (entRes.data) {
+        console.log(`✅ Assigned ${cfg.planKey} to ${cfg.name}${cfg.add || cfg.remove ? ' (with overrides)' : ''}`);
+        entitlementSummaries.push({ org: cfg.name, plan: cfg.planKey, overridesAdd: cfg.add, overridesRemove: cfg.remove, historyExpired: !!cfg.extraExpired, orgId: org.id });
+
+        // Create audit record for plan assignment + overrides
+        try {
+          await dataClient.models.EntitlementAudit.create({
+            organizationId: org.id,
+            action: 'ASSIGN_PLAN',
+            actor: adminEmail,
+            before: null,
+            after: { planKey: cfg.planKey, overridesAdd: cfg.add, overridesRemove: cfg.remove },
+            ts: new Date().toISOString()
+          }, { authMode: 'userPool' });
+        } catch (auditErr) {
+          console.warn('⚠️ Failed to write audit (ASSIGN_PLAN) for', cfg.name, auditErr);
+        }
+        if (cfg.add || cfg.remove) {
+          try {
+            await dataClient.models.EntitlementAudit.create({
+              organizationId: org.id,
+              action: 'OVERRIDE_FEATURES',
+              actor: adminEmail,
+              before: null,
+              after: { add: cfg.add, remove: cfg.remove },
+              ts: new Date().toISOString()
+            }, { authMode: 'userPool' });
+          } catch (auditErr2) {
+            console.warn('⚠️ Failed to write audit (OVERRIDE_FEATURES) for', cfg.name, auditErr2);
+          }
+        }
+      } else {
+        console.warn('⚠️ Failed creating entitlement for org', cfg.name, entRes.errors);
+      }
+
+      // Optionally create an expired historical entitlement for demo/history
+      if (cfg.extraExpired) {
+        const past = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+        const expired = new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000); // yesterday
+        const freePlanId = planIdByKey['PULSE_FREE'];
+        if (freePlanId) {
+          const hist = await dataClient.models.OrganizationEntitlement.create({
+            organizationId: org.id,
+            entitlementPlanId: freePlanId,
+            status: 'EXPIRED',
+            effectiveFrom: past.toISOString(),
+            expiresAt: expired.toISOString(),
+            createdAt: past.toISOString(),
+            updatedAt: expired.toISOString()
+          }, { authMode: 'userPool' });
+          if (hist.data) {
+            console.log(`🗃️ Added historical EXPIRED FREE entitlement for ${cfg.name}`);
+            try {
+              await dataClient.models.EntitlementAudit.create({
+                organizationId: org.id,
+                action: 'CHANGE_STATUS',
+                actor: adminEmail,
+                before: { planKey: 'PULSE_FREE', status: 'ACTIVE' },
+                after: { planKey: 'PULSE_FREE', status: 'EXPIRED' },
+                ts: new Date().toISOString()
+              }, { authMode: 'userPool' });
+            } catch (auditErr3) {
+              console.warn('⚠️ Failed to write audit (CHANGE_STATUS) for', cfg.name, auditErr3);
+            }
+          }
+        }
+      }
+    }
+
+    console.log('🎯 Test entitlement org seeding complete');
+
+    // Attach first created org custom attribute to admin/user for token enrichment demo
+    try {
+      if (entitlementSummaries.length > 0) {
+        const first = entitlementSummaries[0];
+        // We leverage AdminUpdateUserAttributes via Cognito SDK
+        const { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } = await import('@aws-sdk/client-cognito-identity-provider');
+        const cognito = new CognitoIdentityProviderClient({ region: outputs.auth?.aws_region });
+        const updates = [ 'admin@techjavelin.com', 'user@example.com' ];
+        for (const username of updates) {
+          try {
+            await cognito.send(new AdminUpdateUserAttributesCommand({
+              UserPoolId: outputs.auth?.user_pool_id,
+              Username: username,
+              UserAttributes: [ { Name: 'custom:orgId', Value: first.orgId } ]
+            }));
+            console.log(`🔗 Attached orgId (${first.orgId}) to ${username}`);
+          } catch (attrErr) {
+            console.warn(`⚠️ Failed attaching orgId to ${username}`, attrErr);
+          }
+        }
+      }
+    } catch (attachErr) {
+      console.warn('⚠️ Could not attach orgId custom attribute to users', attachErr);
+    }
+
+    // Summary printout
+    console.log('\n📦 Entitlement Test Summary');
+    for (const s of entitlementSummaries) {
+      console.log(` • ${s.org} => ${s.plan}` +
+        (s.overridesAdd?.length ? ` (+${s.overridesAdd.join(',')})` : '') +
+        (s.overridesRemove?.length ? ` (-${s.overridesRemove.join(',')})` : '') +
+        (s.historyExpired ? ' [has expired history]' : ''));
+    }
+    console.log('— End Entitlement Summary —');
+  } catch (err) {
+    console.error('❌ Test entitlement org seeding failed', err);
+  }
+}
+
+await seedTestEntitlementOrganizations();
+
+// Admin creation block moved earlier (bootstrap). Retained here only if bootstrap failed.
+if (!__adminBootstrapDone) {
+  console.log('⚠️ Admin bootstrap not completed earlier; running fallback admin creation block...');
+  let adminUser; let adminExists = false;
+  try {
+    await signInUser({ username: 'admin@techjavelin.com', password: 'TechJavelin2025!', signInFlow: 'Password' });
+    console.log('ℹ️  Admin user already exists and password is correct');
+    adminExists = true;
+    try { await addToUserGroup({ username: 'admin@techjavelin.com' }, 'admin'); console.log('✅ Admin user added to admin group (post sign-in check)'); } catch {}
+    auth.signOut();
+  } catch {
+    try {
+      adminUser = await createAndSignUpUser({ username: 'admin@techjavelin.com', password: 'TechJavelin2025!', signInAfterCreation: false, signInFlow: 'Password', userAttributes: { givenName: 'Tech', familyName: 'Javelin' } });
+      console.log('✅ Admin user created successfully (fallback)');
+      if (adminUser) { try { await addToUserGroup(adminUser, 'admin'); console.log('✅ Admin user added to admin group'); } catch {} }
+    } catch (e) {
+      console.error('❌ Fallback admin creation failed', e);
+    }
+  }
+  try { await addToUserGroup({ username: 'admin@techjavelin.com' }, 'admin'); } catch {}
 }
 
 // Create Regular User (or use existing)

@@ -12,7 +12,10 @@
 		"build": "run-p type-check \"build-only {@}\" --",
 		"preview": "vite preview",
 		"build-only": "vite build",
-		"type-check": "vue-tsc --build --force"
+		"type-check": "vue-tsc --build --force",
+		"lint": "eslint --ext .ts,.vue src",
+		"lint:fix": "eslint --ext .ts,.vue src --fix",
+		"test:integration": "tsx scripts/check-api-health.ts"
 	},
 	"dependencies": {
 		"@aws-amplify/ui-vue": "^4.3.3",
@@ -36,6 +39,7 @@
 		"@types/node": "^20.17.9",
 		"@vitejs/plugin-vue": "^5.2.1",
 		"@vue/tsconfig": "^0.7.0",
+		"eslint": "^9.12.0",
 		"aws-cdk": "^2.170.0",
 		"aws-cdk-lib": "^2.170.0",
 		"constructs": "^10.4.2",

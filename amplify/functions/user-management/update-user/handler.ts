@@ -1,4 +1,5 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
+import { logger } from '../../logger'
 import { 
   CognitoIdentityProviderClient, 
   AdminUpdateUserAttributesCommand,
@@ -8,6 +9,7 @@ import {
   AdminRemoveUserFromGroupCommand,
   AdminListGroupsForUserCommand
 } from '@aws-sdk/client-cognito-identity-provider'
+import { getUserPoolId } from '../../getUserPoolId'
 
 const client = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION })
 
@@ -22,35 +24,23 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({})
-    }
+    logger.debug('Update user OPTIONS preflight')
+    return { statusCode: 200, headers, body: JSON.stringify({}) }
   }
 
   try {
-    // Verify user is authenticated and has admin permissions
-    const userPoolId = process.env.AMPLIFY_AUTH_USER_POOL_ID
-    if (!userPoolId) {
-      throw new Error('User Pool ID not configured')
-    }
+    // Resolve user pool id centrally
+    const userPoolId = getUserPoolId()
 
     const username = event.pathParameters?.username
     if (!username) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Username is required in path' })
-      }
+      logger.warn('Update user missing username param')
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Username is required in path' }) }
     }
 
     if (!event.body) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Request body is required' })
-      }
+      logger.warn('Update user missing body')
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Request body is required' }) }
     }
 
     const { givenName, familyName, enabled, groups = [] } = JSON.parse(event.body)
@@ -114,7 +104,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             })
             await client.send(removeCommand)
           } catch (error) {
-            console.error(`Error removing user from group ${group}:`, error)
+            logger.error('Error removing user from group', { group, error, username })
           }
         }
       }
@@ -130,23 +120,17 @@ export const handler: APIGatewayProxyHandler = async (event) => {
             })
             await client.send(addCommand)
           } catch (error) {
-            console.error(`Error adding user to group ${group}:`, error)
+            logger.error('Error adding user to group', { group, error, username })
           }
         }
       }
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: 'User updated successfully',
-        username: username
-      })
-    }
+    logger.info('User updated successfully', { username })
+    return { statusCode: 200, headers, body: JSON.stringify({ message: 'User updated successfully', username }) }
 
   } catch (error) {
-    console.error('Error updating user:', error)
+    logger.error('Error updating user', { error })
     
     let statusCode = 500
     let errorMessage = 'Failed to update user'
@@ -161,13 +145,6 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }
     }
 
-    return {
-      statusCode,
-      headers,
-      body: JSON.stringify({
-        error: errorMessage,
-        message: error instanceof Error ? error.message : 'Unknown error'
-      })
-    }
+    return { statusCode, headers, body: JSON.stringify({ error: errorMessage, message: error instanceof Error ? error.message : 'Unknown error' }) }
   }
 }

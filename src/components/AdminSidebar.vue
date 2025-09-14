@@ -73,12 +73,6 @@
           </router-link>
         </li>
         
-        <li class="nav-item">
-          <router-link to="/admin/authors" class="nav-link">
-            <span class="nav-icon"><font-awesome-icon :icon="faUserEdit" class="sidebar-png-icon" /></span>
-            <span class="nav-text" v-if="!isCollapsed">Authors</span>
-          </router-link>
-        </li>
         
         <li class="nav-item">
           <router-link to="/admin/subscribers" class="nav-link">
@@ -126,6 +120,12 @@
           <router-link to="/admin/organizations" class="nav-link">
             <span class="nav-icon"><font-awesome-icon :icon="faUsersCog" class="sidebar-png-icon" /></span>
             <span class="nav-text" v-if="!isCollapsed">Organizations</span>
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/admin/entitlements" class="nav-link">
+            <span class="nav-icon"><font-awesome-icon :icon="faCog" class="sidebar-png-icon" /></span>
+            <span class="nav-text" v-if="!isCollapsed">Entitlements</span>
           </router-link>
         </li>
         <!-- System -->

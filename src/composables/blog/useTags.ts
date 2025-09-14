@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { Schema } from '../../../amplify/data/resource';
-import { getClient } from '../../amplifyClient';
+import { getClient, withUserAuth } from '../../amplifyClient';
+import { useApi } from '../useApi';
 
 type Tag = Schema['Tag']['type'];
 type PostTag = Schema['PostTag']['type'];
@@ -13,6 +14,7 @@ const _loading = ref(false);
 const _error = ref<string | null>(null);
 // Lazy client accessor to ensure Amplify has been configured
 const client = getClient();
+const { withErrorToast } = useApi();
 
 export function useTags() {
   const tags = _tags;
@@ -25,8 +27,8 @@ export function useTags() {
     loading.value = true;
     error.value = null;
     try {
-      const { data } = await client.models.Tag.list();
-      tags.value = data || [];
+  const result = await withErrorToast('Load Tags', () => client.models.Tag.list(withUserAuth()));
+      tags.value = (result as any).data || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch tags';
     } finally {
@@ -38,7 +40,7 @@ export function useTags() {
     loading.value = true;
     error.value = null;
     try {
-      const { data } = await client.models.PostTag.list();
+  const { data } = await withErrorToast('Load Post Tags', () => client.models.PostTag.list(withUserAuth()));
       const filtered = (data || []).filter(pt => pt.postId === postId);
       postTags.value = filtered;
       return filtered;
@@ -59,13 +61,13 @@ export function useTags() {
       }
       const slug = (input.slug || input.name)
         .toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-      const { data } = await client.models.Tag.create({
-        name: input.name,
+      const { data } = await withErrorToast('Create Tag', () => client.models.Tag.create({
+        name: input.name!,
         slug,
         description: input.description,
         color: input.color,
         owner: (input as any).owner,
-      });
+      }, withUserAuth()));
       if (data) tags.value = [...tags.value, data];
       return data;
     } catch (err: any) {
@@ -84,7 +86,7 @@ export function useTags() {
         updates.slug = (updates.slug || updates.name)
           ?.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
       }
-      const { data } = await client.models.Tag.update({ id, ...updates });
+  const { data } = await withErrorToast('Update Tag', () => client.models.Tag.update({ id, ...updates }, withUserAuth()));
       const idx = tags.value.findIndex(t => t.id === id);
       if (idx !== -1 && data) tags.value[idx] = data;
       return data;
@@ -102,7 +104,7 @@ export function useTags() {
     const prev = [...tags.value];
     try {
       tags.value = tags.value.filter(t => t.id !== id);
-      await client.models.Tag.delete({ id });
+  await withErrorToast('Delete Tag', () => client.models.Tag.delete({ id }, withUserAuth()));
       return true;
     } catch (err: any) {
       tags.value = prev;
@@ -117,7 +119,7 @@ export function useTags() {
     loading.value = true;
     error.value = null;
     try {
-      const { data } = await client.models.PostTag.create({ postId, tagId });
+  const { data } = await withErrorToast('Add Tag To Post', () => client.models.PostTag.create({ postId, tagId }, withUserAuth()));
       if (data) postTags.value = [...postTags.value, data];
       return data;
     } catch (err: any) {
@@ -134,7 +136,7 @@ export function useTags() {
     try {
       const postTag = postTags.value.find(pt => pt.postId === postId && pt.tagId === tagId);
       if (postTag) {
-        await client.models.PostTag.delete({ id: postTag.id });
+  await withErrorToast('Remove Tag From Post', () => client.models.PostTag.delete({ id: postTag.id }, withUserAuth()));
         postTags.value = postTags.value.filter(pt => pt.id !== postTag.id);
       }
       return true;

@@ -7,6 +7,7 @@ Amplify.configure(amplifyConfig);
 
 // Now import the rest of the application
 import router from './router';
+import { installEntitlements } from './plugins/entitlements';
 import SocialIcons from './components/SocialIcons.vue';
 import './assets/theme.css';
 import './assets/main.css';
@@ -76,4 +77,5 @@ const app = createApp(App);
 app.component('font-awesome-icon', FontAwesomeIcon);
 app.component('SocialIcons', SocialIcons);
 app.use(router);
+installEntitlements(app);
 app.mount('#app');

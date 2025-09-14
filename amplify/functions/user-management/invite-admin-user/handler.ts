@@ -1,11 +1,12 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
+import { logger } from '../../logger'
 import {
   CognitoIdentityProviderClient,
   AdminCreateUserCommand,
-  AdminAddUserToGroupCommand,
   AdminUpdateUserAttributesCommand,
   MessageActionType
 } from '@aws-sdk/client-cognito-identity-provider'
+import { getUserPoolId } from '../../getUserPoolId'
 
 const cognito = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION })
 
@@ -26,23 +27,26 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
 
   if (event.httpMethod === 'OPTIONS') {
+    logger.debug('OPTIONS preflight received')
     return { statusCode: 200, headers, body: JSON.stringify({}) }
   }
 
   try {
-    const userPoolId = process.env.AMPLIFY_AUTH_USER_POOL_ID
-    if (!userPoolId) throw new Error('User Pool ID not configured')
+  const userPoolId = getUserPoolId(event)
 
     if (!event.body) {
+      logger.warn('Invite called with missing body', { requestId: event.requestContext.requestId })
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing request body' }) }
     }
 
     const payload: InvitePayload = JSON.parse(event.body)
     if (!payload.email || !payload.organizationId) {
+      logger.warn('Validation failed', { email: payload.email, organizationId: payload.organizationId })
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'email and organizationId are required' }) }
     }
 
-    const email = payload.email.trim().toLowerCase()
+  const email = payload.email.trim().toLowerCase()
+  logger.info('Processing admin invite', { email, organizationId: payload.organizationId })
 
     // Attempt to create user (idempotent if already exists -> will catch and fallback to adding to group)
     let created = false
@@ -55,28 +59,19 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           { Name: 'email_verified', Value: 'true' },
           // store org id as custom attribute (must exist in pool schema if used) otherwise skip
         ],
-        MessageAction: payload.sendEmail === false ? MessageActionType.SUPPRESS : MessageActionType.RESEND,
+        // Only specify SUPPRESS to skip email; omit RESEND for first-time create per Cognito API semantics
+        ...(payload.sendEmail === false ? { MessageAction: MessageActionType.SUPPRESS } : {}),
         DesiredDeliveryMediums: ['EMAIL']
       })
       await cognito.send(createCmd)
       created = true
+      logger.debug('User created in Cognito', { email })
     } catch (err: any) {
       if (err?.name !== 'UsernameExistsException') {
-        console.error('Create user error', err)
+        logger.error('Create user error', { error: err, email })
         throw err
       }
-    }
-
-    // Add to admin group
-    try {
-      const addCmd = new AdminAddUserToGroupCommand({
-        UserPoolId: userPoolId,
-        Username: email,
-        GroupName: 'admin'
-      })
-      await cognito.send(addCmd)
-    } catch (err) {
-      console.error('Add to admin group error', err)
+      logger.debug('User already exists, proceeding', { email })
     }
 
     // Optionally attach/update attributes (organization context) - placeholder if custom attr added later
@@ -90,24 +85,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
           ]
         })
         await cognito.send(updateCmd)
+        logger.debug('Updated optional attributes', { email, organizationId: payload.organizationId })
       } catch (err) {
         // swallow if custom attribute not defined yet
-        console.warn('Optional attribute update failed (likely attribute not defined)', err as any)
+        logger.warn('Optional attribute update failed (likely attribute not defined)', { error: err, email })
       }
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        message: 'Admin user invited',
-        email,
-        created,
-        organizationId: payload.organizationId
-      })
-    }
+  const responseBody = { message: 'User invited (no group assignment until activation adds client role)', email, created, organizationId: payload.organizationId }
+    logger.info('Invite admin success', responseBody)
+    return { statusCode: 200, headers, body: JSON.stringify(responseBody) }
   } catch (error) {
-    console.error('Invite admin user failure', error)
+    logger.error('Invite admin user failure', { error, requestId: event.requestContext.requestId })
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to invite admin user' }) }
   }
 }

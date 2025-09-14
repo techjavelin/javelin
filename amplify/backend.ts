@@ -1,7 +1,8 @@
 import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from './api/admin/resource';
+import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin } from './api/admin/resource';
+import { health } from './api/health/resource';
 import { storage } from './storage/resource';
 // import { createOrganization, deleteOrganization, getOrganization, inviteUserToOrganization, listOrganizations, updateOrganization } from './api/sigint/Organization.api';
 import { OrganizationAPI } from './api/resource';
@@ -19,6 +20,9 @@ const backend = defineBackend({
   updateUser,
   deleteUser,
   resetUserPassword,
+  inviteAdminUser,
+  activateOrganizationAdmin,
+  health,
   createOrganization: OrganizationAPI.create,
   // deleteOrganization: OrganizationAPI.delete,
   // getOrganization: OrganizationAPI.get,
@@ -85,8 +89,25 @@ const apiConfig: MethodOptions = {
 
 // Resource Paths
 const organizationPath = sigintRest.root.addResource('organization');
-
 organizationPath.addMethod('POST', new LambdaIntegration(backend.createOrganization.resources.lambda), apiConfig);
+
+// Admin user invite & activation endpoints (POST). CORS preflight handled by RestApi defaultCorsPreflightOptions
+const invitePath = sigintRest.root.addResource('invite-admin-user');
+invitePath.addMethod('POST', new LambdaIntegration(backend.inviteAdminUser.resources.lambda), {
+  // Invitation should be allowed without auth if design requires; currently enforce Cognito (adjust if needed)
+  ...apiConfig
+});
+
+const activatePath = sigintRest.root.addResource('activate-organization-admin');
+activatePath.addMethod('POST', new LambdaIntegration(backend.activateOrganizationAdmin.resources.lambda), {
+  ...apiConfig
+});
+
+// Public health endpoint (no auth) for diagnostics & CORS validation
+const healthPath = sigintRest.root.addResource('health');
+healthPath.addMethod('GET', new LambdaIntegration(backend.health.resources.lambda), {
+  authorizationType: AuthorizationType.NONE
+});
 // organizationPath.addMethod('GET', new LambdaIntegration(backend.getOrganization.resources.lambda), apiConfig);
 // organizationPath.addMethod('PUT', new LambdaIntegration(backend.updateOrganization.resources.lambda), apiConfig);
 // organizationPath.addMethod('DELETE', new LambdaIntegration(backend.deleteOrganization.resources.lambda), apiConfig);

@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import type { Schema } from '../../../amplify/data/resource';
-import { getClient } from '../../amplifyClient';
+import { getClient, withUserAuth } from '../../amplifyClient';
+import { useApi } from '../useApi';
 
 type Category = Schema['Category']['type'];
 type PostCategory = Schema['PostCategory']['type'];
@@ -12,6 +13,7 @@ const categories = ref<Category[]>([]);
 const _postCategories = ref<PostCategory[]>([]);
 const loading = ref(false);
 const error = ref<string | null>(null);
+const { withErrorToast } = useApi();
 
 export function useCategories() {
   const rootCategories = computed(() => categories.value.filter(c => !c.parentId));
@@ -22,10 +24,8 @@ export function useCategories() {
     if (!options?.force && categories.value.length > 0) return;
     loading.value = true; error.value = null;
     try {
-      const { data } = await client.models.Category.list({
-        // Potentially expand for nested retrieval later
-      });
-      categories.value = data || [];
+  const result = await withErrorToast('Load Categories', () => client.models.Category.list(withUserAuth()));
+      categories.value = (result as any).data || [];
     } catch (e: any) {
       error.value = e.message || 'Failed to fetch categories';
     } finally { loading.value = false; }
@@ -37,13 +37,13 @@ export function useCategories() {
       if (!input.name) throw new Error('Name required');
       const slug = (input.slug || input.name || '')
         .toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
-      const { data } = await client.models.Category.create({
+      const { data } = await withErrorToast('Create Category', async () => client.models.Category.create({
         name: input.name!,
         slug,
         description: input.description,
         color: input.color,
         parentId: input.parentId
-      });
+      }, withUserAuth()));
       if (data) categories.value = [...categories.value, data];
       return data;
     } catch (e: any) {
@@ -59,7 +59,7 @@ export function useCategories() {
         updates.slug = (updates.slug || updates.name)
           ?.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
       }
-      const { data } = await client.models.Category.update({ id, ...updates });
+  const { data } = await withErrorToast('Update Category', () => client.models.Category.update({ id, ...updates }, withUserAuth()));
       const idx = categories.value.findIndex(c => c.id === id);
       if (idx !== -1 && data) categories.value[idx] = data;
       return data;
@@ -74,7 +74,7 @@ export function useCategories() {
     const prev = [...categories.value];
     try {
       categories.value = categories.value.filter(c => c.id !== id);
-      await client.models.Category.delete({ id });
+  await withErrorToast('Delete Category', () => client.models.Category.delete({ id }, withUserAuth()));
       return true;
     } catch (e: any) {
       categories.value = prev; // rollback
@@ -86,7 +86,7 @@ export function useCategories() {
   async function fetchPostCategories(postId: string) {
     loading.value = true; error.value = null;
     try {
-      const { data } = await client.models.PostCategory.list();
+  const { data } = await withErrorToast('Load Post Categories', () => client.models.PostCategory.list(withUserAuth()));
       const filtered = (data || []).filter(pc => pc.postId === postId);
       postCategories.value = filtered;
       return filtered;

@@ -1,11 +1,16 @@
-import { defineAuth } from '@aws-amplify/backend';
+import { defineAuth, defineFunction } from '@aws-amplify/backend';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin } from '../api/admin/resource';
-import { defineFunction } from '@aws-amplify/backend';
 
 // Post confirmation trigger for auto-activating pending organization
 export const postConfirmActivateOrg = defineFunction({
   name: 'post-confirm-activate-org',
   entry: '../functions/user-management/post-confirm/handler.ts'
+});
+
+// Pre token trigger for entitlement claims
+export const preTokenEntitlements = defineFunction({
+  name: 'pre-token-entitlements',
+  entry: '../functions/user-management/pre-token/handler.ts'
 });
 
 /**
@@ -18,8 +23,9 @@ export const auth = defineAuth({
   },
   triggers: {
     postConfirmation: postConfirmActivateOrg,
+    preTokenGeneration: preTokenEntitlements,
   },
-  groups: ["admin", "editor", "author"],
+  groups: ["admin", "editor", "author", "client"],
   userAttributes: {
     givenName: {
       required: false,

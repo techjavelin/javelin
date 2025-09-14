@@ -70,17 +70,98 @@
             <td>{{ formatAge(org.createdAt) }}</td>
             <td>{{ org.activatedAt ? formatDateTime(org.activatedAt) : '—' }}</td>
             <td class="actions-cell">
-              <div v-if="org.status === 'PENDING'" class="actions-stack">
-                <button class="mini" @click="resendInvite(org)" :disabled="actionLoading">Resend Invite</button>
-                <button class="mini secondary" @click="manualActivate(org)" :disabled="actionLoading">Manual Activate</button>
+              <div class="actions-row">
+                <template v-if="editingOrgId === org.id">
+                  <input v-model="editingName" class="mini-edit" :disabled="actionLoading" :placeholder="org.name" />
+                  <button
+                    class="icon-btn success"
+                    :disabled="actionLoading || !editingName.trim()"
+                    @click="saveEdit(org)"
+                    title="Save changes"
+                    aria-label="Save"
+                  >
+                    <font-awesome-icon :icon="['fas','floppy-disk']" />
+                  </button>
+                  <button
+                    class="icon-btn neutral"
+                    :disabled="actionLoading"
+                    @click="cancelEdit"
+                    title="Cancel edit"
+                    aria-label="Cancel"
+                  >
+                    <font-awesome-icon :icon="['fas','xmark']" />
+                  </button>
+                </template>
+                <template v-else>
+                  <button
+                    class="icon-btn neutral"
+                    :disabled="actionLoading"
+                    @click="startEdit(org)"
+                    title="Edit organization"
+                    aria-label="Edit organization"
+                  >
+                    <font-awesome-icon :icon="['fas','pencil']" />
+                  </button>
+                  <template v-if="deleteConfirmId === org.id">
+                    <button
+                      class="icon-btn danger"
+                      :disabled="actionLoading"
+                      @click="performDelete(org)"
+                      title="Confirm delete"
+                      aria-label="Confirm delete"
+                    >
+                      <font-awesome-icon :icon="['fas','check']" />
+                    </button>
+                    <button
+                      class="icon-btn neutral"
+                      :disabled="actionLoading"
+                      @click="deleteConfirmId = null"
+                      title="Cancel delete"
+                      aria-label="Cancel delete"
+                    >
+                      <font-awesome-icon :icon="['fas','xmark']" />
+                    </button>
+                  </template>
+                  <button
+                    v-else
+                    class="icon-btn danger"
+                    :disabled="actionLoading"
+                    @click="confirmDelete(org)"
+                    title="Delete organization"
+                    aria-label="Delete organization"
+                  >
+                    <font-awesome-icon :icon="['fas','trash']" />
+                  </button>
+                  <template v-if="org.status === 'PENDING'">
+                    <button
+                      class="icon-btn accent"
+                      :disabled="actionLoading"
+                      @click="resendInviteClick(org)"
+                      title="Resend invite"
+                      aria-label="Resend invite"
+                    >
+                      <font-awesome-icon :icon="['fas','paper-plane']" />
+                    </button>
+                    <button
+                      class="icon-btn warning"
+                      :disabled="actionLoading"
+                      @click="manualActivate(org)"
+                      title="Manual activate"
+                      aria-label="Manual activate"
+                    >
+                      <font-awesome-icon :icon="['fas','bolt']" />
+                    </button>
+                  </template>
+                </template>
+                <small v-if="inviteStatus[org.id] && org.status === 'PENDING'" class="invite-status" :class="inviteStatus[org.id].lastResult">{{ inviteStatus[org.id].message }}</small>
               </div>
-              <span v-else class="dash">—</span>
             </td>
             <td>{{ formatDate(org.createdAt) }}</td>
             <td>{{ formatDate(org.updatedAt) }}</td>
           </tr>
         </tbody>
       </table>
+      <p v-if="actionMessage" class="action-message">{{ actionMessage }}</p>
     </section>
   </DashboardLayout>
 </template>
@@ -89,18 +170,23 @@
 import { ref, onMounted } from 'vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import { useOrganizations } from '../composables/useOrganizations'
+import { buildAdminApiPath } from '../utils/apiBase'
+import { buildAuthHeaders } from '../utils/authHeaders'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faBuilding, faList, faSync } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faList, faSync, faPencil, faTrash, faFloppyDisk, faXmark, faPaperPlane, faBolt, faCheck } from '@fortawesome/free-solid-svg-icons'
 
-library.add(faBuilding, faList, faSync)
+library.add(faBuilding, faList, faSync, faPencil, faTrash, faFloppyDisk, faXmark, faPaperPlane, faBolt, faCheck)
 
-const { organizations, loading, error, creating, fetchOrganizations, createOrganization } = useOrganizations()
+const { organizations, loading, error, creating, fetchOrganizations, createOrganization, resendInvite, inviteStatus, updateOrganization, deleteOrganization } = useOrganizations()
 const name = ref('')
 const adminEmail = ref('')
 const createdMessage = ref('')
 const actionLoading = ref(false)
 const actionMessage = ref('')
+const editingOrgId = ref<string | null>(null)
+const editingName = ref('')
+const deleteConfirmId = ref<string | null>(null)
 
 onMounted(() => {
   fetchOrganizations()
@@ -116,24 +202,12 @@ async function handleCreate() {
   }
 }
 
-async function resendInvite(org: any) {
-  if (!org?.invitedAdminEmail) return
+async function resendInviteClick(org: any) {
   actionMessage.value = ''
   actionLoading.value = true
   try {
-    await fetch(import.meta.env.VITE_ADMIN_API_BASE + '/invite-admin-user', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: org.invitedAdminEmail,
-        organizationId: org.id,
-        organizationName: org.name,
-        sendEmail: true
-      })
-    })
-    actionMessage.value = 'Invite resent.'
-  } catch (e: any) {
-    actionMessage.value = 'Failed to resend invite.'
+    const ok = await resendInvite(org)
+    actionMessage.value = ok ? 'Invite resent.' : 'Invite failed.'
   } finally {
     actionLoading.value = false
   }
@@ -143,19 +217,66 @@ async function manualActivate(org: any) {
   actionMessage.value = ''
   actionLoading.value = true
   try {
-    const res = await fetch(import.meta.env.VITE_ADMIN_API_BASE + '/activate-organization-admin', {
+    const url = buildAdminApiPath('/activate-organization-admin')
+    if (url.includes('admin-api-misconfigured')) throw new Error('Admin API base missing')
+    const headers = await buildAuthHeaders({ 'Content-Type': 'application/json' })
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ organizationId: org.id, email: org.invitedAdminEmail })
     })
     if (res.ok) {
       await fetchOrganizations({ force: true })
       actionMessage.value = 'Organization manually activated.'
     } else {
-      actionMessage.value = 'Activation failed.'
+      actionMessage.value = res.status === 401 ? 'Not authorized (check login)' : 'Activation failed.'
     }
   } catch {
     actionMessage.value = 'Activation error.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+function startEdit(org: any) {
+  editingOrgId.value = org.id
+  editingName.value = org.name
+}
+
+async function saveEdit(org: any) {
+  if (!editingOrgId.value) return
+  actionMessage.value = ''
+  actionLoading.value = true
+  try {
+    const updated = await updateOrganization(org.id, { name: editingName.value })
+    if (updated) {
+      actionMessage.value = 'Organization updated.'
+      editingOrgId.value = null
+      editingName.value = ''
+    } else {
+      actionMessage.value = 'Update failed.'
+    }
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+function cancelEdit() {
+  editingOrgId.value = null
+  editingName.value = ''
+}
+
+function confirmDelete(org: any) {
+  deleteConfirmId.value = org.id
+  actionMessage.value = ''
+}
+
+async function performDelete(org: any) {
+  actionLoading.value = true
+  try {
+    const ok = await deleteOrganization(org.id, { confirm: true })
+    actionMessage.value = ok ? 'Organization deleted.' : 'Delete failed.'
+    deleteConfirmId.value = null
   } finally {
     actionLoading.value = false
   }
@@ -213,8 +334,30 @@ button.primary[disabled] { opacity:.6; cursor: not-allowed; }
 .actions-stack { display:flex; flex-direction:column; gap:.35rem; }
 .mini { font-size:.65rem; padding:.3rem .5rem; border:1px solid var(--color-border); background:var(--color-bg-alt); border-radius:4px; cursor:pointer; }
 .mini.secondary { background: var(--color-border-strong); }
+.mini.danger { background:#bb2d3b; color:#fff; border-color:#bb2d3b; }
 .mini[disabled] { opacity:.5; cursor:not-allowed; }
 .action-message { margin-top:.5rem; font-size:.7rem; color: var(--color-text-dim); }
+.invite-status { font-size:.6rem; opacity:.85; }
+.invite-status.success { color:#2d995b; }
+.invite-status.failure { color:#d33; }
+.mini-edit { font-size:.65rem; padding:.25rem .4rem; border:1px solid var(--color-border); border-radius:4px; }
+.confirm-delete { display:flex; gap:.25rem; align-items:center; flex-wrap:wrap; }
+.row-btns { display:flex; gap:.35rem; }
+.actions-row { display:flex; align-items:center; gap:.35rem; flex-wrap:nowrap; }
+.actions-cell { white-space:nowrap; }
+.icon-btn { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; border:1px solid transparent; background: var(--color-border-strong); color: var(--color-text); font-size:.75rem; cursor:pointer; transition: background .15s, color .15s, border-color .15s; }
+.icon-btn.neutral { background: var(--color-bg-alt); border-color: var(--color-border); }
+.icon-btn.neutral:hover:not([disabled]) { background: var(--color-border-strong); }
+.icon-btn.accent { background: var(--color-accent); color:#fff; }
+.icon-btn.accent:hover:not([disabled]) { filter: brightness(1.1); }
+.icon-btn.warning { background:#f59e0b; color:#151515; }
+.icon-btn.warning:hover:not([disabled]) { filter: brightness(1.1); }
+.icon-btn.success { background:#2d995b; color:#fff; }
+.icon-btn.success:hover:not([disabled]) { filter: brightness(1.1); }
+.icon-btn.danger { background:#bb2d3b; color:#fff; }
+.icon-btn.danger:hover:not([disabled]) { filter: brightness(1.05); }
+.icon-btn:focus-visible { outline:2px solid var(--color-accent); outline-offset:2px; }
+.icon-btn[disabled] { opacity:.55; cursor:not-allowed; }
 .loading-state, .empty-state { text-align:center; padding:1.5rem 0; color: var(--color-text-dim); }
 .loading-spinner { width:28px; height:28px; border:3px solid var(--color-border); border-top-color: var(--color-accent); border-radius:50%; margin:0 auto .75rem; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

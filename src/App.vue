@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import TopNav from './components/TopNav.vue'
 import CookiesWarning from './components/CookiesWarning.vue'
+import ToastHost from './components/ToastHost.vue'
 import { getCurrentUser, signOut, type AuthUser } from 'aws-amplify/auth'
 import '@aws-amplify/ui-vue/styles.css'
 
@@ -66,6 +67,10 @@ declare global {
 }
 
 const theme = ref('light')
+// Provide theme + setter so nested layouts/components don't rely on $root
+provide('themeRef', theme)
+provide('toggleThemeFn', toggleTheme)
+provide('setThemeFn', setTheme)
 
 // Theme management with cookie compliance
 function toggleTheme() {
@@ -90,6 +95,9 @@ function setTheme(newTheme: string) {
 }
 
 function showThemeConsentNotice() {
+  // TODO(ToastRefactor): Consider replacing this custom DOM notification with a standard toast
+  // via useToasts.add({ title: 'Theme Preference Not Saved', message: 'Accept functional cookies to persist theme.' })
+  // to unify notification UX. Deferred for now to keep minimal surface while toast system stabilizes.
   // Create a temporary notification
   const notification = document.createElement('div')
   notification.innerHTML = `
@@ -219,6 +227,7 @@ function handleClickOutside() {
 
 <template>
   <div class="javelin-app" @click="handleClickOutside" style="background: var(--color-bg-light); color: var(--color-text-light);">
+    <ToastHost />
     <!-- Top blue bar: only show on main site -->
     <div v-if="!route.meta.hideTopNav" class="top-bar bg-card" style="color: var(--color-text-light);">
       <span>Sign-up for updates now!</span>

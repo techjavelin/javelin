@@ -135,8 +135,15 @@ const routes = [
   },
   {
     path: '/admin/posts/new',
-    component: () => import('./pages/AdminPosts.vue'), // Replace with AdminPostNew.vue if you create one
+    component: () => import('./pages/AdminPostNew.vue'),
     name: 'admin-posts-new',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/admin/posts/:id/edit',
+    component: () => import('./pages/AdminPostEdit.vue'),
+    name: 'admin-posts-edit',
+    props: true,
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   {

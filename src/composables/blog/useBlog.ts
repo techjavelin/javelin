@@ -33,7 +33,10 @@ export function useBlog() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (options?: { force?: boolean }) => {
+    if (!options?.force && posts.value.length > 0) {
+      return; // avoid duplicate fetch unless forced
+    }
     loading.value = true;
     error.value = null;
     try {

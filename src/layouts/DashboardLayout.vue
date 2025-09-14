@@ -55,7 +55,7 @@
             </slot>
           </div>
           <div class="header-right-group">
-            <ThemeSwitcher :theme="$root.theme" @toggle-theme="$root.toggleTheme" />
+            <ThemeSwitcher :theme="currentTheme" @toggle-theme="handleThemeToggle" />
           </div>
         </div>
       </header>
@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import AppSidebar from '../components/nav/AppSidebar.vue'
@@ -93,6 +93,20 @@ function onLogout() {
 
 function handleAdminSidebarToggle(val) {
   sidebarCollapsed.value = val
+}
+
+// THEME: inject from root App.vue
+const themeRef = inject('themeRef', null)
+const toggleThemeFn = inject('toggleThemeFn', null)
+const setThemeFn = inject('setThemeFn', null)
+const currentTheme = computed(() => (themeRef && 'value' in themeRef ? themeRef.value : 'light'))
+
+function handleThemeToggle(nextTheme) {
+  if (setThemeFn) {
+    setThemeFn(nextTheme)
+  } else if (toggleThemeFn) {
+    toggleThemeFn()
+  }
 }
 </script>
 

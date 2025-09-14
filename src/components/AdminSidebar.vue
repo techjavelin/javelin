@@ -1,22 +1,23 @@
 <template>
   <aside class="admin-sidebar" :class="{ 'collapsed': isCollapsed }">
-    <!-- Toggle Button -->
-    <button 
-      @click="toggleSidebar" 
-      class="sidebar-toggle"
-      :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-    >
-      <font-awesome-icon :icon="isCollapsed ? 'chevron-right' : 'chevron-left'" />
-    </button>
-
-    <!-- Sidebar Header -->
+    <!-- Sidebar Header with Toggle Inside -->
     <div class="sidebar-header">
-      <div class="sidebar-logo" v-if="!isCollapsed">
-  <h2><font-awesome-icon :icon="faTachometerAlt" class="sidebar-logo-svg" /> Javelin Pulse Admin</h2>
+      <div class="logo-wrapper" :class="{ compact: isCollapsed }">
+        <div class="sidebar-logo" v-if="!isCollapsed">
+          <h2><font-awesome-icon :icon="faTachometerAlt" class="sidebar-logo-svg" /> Javelin Pulse Admin</h2>
+        </div>
+        <div class="sidebar-logo-compact" v-else>
+          <span><font-awesome-icon :icon="faTachometerAlt" class="sidebar-logo-svg" /> JP</span>
+        </div>
       </div>
-      <div class="sidebar-logo-compact" v-else>
-  <span><font-awesome-icon :icon="faTachometerAlt" class="sidebar-logo-svg" /> JP</span>
-      </div>
+      <button
+        @click="toggleSidebar"
+        class="sidebar-toggle"
+        :title="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        aria-label="Toggle sidebar"
+      >
+        <font-awesome-icon :icon="isCollapsed ? 'chevron-right' : 'chevron-left'" />
+      </button>
     </div>
 
     <!-- Navigation Menu -->
@@ -290,29 +291,25 @@ onMounted(async () => {
 
 /* Toggle Button */
 
-.sidebar-toggle {
-  position: absolute;
-  top: 1rem;
-  right: -15px;
-  width: 32px;
-  height: 32px;
-  background: transparent;
+ .sidebar-toggle {
+  width: 30px;
+  height: 30px;
+  background: rgba(255,255,255,0.08);
   color: #e2e8f0;
-  border: 2px solid #e2e8f0;
+  border: 1px solid rgba(255,255,255,0.25);
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 1001;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s;
 }
 
 
-.sidebar-toggle:hover {
+ .sidebar-toggle:hover {
   border-color: #60a5fa;
   color: #60a5fa;
-  transform: scale(1.1);
+  background: rgba(255,255,255,0.15);
 }
 
 .sidebar-toggle svg {
@@ -321,11 +318,18 @@ onMounted(async () => {
 }
 
 /* Header */
-.sidebar-header {
-  padding: 1.5rem 1rem 1rem;
+ .sidebar-header {
+  padding: 1rem 0.75rem 0.75rem 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
+ .logo-wrapper.compact h2 { display: none; }
+ .logo-wrapper.compact span { font-size: 1.25rem; }
+ .admin-sidebar.collapsed .sidebar-header { padding: 1rem 0.5rem 0.75rem 0.5rem; }
 
 .sidebar-logo h2 {
   margin: 0;

@@ -379,20 +379,21 @@ onMounted(async () => {
 }
 .stat-card {
   flex: 1;
-  background: #181e2a;
-  border: 1px solid #222a36;
+  background: var(--color-card-light);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.25rem 1rem;
   display: flex;
   flex-direction: row;
   align-items: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.25s;
   min-width: 160px;
+  color: var(--color-text-light);
 }
 .stat-card:hover {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 4px 16px rgba(52,144,250,0.12);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 }
 .stat-icon {
   display: flex;
@@ -965,11 +966,14 @@ onMounted(async () => {
   color: #e0e0e0;
 }
 
-[data-theme="dark"] .stat-card,
-[data-theme="dark"] .dashboard-section {
-  background: #1e1e1e;
-  border-color: #333;
-  color: #e0e0e0;
+[data-theme="dark"] .stat-card {
+  background: var(--color-card-light); /* swapped via dark theme vars */
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--color-text-light);
+  box-shadow: 0 4px 22px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05);
+}
+[data-theme="dark"] .stat-card:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.07);
 }
 
 [data-theme="dark"] .stat-content h3,

@@ -7,6 +7,9 @@ export const Organization = a.model({
   // Lifecycle Status
   status: a.enum(['PENDING','ACTIVE']).default('PENDING'),
   invitedAdminEmail: a.string(),
+  createdBy: a.string(),
+  activatedAt: a.datetime(),
+  activatedBy: a.string(),
 
   // Relationships
   scopes: a.hasMany('Scope', 'organizationId'),

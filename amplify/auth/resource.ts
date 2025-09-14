@@ -1,5 +1,12 @@
 import { defineAuth } from '@aws-amplify/backend';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin } from '../api/admin/resource';
+import { defineFunction } from '@aws-amplify/backend';
+
+// Post confirmation trigger for auto-activating pending organization
+export const postConfirmActivateOrg = defineFunction({
+  name: 'post-confirm-activate-org',
+  entry: '../functions/user-management/post-confirm/handler.ts'
+});
 
 /**
  * Define and configure your auth resource
@@ -8,6 +15,9 @@ import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, invit
 export const auth = defineAuth({
   loginWith: {
     email: true,
+  },
+  triggers: {
+    postConfirmation: postConfirmActivateOrg,
   },
   groups: ["admin", "editor", "author"],
   userAttributes: {

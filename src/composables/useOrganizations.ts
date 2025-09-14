@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { useAuth } from './useAuth'
 import type { Schema } from '../../amplify/data/resource'
 import { getClient } from '../amplifyClient'
 
@@ -29,12 +30,24 @@ export function useOrganizations() {
     try {
       if (!input.name || !input.adminEmail) throw new Error('Name and admin email required')
       const adminEmail = input.adminEmail.trim().toLowerCase()
+      // Guard: prevent duplicate pending org for same invited email
+  const existing = organizations.value.find((o: Schema['Organization']['type']) => o.status === 'PENDING' && (o.invitedAdminEmail || '').toLowerCase() === adminEmail)
+      if (existing) {
+        throw new Error('A pending organization already exists for that admin email.')
+      }
+      // Capture creator identity if available
+      let createdBy: string | undefined = undefined
+      try {
+        const { userEmail, isAuthenticated } = useAuth()
+        if (isAuthenticated.value && userEmail.value) createdBy = userEmail.value
+      } catch {}
       const { data } = await client.models.Organization.create({
         name: input.name,
         admins: [], // will be populated upon activation
         members: [],
         invitedAdminEmail: adminEmail,
         status: 'PENDING',
+        createdBy,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })

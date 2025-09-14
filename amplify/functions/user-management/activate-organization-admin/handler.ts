@@ -47,10 +47,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     const newAdmins = Array.from(new Set([...(org.admins || []), email]))
 
+    const now = new Date().toISOString()
     const updateRes = await client.models.Organization.update({
       id: org.id,
       admins: newAdmins,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      activatedAt: org.activatedAt || now,
+      activatedBy: org.activatedBy || email
     })
 
     return { statusCode: 200, headers, body: JSON.stringify({ message: 'Organization activated', organization: updateRes.data }) }

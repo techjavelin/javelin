@@ -47,6 +47,9 @@
             <th>Invited Admin</th>
             <th>Admins</th>
             <th>Members</th>
+            <th>Age</th>
+            <th>Activated At</th>
+            <th>Actions</th>
             <th>Created</th>
             <th>Updated</th>
           </tr>
@@ -64,6 +67,15 @@
             </td>
             <td><span class="badge" v-for="a in org.admins" :key="a">{{ a }}</span></td>
             <td><span class="badge secondary" v-for="m in org.members || []" :key="m">{{ m }}</span></td>
+            <td>{{ formatAge(org.createdAt) }}</td>
+            <td>{{ org.activatedAt ? formatDateTime(org.activatedAt) : '—' }}</td>
+            <td class="actions-cell">
+              <div v-if="org.status === 'PENDING'" class="actions-stack">
+                <button class="mini" @click="resendInvite(org)" :disabled="actionLoading">Resend Invite</button>
+                <button class="mini secondary" @click="manualActivate(org)" :disabled="actionLoading">Manual Activate</button>
+              </div>
+              <span v-else class="dash">—</span>
+            </td>
             <td>{{ formatDate(org.createdAt) }}</td>
             <td>{{ formatDate(org.updatedAt) }}</td>
           </tr>
@@ -87,6 +99,8 @@ const { organizations, loading, error, creating, fetchOrganizations, createOrgan
 const name = ref('')
 const adminEmail = ref('')
 const createdMessage = ref('')
+const actionLoading = ref(false)
+const actionMessage = ref('')
 
 onMounted(() => {
   fetchOrganizations()
@@ -100,6 +114,69 @@ async function handleCreate() {
     name.value = ''
     adminEmail.value = ''
   }
+}
+
+async function resendInvite(org: any) {
+  if (!org?.invitedAdminEmail) return
+  actionMessage.value = ''
+  actionLoading.value = true
+  try {
+    await fetch(import.meta.env.VITE_ADMIN_API_BASE + '/invite-admin-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: org.invitedAdminEmail,
+        organizationId: org.id,
+        organizationName: org.name,
+        sendEmail: true
+      })
+    })
+    actionMessage.value = 'Invite resent.'
+  } catch (e: any) {
+    actionMessage.value = 'Failed to resend invite.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function manualActivate(org: any) {
+  actionMessage.value = ''
+  actionLoading.value = true
+  try {
+    const res = await fetch(import.meta.env.VITE_ADMIN_API_BASE + '/activate-organization-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ organizationId: org.id, email: org.invitedAdminEmail })
+    })
+    if (res.ok) {
+      await fetchOrganizations({ force: true })
+      actionMessage.value = 'Organization manually activated.'
+    } else {
+      actionMessage.value = 'Activation failed.'
+    }
+  } catch {
+    actionMessage.value = 'Activation error.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+function formatDateTime(dateString?: string | null) {
+  if (!dateString) return '—'
+  try { return new Date(dateString).toLocaleString() } catch { return dateString }
+}
+
+function formatAge(createdAt?: string | null) {
+  if (!createdAt) return '—'
+  const start = new Date(createdAt).getTime()
+  if (isNaN(start)) return '—'
+  const diffMs = Date.now() - start
+  const diffDays = Math.floor(diffMs / 86400000)
+  if (diffDays > 0) return diffDays + 'd'
+  const diffHours = Math.floor(diffMs / 3600000)
+  if (diffHours > 0) return diffHours + 'h'
+  const diffMinutes = Math.floor(diffMs / 60000)
+  return diffMinutes + 'm'
 }
 
 function formatDate(dateString?: string | null) {
@@ -132,6 +209,12 @@ button.primary[disabled] { opacity:.6; cursor: not-allowed; }
 .status-pill.active { background: #2d995b; color:#fff; }
 .invited-email { font-size:.7rem; background: var(--color-border-strong); padding:.15rem .4rem; border-radius:10px; }
 .activated-email { font-size:.7rem; background:#2d995b; color:#fff; padding:.15rem .4rem; border-radius:10px; }
+.actions-cell { min-width:140px; }
+.actions-stack { display:flex; flex-direction:column; gap:.35rem; }
+.mini { font-size:.65rem; padding:.3rem .5rem; border:1px solid var(--color-border); background:var(--color-bg-alt); border-radius:4px; cursor:pointer; }
+.mini.secondary { background: var(--color-border-strong); }
+.mini[disabled] { opacity:.5; cursor:not-allowed; }
+.action-message { margin-top:.5rem; font-size:.7rem; color: var(--color-text-dim); }
 .loading-state, .empty-state { text-align:center; padding:1.5rem 0; color: var(--color-text-dim); }
 .loading-spinner { width:28px; height:28px; border:3px solid var(--color-border); border-top-color: var(--color-accent); border-radius:50%; margin:0 auto .75rem; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

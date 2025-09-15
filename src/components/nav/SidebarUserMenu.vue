@@ -14,10 +14,29 @@
           <div class="user-name">{{ userName }}</div>
           <div class="user-email">{{ userEmail }}</div>
         </div>
-        <div class="user-menu-actions">
+        <ul class="action-list">
+          <li>
+            <router-link to="/profile" class="action-link">
+              <font-awesome-icon :icon="['fas','user']" class="act-ic" /> Profile
+            </router-link>
+          </li>
+          <li>
+            <router-link to="/preferences" class="action-link">
+              <font-awesome-icon :icon="['fas','cog']" class="act-ic" /> Preferences
+            </router-link>
+          </li>
+          <li>
+            <a @click="exitHome" class="action-link">
+              <font-awesome-icon :icon="['fas','arrow-left']" class="act-ic" /> Exit
+            </a>
+          </li>
+          <li>
+            <a @click="onLogout" class="action-link danger">
+              <font-awesome-icon :icon="['fas','sign-out-alt']" class="act-ic" /> Logout
+            </a>
+          </li>
           <slot />
-          <a class="logout-link" @click="onLogout">Logout</a>
-        </div>
+        </ul>
       </div>
     </transition>
   </div>
@@ -25,13 +44,13 @@
 
 <script setup lang="ts">
 import { defineProps, ref } from 'vue'
+import { useRouter } from 'vue-router'
 const props = defineProps<{ userName: string, userEmail: string }>()
 const menuOpen = ref(false)
+const router = useRouter()
 function toggleMenu() { menuOpen.value = !menuOpen.value }
-function onLogout() {
-  // Emit logout event for parent to handle
-  window.dispatchEvent(new CustomEvent('sidebar-logout'))
-}
+function onLogout() { window.dispatchEvent(new CustomEvent('sidebar-logout')) }
+function exitHome(){ router.push('/') }
 </script>
 
 <style scoped>
@@ -78,26 +97,12 @@ function onLogout() {
   .user-name {
     font-weight: 600;
   }
-  .user-menu-actions {
-    margin-top: 0.5rem;
-    width: 100%;
-  }
-  .logout-link {
-    display: block;
-    color: var(--color-primary);
-    background: var(--color-card-light);
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem;
-    margin-top: 0.5rem;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.15s;
-    text-decoration: none;
-  }
-  .logout-link:hover {
-    background: var(--color-primary);
-    color: #fff;
-  }
+  .action-list { list-style:none; margin:.4rem 0 0; padding:0; display:flex; flex-direction:column; gap:.25rem; }
+  .action-link { display:flex; align-items:center; gap:.55rem; font-size:.8rem; padding:.45rem .55rem; border-radius:6px; color:#e2e8f0; text-decoration:none; background:#20263a; transition:background .15s,color .15s; }
+  .action-link:hover { background:#2b3245; color:#fff; }
+  .action-link.danger { background:#3b1f24; color:#fca5a5; }
+  .action-link.danger:hover { background:#4c1d1d; color:#fff; }
+  .act-ic { width:14px; }
   .fade-enter-active, .fade-leave-active {
     transition: opacity 0.2s;
   }

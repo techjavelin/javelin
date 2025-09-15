@@ -1,75 +1,69 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
-import type { Schema } from '../../amplify/data/resource'
-import { withAuth } from '../amplifyClient'
-import { normalizeError } from './useError'
+import type { Schema } from '@/../amplify/data/resource'
+import { useAuthorization } from './useAuthorization'
 
 const client = generateClient<Schema>()
 
 export function useArtifacts() {
   const artifacts = ref<Schema['ArtifactLink']['type'][]>([])
   const loading = ref(false)
-  const error = ref('')
+  const error = ref<string | null>(null)
+  const { has } = useAuthorization()
 
-  async function list(params: { engagementId?: string; provider?: string } = {}) {
-    loading.value = true
-    error.value = ''
+  async function listByEngagement(engagementId: string, params: { status?: string; limit?: number; nextToken?: string } = {}) {
+    loading.value = true; error.value = null
     try {
-      const res = await client.models.ArtifactLink.list(withAuth({}))
-      let data = res.data || []
-      if (params.engagementId) data = data.filter(a => a.engagementId === params.engagementId)
-      if (params.provider) data = data.filter(a => a.provider === params.provider)
-      artifacts.value = data
-    } catch (e) {
-      error.value = normalizeError(e,'Failed to load artifacts').message
-    } finally {
-      loading.value = false
-    }
+      const filter: any = { engagementId: { eq: engagementId } }
+      if (params.status) filter.status = { eq: params.status }
+      const resp = await client.models.ArtifactLink.list({ filter, limit: params.limit, nextToken: params.nextToken })
+      artifacts.value = resp.data || []
+      return { nextToken: resp.nextToken }
+    } catch (e: any) {
+      error.value = e.message || 'Failed to load artifacts'
+      return { nextToken: undefined }
+    } finally { loading.value = false }
   }
 
-  async function create(input: Partial<Schema['ArtifactLink']['type']>) {
+  async function create(input: Omit<Schema['ArtifactLink']['type'],'id'|'createdAt'|'updatedAt'> & { engagementId: string; organizationId: string; provider: any; externalId: string; name: string }) {
+    if (!has('ENG.MANAGE', { engagementId: input.engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value = true; error.value = null
     try {
-      const res = await client.models.ArtifactLink.create(withAuth({
-        provider: input.provider!,
-        externalId: input.externalId || `ext_${Math.random().toString(36).slice(2,10)}`,
-        name: input.name || 'Untitled Artifact',
-        description: input.description,
-        documentType: input.documentType,
-        status: input.status,
-        engagementId: input.engagementId,
-        organizationId: input.organizationId,
-        metadata: input.metadata || {}
-      }))
-      if (res.data) artifacts.value.push(res.data)
-      return res.data
-    } catch (e) {
-      error.value = normalizeError(e,'Failed to create artifact').message
-      return null
-    }
+      const resp = await client.models.ArtifactLink.create({ ...input })
+      return resp.data || null
+    } catch (e: any) {
+      error.value = e.message || 'Failed to create artifact'
+      throw e
+    } finally { loading.value = false }
   }
 
-  async function update(id: string, patch: Partial<Schema['ArtifactLink']['type']>) {
+  async function update(id: string, engagementId: string, patch: Partial<Schema['ArtifactLink']['type']>) {
+    if (!has('ENG.MANAGE', { engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value = true; error.value = null
     try {
-      const res = await client.models.ArtifactLink.update(withAuth({ id, ...patch }))
-      if (res.data) {
-        const idx = artifacts.value.findIndex(a => a.id === id)
-        if (idx >= 0) artifacts.value[idx] = res.data
-      }
-      return res.data
-    } catch (e) {
-      error.value = normalizeError(e,'Failed to update artifact').message
-      return null
-    }
+      const resp = await client.models.ArtifactLink.update({ id, ...patch })
+      return resp.data || null
+    } catch (e: any) {
+      error.value = e.message || 'Failed to update artifact'
+      throw e
+    } finally { loading.value = false }
   }
 
-  async function remove(id: string) {
+  // Backward-compatible generic list alias expected by dashboard pages
+  async function list(params: { engagementId?: string; provider?: string; limit?: number; nextToken?: string } = {}) {
+    if (params.engagementId) return listByEngagement(params.engagementId, params)
+    loading.value = true; error.value = null
     try {
-      await client.models.ArtifactLink.delete(withAuth({ id }))
-      artifacts.value = artifacts.value.filter(a => a.id !== id)
-    } catch (e) {
-      error.value = normalizeError(e,'Failed to delete artifact').message
-    }
+      const filter: any = {}
+      if (params.provider) filter.provider = { eq: params.provider }
+      const resp = await client.models.ArtifactLink.list({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken })
+      artifacts.value = resp.data || []
+      return { nextToken: resp.nextToken }
+    } catch (e: any) {
+      error.value = e.message || 'Failed to load artifacts'
+      return { nextToken: undefined }
+    } finally { loading.value = false }
   }
 
-  return { artifacts, loading, error, list, create, update, remove }
+  return { artifacts, loading, error, listByEngagement, list, create, update }
 }

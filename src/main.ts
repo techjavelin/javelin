@@ -40,6 +40,7 @@ import {
   faTimes,
   faTags
 } from '@fortawesome/free-solid-svg-icons';
+import { faShieldHalved, faBriefcase, faBug, faPlusCircle, faCog, faArrowLeft, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import { faTwitter, faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faLifeRing } from '@fortawesome/free-solid-svg-icons';
 
@@ -67,6 +68,13 @@ library.add(
   faCheck,
   faTimes,
   faTags,
+  faShieldHalved,
+  faBriefcase,
+  faBug,
+  faPlusCircle,
+  faCog,
+  faArrowLeft,
+  faSignOutAlt,
   faTwitter,
   faLinkedin,
   faGithub,

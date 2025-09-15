@@ -26,6 +26,5 @@ export const Application = a.model({
   .authorization(allow => [
     allow.group('admin'),
     allow.authenticated().to(['read']),
-    // Simplified owner-based rule (predicate .when not supported in current auth DSL)
-    allow.ownersDefinedIn('createdBy').to(['update','delete'])
+    // Removed ownersDefinedIn('createdBy') to avoid implicit field collision; enforcement handled at service layer
   ]);

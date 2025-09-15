@@ -270,6 +270,8 @@ const routes = [
     path: '/pentester',
     component: () => import('./pages/PentesterDashboard.vue'),
     name: 'pentester-dashboard',
+    // Admins inherit pentester capabilities via useRoles (isPentester true if admin)
+    alias: ['/pentester/dashboard'],
     meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
   },{
     path: '/pentester/engagements',
@@ -298,6 +300,24 @@ const routes = [
     name: 'pentester-vuln-library',
     meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
   }
+  ,{
+    path: '/pulse/sigint',
+    component: () => import('./pages/SigIntLanding.vue'),
+    name: 'pulse-sigint-landing'
+  }
+  ,{
+    path: '/engagements',
+    component: () => import('./pages/EngagementsList.vue'),
+    name: 'engagements-list',
+    meta: { requiresAuth: true, hideTopNav: true }
+  }
+  ,{
+    path: '/engagements/:id',
+    component: () => import('./pages/EngagementDetail.vue'),
+    name: 'engagement-detail',
+    props: true,
+    meta: { requiresAuth: true, hideTopNav: true }
+  }
 ];
 
 const router = createRouter({
@@ -324,6 +344,7 @@ router.beforeEach(async (to, from, next) => {
 
       const { isAdmin, isPentester } = useRoles()
 
+      // Admin inherits pentester; isPentester already true for admin in useRoles
       if (requiresAdmin && !isAdmin.value) {
         console.warn('Admin access required')
         next('/login')
@@ -331,7 +352,7 @@ router.beforeEach(async (to, from, next) => {
       }
 
       if (requiresPentester && !isPentester.value) {
-        console.warn('Pentester access required')
+        console.warn('Pentester (or admin) access required')
         next('/login')
         return
       }

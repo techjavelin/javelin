@@ -1,0 +1,28 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="gradFlame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fde68a" />
+      <stop offset="50%" stop-color="#fb923c" />
+      <stop offset="100%" stop-color="#dc2626" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <path d="M120 20c-24 30-36 72-36 110 0 28 8 52 36 90 28-38 36-62 36-90 0-38-12-80-36-110z" fill="url(#gradBody)" stroke="#1e3a8a" stroke-width="3" />
+    <circle cx="120" cy="100" r="22" fill="#0f172a" stroke="#93c5fd" stroke-width="4" />
+    <circle cx="120" cy="100" r="10" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2" />
+    <path d="M120 220c-10-14-18-30-22-46l22 10 22-10c-4 16-12 32-22 46z" fill="url(#gradFlame)" />
+    <path d="M90 130l-28 18 10 12 30-12c-4-6-8-12-12-18z" fill="#1e3a8a" />
+    <path d="M150 130l28 18-10 12-30-12c4-6 8-12 12-18z" fill="#1e3a8a" />
+  </g>
+</svg>

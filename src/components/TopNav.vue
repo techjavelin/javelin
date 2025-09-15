@@ -10,12 +10,7 @@
       to="/services"
       mode="both"
     />
-    <NavDropdown
-      :items="solutionsMenuItems"
-      label="Solutions"
-      to="/javelin-pulse"
-      mode="both"
-    />
+    <router-link to="/javelin-pulse" class="nav-link">Pulse</router-link>
     
   <router-link to="/blog" class="nav-link">Blog</router-link>
 
@@ -173,10 +168,7 @@ const servicesMenuItems = [
   { label: 'Fractional Leadership', to: '/services#leadership' }
 ]
 
-// Solutions menu configuration
-const solutionsMenuItems = [
-  { label: 'Javelin Pulse', to: '/javelin-pulse' }
-]
+// Removed solutions dropdown in favor of direct Pulse link
 
 // Methods
 function toggleUserMenu() {

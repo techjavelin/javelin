@@ -247,3 +247,28 @@ Why `ArtifactLink` vs distinct document models? To unify linkage across multiple
 * Automated report generation pipeline referencing templates + findings + artifact metadata.
 
 ---
+
+## Custom Secure User Profile Mutations
+
+Owner-style auth rules for `UserProfile` caused implicit field collisions with newer role assignment models. To avoid schema assembly failures while preserving least-privilege semantics, profile update & delete are now routed through custom Lambda resolvers:
+
+Mutations (GraphQL):
+```
+updateUserProfileSecure(input: { username: String!, displayName: String, avatarUrl: AWSURL, bio: String, website: AWSURL }): UserProfile
+deleteUserProfileSecure(username: String!): { deleted: Boolean, username: String }
+```
+
+Enforcement logic (Lambda handlers):
+1. Extract identity (username, groups) from request context.
+2. Permit if (admin group) OR (identity.username === target username).
+3. Reject with `Unauthorized` otherwise.
+4. Whitelist allowed mutable fields to prevent privilege escalation.
+
+Frontend integration: `src/composables/useUserProfile.ts` uses raw GraphQL operations (temporary) until we either (a) reintroduce safe owner predicates or (b) map these into generated client operations.
+
+Future improvements:
+* Emit audit events to `EntitlementAudit` on profile changes.
+* Cache & optimistic UI updates.
+* Replace custom mutations if Amplify adds predicate owner auth without implicit field injection.
+
+Rationale: Keeps schema consistent, removes hidden implicit fields, and centralizes mutation-side authorization for clearer audit and extension points.

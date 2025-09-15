@@ -2,6 +2,7 @@ import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin } from './api/admin/resource';
+import { updateUserProfileSecure, deleteUserProfileSecure } from './api/profile/resource';
 import { health } from './api/health/resource';
 import { storage } from './storage/resource';
 // import { createOrganization, deleteOrganization, getOrganization, inviteUserToOrganization, listOrganizations, updateOrganization } from './api/sigint/Organization.api';
@@ -22,6 +23,8 @@ const backend = defineBackend({
   resetUserPassword,
   inviteAdminUser,
   activateOrganizationAdmin,
+  updateUserProfileSecure,
+  deleteUserProfileSecure,
   health,
   createOrganization: OrganizationAPI.create,
   // deleteOrganization: OrganizationAPI.delete,
@@ -142,6 +145,10 @@ backend.addOutput({
         region: Stack.of(api).region,
         apiName: sigintRest.restApiName
       }
+    },
+    GRAPHQL: {
+      endpoint: (data as any).resources?.graphql?.url ?? 'https://cct4ibicz5f3piqqte3kaiwlce.appsync-api.us-east-1.amazonaws.com/graphql',
+      region: Stack.of(api).region
     }
   }
 });

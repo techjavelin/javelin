@@ -10,9 +10,10 @@
       </div>
     </section>
     <section class="pulse-cta">
-      <button class="pulse-btn" @click="showModal = true">Request Early Access</button>
+      <button v-if="canLaunchPulse" class="pulse-btn" @click="goToLaunchpad">Launch Pulse Platform</button>
+      <button v-else class="pulse-btn" @click="showModal = true">Request Early Access</button>
     </section>
-    <PulseInviteModal :show="showModal" @close="showModal = false" v-if="showModal" />
+    <PulseInviteModal :show="showModal" @close="showModal = false" v-if="showModal && !canLaunchPulse" />
     <section class="pulse-features pulse-card">
       <div class="feature">
         <div class="feature-graphic">
@@ -48,11 +49,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import PageWrapper from '@/components/PageWrapper.vue'
 import PulseInviteModal from '@/components/PulseInviteModal.vue'
+import { useAuth } from '@/composables/useAuth'
 
 const showModal = ref(false)
+const { userGroups, loadCurrentUser } = useAuth()
+const isAdmin = computed(() => userGroups.value.includes('admin'))
+const isPulseUser = computed(() => userGroups.value.includes('pulse'))
+const canLaunchPulse = computed(() => isAdmin.value || isPulseUser.value)
+
+onMounted(() => {
+  loadCurrentUser().catch(() => {})
+})
+
+function goToLaunchpad() {
+  window.location.href = '/pulse'
+}
 </script>
 
 <style scoped>

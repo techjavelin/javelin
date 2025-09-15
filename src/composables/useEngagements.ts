@@ -1,89 +1,92 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
-import type { Schema } from '../../amplify/data/resource'
-import { withAuth } from '../amplifyClient'
-import { normalizeError } from './useError'
+import type { Schema } from '@/../amplify/data/resource'
+import { useAuthorization } from './useAuthorization'
 
 const client = generateClient<Schema>()
 
-export function useEngagements() {
-  const engagements = ref<Schema['Engagement']['type'][]>([])
-  const currentEngagement = ref<Schema['Engagement']['type'] | null>(null)
-  const loading = ref(false)
-  const error = ref<string>('')
+export interface UseEngagementsApi {
+  // Canonical new API
+  items: ReturnType<typeof ref<Schema['Engagement']['type'][]>>
+  loading: ReturnType<typeof ref<boolean>>
+  error: ReturnType<typeof ref<string | null>>
+  list: (params?: { organizationId?: string; phase?: string; status?: string; limit?: number; nextToken?: string }) => Promise<{ nextToken?: string | null }>
+  get: (id: string) => Promise<Schema['Engagement']['type'] | null>
+  updateState: (id: string, data: Partial<Pick<Schema['Engagement']['type'],'phase'|'status'>>) => Promise<Schema['Engagement']['type'] | null>
+  primeContext: (ctx: any) => Promise<void>
+  // Backward-compat (legacy pages expect these)
+  engagements: ReturnType<typeof ref<Schema['Engagement']['type'][]>>
+  create: (input: Partial<Schema['Engagement']['type']>) => Promise<Schema['Engagement']['type'] | null>
+}
 
-  async function list(params: { organizationId?: string; phase?: string; status?: string } = {}) {
-    loading.value = true
-    error.value = ''
+export function useEngagements(): UseEngagementsApi {
+  const items = ref<Schema['Engagement']['type'][]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+  const { has, primeContext } = useAuthorization()
+
+  async function list(params: { organizationId?: string; phase?: string; status?: string; limit?: number; nextToken?: string } = {}) {
+    loading.value = true; error.value = null
     try {
-      // Basic list then filter client-side; could be replaced with predicate query when supported
-      const res = await client.models.Engagement.list(withAuth({}))
-      let data = res.data || []
-      if (params.organizationId) data = data.filter(e => e.organizationId === params.organizationId)
-      if (params.phase) data = data.filter(e => e.phase === params.phase)
-      if (params.status) data = data.filter(e => e.status === params.status)
-      engagements.value = data
-    } catch (e:any) {
-      error.value = normalizeError(e, 'Failed to load engagements').message
-    } finally {
-      loading.value = false
-    }
+      const filter: any = {}
+      if (params.organizationId) filter.organizationId = { eq: params.organizationId }
+      if (params.phase) filter.phase = { eq: params.phase }
+      if (params.status) filter.status = { eq: params.status }
+      const resp = await client.models.Engagement.list({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken })
+      items.value = resp.data || []
+      return { nextToken: resp.nextToken }
+    } catch (e: any) {
+      error.value = e.message || 'Failed to list engagements'
+      return { nextToken: undefined }
+    } finally { loading.value = false }
   }
 
   async function get(id: string) {
-    loading.value = true
-    error.value = ''
+    loading.value = true; error.value = null
     try {
-      const res = await client.models.Engagement.get(withAuth({ id }))
-      currentEngagement.value = res.data ?? null
-      return currentEngagement.value
-    } catch (e:any) {
-      error.value = normalizeError(e,'Failed to load engagement').message
+      const resp = await client.models.Engagement.get({ id })
+      return resp.data || null
+    } catch (e: any) {
+      error.value = e.message || 'Failed to load engagement'
       return null
-    } finally {
-      loading.value = false
-    }
+    } finally { loading.value = false }
   }
 
+  async function updateState(id: string, data: Partial<Pick<Schema['Engagement']['type'],'phase'|'status'>>) {
+    if (!has('ENG.MANAGE', { engagementId: id })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value = true; error.value = null
+    try {
+      const resp = await client.models.Engagement.update({ id, ...data })
+      return resp.data || null
+    } catch (e: any) {
+      error.value = e.message || 'Failed to update engagement'
+      throw e
+    } finally { loading.value = false }
+  }
+
+  // Backward-compatible create (minimal) with capability check. Extend later for applications linking etc.
   async function create(input: Partial<Schema['Engagement']['type']>) {
+    loading.value = true; error.value = null
     try {
-      const res = await client.models.Engagement.create(withAuth({
-        code: input.code!,
-        title: input.title!,
-        organizationId: input.organizationId!,
-        phase: input.phase || 'PLANNING',
-        status: input.status || 'ACTIVE'
-      }))
-      if (res.data) engagements.value.push(res.data)
-      return res.data
-    } catch (e:any) {
-      error.value = normalizeError(e,'Failed to create engagement').message
-      return null
-    }
-  }
-
-  async function update(id: string, patch: Partial<Schema['Engagement']['type']>) {
-    try {
-      const res = await client.models.Engagement.update(withAuth({ id, ...patch }))
-      if (res.data) {
-        const idx = engagements.value.findIndex(e => e.id === id)
-        if (idx >= 0) engagements.value[idx] = res.data
+      if (!has('ENG.MANAGE', { organizationId: (input as any).organizationId })) throw new Error('Forbidden: ENG.MANAGE required')
+      const base: any = {
+        title: input.title || 'Untitled Engagement',
+        code: input.code || `ENG-${Date.now()}`,
+        organizationId: (input as any).organizationId,
+        phase: (input as any).phase || 'PLANNING',
+        status: (input as any).status || 'ACTIVE'
       }
-      return res.data
-    } catch (e:any) {
-      error.value = normalizeError(e,'Failed to update engagement').message
+      const resp = await client.models.Engagement.create(base)
+      if (resp.data) items.value.push(resp.data)
+      return resp.data || null
+    } catch (e: any) {
+      error.value = e.message || 'Failed to create engagement'
       return null
-    }
+    } finally { loading.value = false }
   }
 
-  async function remove(id: string) {
-    try {
-      await client.models.Engagement.delete(withAuth({ id }))
-      engagements.value = engagements.value.filter(e => e.id !== id)
-    } catch (e:any) {
-      error.value = normalizeError(e,'Failed to delete engagement').message
-    }
-  }
+  // Expose legacy alias 'engagements'
+  const engagements = items
 
-  return { engagements, currentEngagement, loading, error, list, get, create, update, remove }
+  return { items, engagements, loading, error, list, get, updateState, primeContext, create }
 }

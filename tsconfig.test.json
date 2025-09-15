@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/../amplify/*": ["./amplify/*"]
+    }
+  },
+  "include": ["tests/**/*.ts", "src/**/*.ts", "src/**/*.vue", "scripts/**/*.ts"],
+  "exclude": ["node_modules"]
+}

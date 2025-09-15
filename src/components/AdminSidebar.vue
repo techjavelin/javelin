@@ -170,6 +170,12 @@
               <span class="nav-text" v-if="!isCollapsed">Vuln Library</span>
             </router-link>
           </li>
+          <li class="nav-item">
+            <router-link to="/engagements" class="nav-link">
+              <span class="nav-icon"><font-awesome-icon :icon="faFileAlt" class="sidebar-png-icon" /></span>
+              <span class="nav-text" v-if="!isCollapsed">Pentest Portal</span>
+            </router-link>
+          </li>
         </template>
       </ul>
     </nav>
@@ -184,21 +190,16 @@
 
     <!-- User Info -->
     <div class="sidebar-footer">
-      <div class="user-info clickable" v-if="!isCollapsed" @click="userMenuVisible = !userMenuVisible">
-        <div class="user-avatar">
-          <span>{{ userInitials }}</span>
-        </div>
-        <div class="user-details">
-          <div class="user-name">{{ userName }}</div>
-          <div class="user-role">Administrator</div>
-        </div>
-        <UserContextMenu :visible="userMenuVisible" />
-      </div>
-      <div class="user-info-compact" v-else>
-        <div class="user-avatar">
-          <span>{{ userInitials }}</span>
-        </div>
-      </div>
+      <UserFooterPanel
+        :userName="userName"
+        :userEmail="''"
+        roleLabel="Administrator"
+        :compact="isCollapsed"
+      >
+        <template #menu>
+          <UserContextMenu :visible="userMenuVisible" />
+        </template>
+      </UserFooterPanel>
     </div>
   </aside>
 </template>
@@ -209,6 +210,7 @@ import { useRoles } from '../composables/useRoles'
 import { getCurrentUser } from 'aws-amplify/auth'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import UserContextMenu from './UserContextMenu.vue'
+import UserFooterPanel from './UserFooterPanel.vue'
 const userMenuVisible = ref(false)
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {

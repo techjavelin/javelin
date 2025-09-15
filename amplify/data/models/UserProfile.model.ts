@@ -12,7 +12,9 @@ export const UserProfile = a.model({
   updatedAt: a.datetime(),
 })
 .authorization((allow) => [
-  allow.owner().to(['read', 'update', 'delete']),
+  // NOTE: Removed ownersDefinedIn('username') due to implicit field collision in schema build.
+  // TODO: Reintroduce fine-grained self-access using a future predicate-capable rule or a
+  // dedicated resolver layer checking { identity.username === item.username }.
   allow.group('admin').to(['create', 'read', 'update', 'delete']),
   allow.publicApiKey().to(['read'])
 ]);

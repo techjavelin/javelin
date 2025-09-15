@@ -84,10 +84,6 @@
   </DashboardLayout>
 </template>
 <script setup lang="ts">
-// Provide slot type to silence TS complaining about named slot usage
-// (Vue's implicit slots in SFC sometimes need manual defineSlots in strict TS)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const slots = defineSlots<{ header?: any }>()
 import { reactive, ref, computed, onMounted } from 'vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import { useEngagements } from '../composables/useEngagements'

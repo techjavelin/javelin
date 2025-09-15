@@ -14,14 +14,14 @@ export const migration_002_add_pulse_products: MigrationDef = {
     async function ensureProduct(key: string, name: string, description: string){
       const existing = await client.models.Product.list({ filter: { key: { eq: key } }, authMode: 'userPool' });
       if((existing.data || []).some(p => p?.key === key)) return;
-      await client.models.Product.create({ key, name, description, active: true, authMode: 'userPool' });
+      await client.models.Product.create({ key, name, description, active: true }, { authMode: 'userPool' });
     }
 
     // Helper for ServiceLevel
     async function ensureServiceLevel(key: string, name: string, description: string, rank: number){
       const existing = await client.models.ServiceLevel.list({ filter: { key: { eq: key } }, authMode: 'userPool' });
       if((existing.data || []).some(sl => sl?.key === key)) return;
-      await client.models.ServiceLevel.create({ key, name, description, rank, active: true, authMode: 'userPool' });
+      await client.models.ServiceLevel.create({ key, name, description, rank, active: true }, { authMode: 'userPool' });
     }
 
     // Products

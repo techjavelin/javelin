@@ -9,6 +9,7 @@ export const migration_001_seed_default_metadata: MigrationDef = {
   bodyHash: 'application_user_types_v1',
   up: async () => {
     const client = generateClient<Schema>();
+    console.log('[migration 001] Starting seed_default_metadata');
     const defaultApplicationTypes: Array<Pick<Schema['ApplicationType']['type'],'key'|'label'|'description'|'rank'>> = [
       { key: 'web_app', label: 'Web Application', description: 'Browser-accessed application', rank: 1 },
       { key: 'api_service', label: 'API / Service', description: 'Backend or service API', rank: 2 },
@@ -38,7 +39,27 @@ export const migration_001_seed_default_metadata: MigrationDef = {
       }
     }
   
-    await ensure(defaultApplicationTypes, () => client.models.ApplicationType.list({ authMode: 'userPool' }), (input)=> client.models.ApplicationType.create({ ...input, authMode: 'userPool' }))
-    await ensure(defaultUserTypes, () => client.models.UserType.list({ authMode: 'userPool' }), (input)=> client.models.UserType.create({ ...input, authMode: 'userPool' }))
+    // Use function resource-based auth (run-migrations) instead of userPool tokens when seeding.
+    // This avoids needing a Cognito identity inside the lambda environment. Frontend still enforces userPool.
+    try {
+      console.log('[migration 001] Ensuring ApplicationType defaults');
+      await ensure(defaultApplicationTypes, () => client.models.ApplicationType.list({ authMode: 'userPool' }), async (input)=> {
+        console.log('[migration 001] Creating ApplicationType', input.key);
+        return client.models.ApplicationType.create({ ...input }, { authMode: 'userPool' });
+      })
+      console.log('[migration 001] Ensuring UserType defaults');
+      await ensure(defaultUserTypes, () => client.models.UserType.list({ authMode: 'userPool' }), async (input)=> {
+        console.log('[migration 001] Creating UserType', input.key);
+        return client.models.UserType.create({ ...input }, { authMode: 'userPool' });
+      })
+      console.log('[migration 001] Seed complete');
+    } catch (e:any) {
+      if(/No federated jwt/i.test(e?.message || '')) {
+        console.warn('[migration 001] Skipping metadata seed - no federated JWT available (will require manual seed via admin UI)');
+        return;
+      }
+      console.error('[migration 001] Error seeding metadata', e?.message || e);
+      throw e;
+    }
   }
 };

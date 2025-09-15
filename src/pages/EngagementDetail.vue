@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useAuthorization } from '@/composables/useAuthorization'
 import { useEngagementParticipants } from '@/composables/useEngagementParticipants'
 import CapGate from '@/components/CapGate.vue'
+import DashboardLayout from '../layouts/DashboardLayout.vue'
 
 interface EngagementMinimal { id: string; title?: string | null }
 const route = useRoute()
@@ -48,7 +49,11 @@ function tabClass(t: string) { return ['tab', activeTab.value === t ? 'active' :
 </script>
 
 <template>
-  <div class="engagement-detail">
+  <DashboardLayout>
+    <template #header>
+      <h1 class="dashboard-title">Engagement Detail</h1>
+    </template>
+    <div class="engagement-detail">
     <div v-if="loading" class="state">Loading…</div>
     <div v-else-if="error" class="state error">{{ error }}</div>
     <div v-else-if="!engagement" class="state empty">Engagement not found.</div>
@@ -87,8 +92,8 @@ function tabClass(t: string) { return ['tab', activeTab.value === t ? 'active' :
       </section>
       <section class="tab-body" v-else-if="activeTab==='participants'">
         <h2>Participants</h2>
-        <div v-if="participantsLoading" class="placeholder">Loading participants…</div>
-        <table v-else class="part-table" v-if="participants.length">
+  <div v-if="participantsLoading" class="placeholder">Loading participants…</div>
+  <table v-else-if="participants.length" class="part-table">
           <thead>
             <tr><th>User</th><th>Role</th><th></th></tr>
           </thead>
@@ -103,8 +108,8 @@ function tabClass(t: string) { return ['tab', activeTab.value === t ? 'active' :
                 </td>
               </tr>
             </tbody>
-        </table>
-        <p v-else class="placeholder empty">No participants assigned.</p>
+  </table>
+  <p v-else class="placeholder empty">No participants assigned.</p>
         <CapGate capability="ENG.MANAGE" :ctx="{ engagementId: engagement.id }">
           <form class="assign-form" @submit.prevent="onAssign">
             <div class="row">
@@ -122,6 +127,7 @@ function tabClass(t: string) { return ['tab', activeTab.value === t ? 'active' :
       </section>
     </div>
   </div>
+  </DashboardLayout>
 </template>
 
 <style scoped>

@@ -103,9 +103,9 @@ onMounted(() => load(true))
 .state { padding: 1rem; font-size: 0.95rem; }
 .state.error { color: #b91c1c; }
 .state.empty { color: #555; }
-.modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
-.modal { background:#fff; padding:1rem 1.2rem; border-radius:6px; width:320px; display:flex; flex-direction:column; gap:.75rem; }
-.modal input { width:100%; padding:0.4rem; }
+
+.modal { max-width:360px; }
+.modal input { width:100%; }
 .modal .actions { display:flex; justify-content:flex-end; gap:.5rem; }
 .load-more-row { margin-top:1rem; text-align:center; }
 .load-more { background:#334155; color:#fff; border:none; padding:.55rem 1rem; border-radius:4px; cursor:pointer; }

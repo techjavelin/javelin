@@ -1,0 +1,17 @@
+/* Design Tokens (base) */
+:root {
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --easing-standard: cubic-bezier(.4,0,.2,1);
+  --transition-fast: 120ms;
+  --transition-medium: 180ms;
+  --transition-slow: 280ms;
+  --shadow-popover: 0 6px 22px -4px rgba(0,0,0,0.45);
+}
+
+[data-theme="dark"] {
+  --shadow-popover: 0 8px 26px -6px rgba(0,0,0,0.55);
+}

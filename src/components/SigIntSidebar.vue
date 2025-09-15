@@ -36,8 +36,8 @@
     </nav>
     <div class="sidebar-footer">
       <UserFooterPanel :userName="userName" :userEmail="''" roleLabel="SigInt User" :compact="isCollapsed">
-        <template #menu>
-          <UserContextMenu :visible="userMenuVisible" />
+        <template #menu="slotProps">
+          <UserContextMenu :visible="slotProps.open" :menuId="'sigint-user-menu'" />
         </template>
       </UserFooterPanel>
     </div>
@@ -54,7 +54,6 @@ import { getCurrentUser } from 'aws-amplify/auth'
 const isCollapsed = ref(false)
 const currentUser = ref<any>(null)
 const userGroups = ref<string[]>([])
-const userMenuVisible = ref(false)
 
 function toggleSidebar() {
   isCollapsed.value = !isCollapsed.value
@@ -107,7 +106,7 @@ const canViewOrganizations = computed(() => userGroups.value.includes('admin') |
 .sidebar-nav { flex:1; overflow-y:auto; padding:0 .5rem; }
 .nav-menu { list-style:none; margin:0; padding:0; }
 .nav-item { margin-bottom:.25rem; }
-.nav-link { display:flex; align-items:center; gap:.75rem; padding:.75rem 1rem; color:#cbd5e1; text-decoration:none; border-radius:8px; transition:all .2s ease; font-size:.9rem; position:relative; }
+.nav-link { display:flex; align-items:center; gap:.65rem; padding:.65rem .9rem; color:#cbd5e1; text-decoration:none; border-radius:8px; transition:all .2s ease; font-size:.8rem; position:relative; }
 .nav-link:hover { background:rgba(255,255,255,0.1); color:#fff; transform:translateX(4px); }
 .nav-link.active { background:linear-gradient(135deg,#2563eb,#3b82f6); color:#fff; font-weight:500; }
 .nav-icon { font-size:1.2rem; width:20px; text-align:center; flex-shrink:0; }

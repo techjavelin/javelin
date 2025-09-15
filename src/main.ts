@@ -11,6 +11,9 @@ import { installEntitlements } from './plugins/entitlements';
 import SocialIcons from './components/SocialIcons.vue';
 import './assets/theme.css';
 import './assets/main.css';
+import './assets/tokens.css';
+import './assets/ui/popover.css';
+import './assets/ui/modal.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
@@ -40,7 +43,7 @@ import {
   faTimes,
   faTags
 } from '@fortawesome/free-solid-svg-icons';
-import { faShieldHalved, faBriefcase, faBug, faPlusCircle, faCog, faArrowLeft, faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faShieldHalved, faBriefcase, faBug, faPlusCircle, faCog, faArrowLeft, faSignOutAlt, faChevronLeft, faChevronRight, faRocket, faBoxesStacked } from '@fortawesome/free-solid-svg-icons';
 import { faTwitter, faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faLifeRing } from '@fortawesome/free-solid-svg-icons';
 
@@ -79,6 +82,10 @@ library.add(
   faLinkedin,
   faGithub,
   faLifeRing
+  ,faChevronLeft
+  ,faChevronRight
+  ,faRocket
+  ,faBoxesStacked
 );
 
 const app = createApp(App);

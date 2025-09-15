@@ -37,3 +37,14 @@ export const activateOrganizationAdmin = defineFunction({
   name: 'activate-organization-admin',
   entry: '../../functions/user-management/activate-organization-admin/handler.ts'
 })
+
+// Migrations trigger function (admin only)
+export const runMigrations = defineFunction({
+  name: 'run-migrations',
+  entry: '../../functions/migrations/run-migrations/handler.ts'
+})
+
+export const listMigrations = defineFunction({
+  name: 'list-migrations',
+  entry: '../../functions/migrations/list-migrations/handler.ts'
+})

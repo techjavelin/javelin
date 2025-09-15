@@ -200,6 +200,18 @@ const routes = [
     meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
   },
   {
+    path: '/admin/migrations',
+    component: () => import('./pages/AdminMigrations.vue'),
+    name: 'admin-migrations',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
+    path: '/admin/application-metadata',
+    component: () => import('./pages/AdminApplicationMetadata.vue'),
+    name: 'admin-application-metadata',
+    meta: { requiresAuth: true, requiresAdmin: true, hideTopNav: true }
+  },
+  {
     path: '/admin/settings',
     component: () => import('./pages/AdminSettings.vue'),
     name: 'admin-settings',
@@ -272,6 +284,11 @@ const routes = [
     name: 'pentester-dashboard',
     // Admins inherit pentester capabilities via useRoles (isPentester true if admin)
     alias: ['/pentester/dashboard'],
+    meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
+  },{
+    path: '/pentester/applications',
+    component: () => import('./pages/PentesterApplications.vue'),
+    name: 'pentester-applications',
     meta: { requiresAuth: true, hideTopNav: true, requiresPentester: true }
   },{
     path: '/pentester/engagements',

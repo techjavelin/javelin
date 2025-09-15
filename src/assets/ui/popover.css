@@ -1,0 +1,12 @@
+.popover-surface {
+  background: var(--color-bg-light, #1e293b);
+  color: #e2e8f0;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  box-shadow: 0 6px 22px -4px rgba(0,0,0,0.45);
+  padding: .85rem .9rem;
+  z-index: 2000;
+  min-width: 170px;
+  backdrop-filter: blur(4px);
+}
+[data-theme="dark"] .popover-surface { background: rgba(30,41,59,0.95); }

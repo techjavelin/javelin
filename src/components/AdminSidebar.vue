@@ -146,6 +146,18 @@
             <span class="nav-text" v-if="!isCollapsed">Backups</span>
           </router-link>
         </li>
+        <li class="nav-item">
+          <router-link to="/admin/application-metadata" class="nav-link">
+            <span class="nav-icon"><font-awesome-icon :icon="faCog" class="sidebar-png-icon" /></span>
+            <span class="nav-text" v-if="!isCollapsed">App Metadata</span>
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link to="/admin/migrations" class="nav-link">
+            <span class="nav-icon"><font-awesome-icon :icon="faDatabase" class="sidebar-png-icon" /></span>
+            <span class="nav-text" v-if="!isCollapsed">Migrations</span>
+          </router-link>
+        </li>
 
         <!-- Pentester Portal (visible to pentester or admin) -->
         <template v-if="showPentesterSection">
@@ -196,8 +208,8 @@
         roleLabel="Administrator"
         :compact="isCollapsed"
       >
-        <template #menu>
-          <UserContextMenu :visible="userMenuVisible" />
+        <template #menu="slotProps">
+          <UserContextMenu :visible="slotProps.open" :menuId="'admin-user-menu'" />
         </template>
       </UserFooterPanel>
     </div>
@@ -211,7 +223,6 @@ import { getCurrentUser } from 'aws-amplify/auth'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import UserContextMenu from './UserContextMenu.vue'
 import UserFooterPanel from './UserFooterPanel.vue'
-const userMenuVisible = ref(false)
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
   faTachometerAlt,
@@ -415,12 +426,12 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.65rem 0.9rem;
   color: #cbd5e1;
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.2s ease;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   position: relative;
 }
 

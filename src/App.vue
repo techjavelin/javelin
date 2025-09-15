@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue'
+import CommandPalette from './components/CommandPalette.vue'
 import { useRoute } from 'vue-router'
 import TopNav from './components/TopNav.vue'
 import CookiesWarning from './components/CookiesWarning.vue'
@@ -287,8 +288,10 @@ function handleClickOutside() {
       </div>
     </footer>
 
-    <!-- Cookies Warning Banner -->
-    <CookiesWarning />
+  <!-- Command Palette Mount -->
+  <CommandPalette />
+  <!-- Cookies Warning Banner -->
+  <CookiesWarning />
   </div>
 </template>
 

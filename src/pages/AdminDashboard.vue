@@ -157,13 +157,38 @@
       <section class="dashboard-section full-width user-management-section">
         <UserManagement />
       </section>
+      <section v-if="isAdmin" class="dashboard-section full-width migration-section">
+        <div class="section-header">
+          <h2>Migrations</h2>
+          <button class="action-btn" :disabled="migRunning" @click="runPending">{{ migRunning ? 'Running...' : 'Run Pending' }}</button>
+        </div>
+        <div class="migration-status">
+          <p>
+            <strong>Latest Code Version:</strong> {{ latestCodeVersion }}
+            • <strong>Applied:</strong> <span v-if="migLoading">Loading...</span><span v-else>{{ latestApplied ?? '—' }}</span>
+            <span v-if="(latestApplied||0) < latestCodeVersion && !migLoading" class="pending-indicator">(Pending)</span>
+            <span v-else-if="!migLoading" class="ok-indicator">Up to date</span>
+          </p>
+          <p v-if="lastRunSummary">
+            <strong>Last Run:</strong> {{ lastRunAt ? new Date(lastRunAt).toLocaleString() : 'N/A' }} • Applied {{ lastRunSummary.applied }} / Attempted {{ lastRunSummary.attempted }} • Skipped {{ lastRunSummary.skipped }} <span v-if="lastRunSummary.failed" class="error">Failed at #{{ lastRunSummary.failed.id }} {{ lastRunSummary.failed.name }}</span>
+          </p>
+          <p v-if="migError" class="error">{{ migError }}</p>
+          <details v-if="migLogs.length" class="migration-logs" open>
+            <summary>Logs ({{ migLogs.length }})</summary>
+            <pre class="log-lines"><code>
+{{ migLogs.join('\n') }}
+            </code></pre>
+          </details>
+          <p class="hint">Runs execute on the server via secured Lambda. Ensure you have admin privileges.</p>
+        </div>
+      </section>
       </DashboardLayout>
     </template>
             
   
 <script setup>
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 // Removed duplicate import of FontAwesomeIcon
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faTachometerAlt, faFileAlt, faUser, faUsers, faEye, faNewspaper, faChartBar, faChartLine, faUserEdit, faComment, faQuestionCircle, faThLarge, faUserCheck } from '@fortawesome/free-solid-svg-icons'
@@ -192,8 +217,17 @@ import SearchComponent from '../components/SearchComponent.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import amplifyOutputs from '../../amplify_outputs.json'
+import { useAuth } from '../composables/useAuth'
+import { useMigrations } from '../composables/useMigrations'
 
 const router = useRouter()
+const { userGroups } = useAuth()
+const isAdmin = computed(()=> userGroups.value.includes('admin'))
+const { latestCodeVersion, latestApplied, loading: migLoading, running: migRunning, error: migError, logs: migLogs, lastRunSummary, lastRunAt, refreshApplied, runPending } = useMigrations()
+
+onMounted(()=>{
+  refreshApplied()
+})
 
 // Composables
 
@@ -1064,4 +1098,12 @@ onMounted(async () => {
   --color-primary: #90caf9;
   --color-primary-dark: #2566af;
 }
+.migration-section { margin-top:2rem; }
+.migration-status { font-size:.75rem; line-height:1.3; }
+.migration-status .pending-indicator { color:#c97a00; margin-left:.5rem; font-weight:600; }
+.migration-status .ok-indicator { color:#2d8a34; margin-left:.5rem; font-weight:600; }
+.migration-status .error { color:#c0392b; font-size:.7rem; }
+.migration-logs { margin-top:.5rem; }
+.migration-logs .log-lines { background:var(--modal-field-bg,#f5f7fa); border:1px solid var(--modal-border-color,#d0d7de); padding:.5rem; font-size:.6rem; max-height:140px; overflow:auto; }
+.hint { font-size:.6rem; color: var(--modal-muted-color,#6c737d); margin-top:.4rem; }
 </style>

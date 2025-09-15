@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["aws-lambda"],
+    "module": "esnext",
+    "target": "ES2022"
+  },
+  "include": ["./handler.ts"]
+}

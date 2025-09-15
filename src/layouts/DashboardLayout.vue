@@ -21,6 +21,7 @@
       </SidebarLink>
       <SidebarCollapsible v-if="showPentesterPortal" title="Pentester Portal" :defaultOpen="true">
         <SidebarLink to="/pentester"><template #icon><font-awesome-icon :icon="['fas','shield-halved']" /></template>Dashboard</SidebarLink>
+        <SidebarLink to="/pentester/applications"><template #icon><font-awesome-icon :icon="['fas','boxes-stacked']" /></template>Applications</SidebarLink>
         <SidebarLink to="/pentester/engagements"><template #icon><font-awesome-icon :icon="['fas','briefcase']" /></template>Engagements</SidebarLink>
         <SidebarLink to="/pentester/vuln-library"><template #icon><font-awesome-icon :icon="['fas','bug']" /></template>Vuln Library</SidebarLink>
         <SidebarLink to="/pentester/findings/new"><template #icon><font-awesome-icon :icon="['fas','plus-circle']" /></template>New Finding</SidebarLink>
@@ -30,14 +31,10 @@
       </SidebarCollapsible>
       <template #footer>
         <UserFooterPanel :userName="userName" :userEmail="userEmail" roleLabel="User" :compact="false">
-          <template #menu>
-            <UserContextMenu :visible="userMenuVisible" />
+          <template #menu="slotProps">
+            <UserContextMenu :visible="slotProps.open" />
           </template>
         </UserFooterPanel>
-        <div class="footer-actions">
-          <button @click="exitToHome" class="sidebar-exit">Home</button>
-          <button @click="onLogout" class="sidebar-logout">Logout</button>
-        </div>
       </template>
     </AppSidebar>
 
@@ -97,16 +94,11 @@ const showPentesterPortal = computed(() => isPentester.value || isAdmin.value)
 const userName = computed(() => authUserName?.value || 'User')
 const userEmail = computed(() => authUserEmail?.value || '')
 const userInitials = computed(() => userName.value.split(/\s+/).map((p: string)=>p[0]).join('').slice(0,2).toUpperCase())
-const userMenuVisible = ref(false)
-function toggleUserMenu(){ userMenuVisible.value = !userMenuVisible.value }
 
 // Eagerly load user if not present
 loadCurrentUser?.().catch(()=>{})
 
-function onLogout() {
-  // TODO: Hook up to actual logout logic
-  alert('Logout clicked')
-}
+// Logout now handled inside UserContextMenu
 
 function handleAdminSidebarToggle(val: boolean) { sidebarCollapsed.value = val }
 function handleGenericSidebarToggle(val: boolean) { genericCollapsed.value = val }
@@ -207,24 +199,5 @@ function handleThemeToggle(nextTheme: string) {
   .dashboard-layout.admin-mode.admin-collapsed { padding-left: var(--admin-sidebar-collapsed); }
   .dashboard-content { padding: 1.5rem 1rem 2.5rem 1rem; }
 }
-.sidebar-exit {
-  background:#374151;
-  color:#e5e7eb;
-  border:none;
-  padding:.5rem .75rem;
-  border-radius:6px;
-  font-size:.7rem;
-  cursor:pointer;
-  margin-right:.5rem;
-}
-.sidebar-exit:hover { background:#4b5563; }
-.sidebar-logout { background:#b91c1c; color:#fff; border:none; padding:.5rem .75rem; border-radius:6px; font-size:.7rem; cursor:pointer; }
-.sidebar-logout:hover { background:#dc2626; }
-.footer-user { display:flex; align-items:center; gap:.75rem; padding:.5rem .5rem; border-radius:8px; cursor:pointer; position:relative; transition:background .2s; }
-.footer-user:hover { background:rgba(255,255,255,0.08); }
-.footer-user .user-avatar { width:40px; height:40px; background:linear-gradient(135deg,#2563eb,#3b82f6); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:600; color:#fff; }
-.footer-user .user-meta { flex:1; min-width:0; }
-.footer-user .user-name { font-size:.85rem; font-weight:500; color:#e2e8f0; }
-.footer-user .user-email { font-size:.65rem; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.footer-actions { display:flex; gap:.5rem; margin-top:.5rem; }
+/* Removed footer action buttons & local popover styling (handled by UserContextMenu) */
 </style>

@@ -14,12 +14,12 @@ const props = defineProps<{ to: string }>()
 .sidebar-link {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.85rem;
   color: #fff;
   text-decoration: none;
   border-radius: 6px;
   transition: background 0.15s;
-  font-size: 1rem;
+  font-size: 0.8rem;
   margin-bottom: 2px;
 }
 .sidebar-link.active, .sidebar-link:hover {

@@ -23,7 +23,7 @@ import { EntitlementPlan } from "./models/EntitlementPlan.model";
 import { OrganizationEntitlement } from "./models/OrganizationEntitlement.model";
 import { EntitlementAudit } from "./models/EntitlementAudit.model";
 import { PentesterProfile, PentesterAvailability } from "./models/PentesterProfile.model";
-import { Application, ApplicationKind, DataSensitivity } from "./models/Application.model";
+import { Application, ApplicationType, UserType } from "./models/Application.model";
 import { Engagement, EngagementPhase, EngagementStatus } from "./models/Engagement.model";
 import { ApplicationEngagement } from "./models/ApplicationEngagement.model";
 import { VulnerabilityTemplate, VulnerabilityCategory, Severity } from "./models/VulnerabilityTemplate.model";
@@ -32,6 +32,7 @@ import { ArtifactLink, ArtifactProvider, DocumentType, ArtifactStatus } from "./
 import { OrganizationMembership, OrgRole } from "./models/OrganizationMembership.model";
 import { ApplicationRoleAssignment, ApplicationRole } from "./models/ApplicationRoleAssignment.model";
 import { EngagementRoleAssignment, EngagementUserRole } from "./models/EngagementRoleAssignment.model";
+import { Migration } from "./models/Migration.model";
 
 const schema = a.schema({
   BlogPost,
@@ -58,8 +59,8 @@ const schema = a.schema({
   EntitlementAudit,
   PentesterProfile,
   PentesterAvailability,
-  ApplicationKind,
-  DataSensitivity,
+  ApplicationType,
+  UserType,
   Application,
   EngagementPhase,
   EngagementStatus,
@@ -80,6 +81,7 @@ const schema = a.schema({
   ApplicationRole,
   EngagementRoleAssignment,
   EngagementUserRole,
+  Migration,
 });
 
 export type Schema = ClientSchema<typeof schema>;

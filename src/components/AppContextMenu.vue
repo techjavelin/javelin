@@ -9,6 +9,10 @@
         <font-awesome-icon :icon="['fas', 'cogs']" class="menu-icon" />
         <router-link to="/admin">Admin Panel</router-link>
       </li>
+      <li v-if="isAdmin">
+        <font-awesome-icon :icon="['fas', 'database']" class="menu-icon" />
+        <router-link to="/admin/migrations">Migrations</router-link>
+      </li>
       <!-- Add new app links here as apps are added -->
     </ul>
   </nav>

@@ -1,13 +1,17 @@
 import { defineBackend } from '@aws-amplify/backend';
+// Data migrations framework
+import { runMigrations } from './data/migrations/runner';
+import { latestMigrationId } from './data/migrations';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin } from './api/admin/resource';
+import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations } from './api/admin/resource';
 import { updateUserProfileSecure, deleteUserProfileSecure } from './api/profile/resource';
 import { health } from './api/health/resource';
 import { storage } from './storage/resource';
 // import { createOrganization, deleteOrganization, getOrganization, inviteUserToOrganization, listOrganizations, updateOrganization } from './api/sigint/Organization.api';
 import { OrganizationAPI } from './api/resource';
 import { Policy, PolicyStatement, PolicyDocument, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
 import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
 import type { MethodOptions } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
@@ -23,6 +27,8 @@ const backend = defineBackend({
   resetUserPassword,
   inviteAdminUser,
   activateOrganizationAdmin,
+  runMigrations: runMigrationsFn,
+  listMigrations,
   updateUserProfileSecure,
   deleteUserProfileSecure,
   health,
@@ -32,6 +38,12 @@ const backend = defineBackend({
   // inviteUserToOrganization: OrganizationAPI.inviteUser,
   // listOrganizations: OrganizationAPI.list,
   // updateOrganization: OrganizationAPI.update
+});
+
+// Apply pending data migrations (during synth we allow skipping if config not ready)
+runMigrations({ skipOnConfigError: true }).catch(e => {
+  // eslint-disable-next-line no-console
+  console.error('[migrations] Error applying migrations', e);
 });
 
 // Create a policy for Cognito user management
@@ -64,6 +76,18 @@ const cognitoUserManagementPolicy = new ManagedPolicy(backend.auth.resources.use
 backend.auth.resources.groups["admin"].role.addManagedPolicy(cognitoUserManagementPolicy);
 
 const api = backend.createStack('pulse-sigint=-api');
+// Separate stack for migration infrastructure (DynamoDB state table)
+const migrationsInfra = backend.createStack('migrations');
+
+// Table design:
+//  pk = 'lock' (single item used for optimistic locking via conditional put)
+//  pk = 'migration#<id>' items recording applied migrations when using the Dynamo adapter
+//  Attributes stored (besides pk): name, appliedAt (ISO), checksum
+// Pay-per-request billing to avoid capacity management. No TTL required.
+const migrationStateTable = new Table(migrationsInfra, 'MigrationStateTable', {
+  partitionKey: { name: 'pk', type: AttributeType.STRING },
+  billingMode: BillingMode.PAY_PER_REQUEST
+});
 
 // APIs
 const sigintRest = new RestApi(api, 'SigintRestApi', {
@@ -111,6 +135,16 @@ const healthPath = sigintRest.root.addResource('health');
 healthPath.addMethod('GET', new LambdaIntegration(backend.health.resources.lambda), {
   authorizationType: AuthorizationType.NONE
 });
+
+// Admin-only run-migrations endpoint (POST)
+const runMigrationsPath = sigintRest.root.addResource('run-migrations');
+runMigrationsPath.addMethod('POST', new LambdaIntegration(backend.runMigrations.resources.lambda), apiConfig);
+const listMigrationsPath = sigintRest.root.addResource('migrations-state');
+listMigrationsPath.addMethod('GET', new LambdaIntegration(backend.listMigrations.resources.lambda), apiConfig);
+
+// Grant Dynamo table access (read/write) to the migrations lambda
+migrationStateTable.grantReadWriteData(backend.runMigrations.resources.lambda);
+migrationStateTable.grantReadData(backend.listMigrations.resources.lambda);
 // organizationPath.addMethod('GET', new LambdaIntegration(backend.getOrganization.resources.lambda), apiConfig);
 // organizationPath.addMethod('PUT', new LambdaIntegration(backend.updateOrganization.resources.lambda), apiConfig);
 // organizationPath.addMethod('DELETE', new LambdaIntegration(backend.deleteOrganization.resources.lambda), apiConfig);
@@ -149,6 +183,10 @@ backend.addOutput({
     GRAPHQL: {
       endpoint: (data as any).resources?.graphql?.url ?? 'https://cct4ibicz5f3piqqte3kaiwlce.appsync-api.us-east-1.amazonaws.com/graphql',
       region: Stack.of(api).region
+    },
+    MIGRATIONS: {
+      latest: latestMigrationId,
+      stateTableName: migrationStateTable.tableName
     }
   }
 });

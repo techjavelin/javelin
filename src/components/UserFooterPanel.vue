@@ -1,20 +1,33 @@
 <template>
-  <div class="user-footer-panel" @click="toggle" :class="{ open: menuOpen }">
+  <div
+    class="user-footer-panel"
+    ref="panelEl"
+    :class="{ open: menuOpen }"
+  :aria-expanded="menuOpen"
+    :aria-controls="menuId"
+    role="button"
+    tabindex="0"
+    @click="toggle"
+    @keydown.enter.prevent="toggle"
+    @keydown.space.prevent="toggle"
+  >
     <div class="ufp-avatar"><span>{{ initials }}</span></div>
     <div class="ufp-meta" v-if="!compact">
       <div class="ufp-name">{{ userName }}</div>
       <div class="ufp-email" v-if="userEmail">{{ userEmail }}</div>
       <div class="ufp-role" v-if="roleLabel">{{ roleLabel }}</div>
     </div>
-    <slot name="menu" :open="menuOpen" :toggle="toggle" />
+    <slot name="menu" :open="menuOpen" :toggle="toggle" :menu-id="menuId" />
   </div>
 </template>
 <script setup lang="ts">
 import { computed, defineProps, ref } from 'vue'
+import { usePopover } from '../composables/usePopover'
 const props = defineProps<{ userName: string; userEmail?: string; roleLabel?: string; compact?: boolean }>()
 const initials = computed(()=> props.userName.split(/\s+/).map((p:string)=>p[0]).join('').slice(0,2).toUpperCase())
-const menuOpen = ref(false)
-function toggle(){ menuOpen.value = !menuOpen.value }
+const panelEl = ref<HTMLElement | null>(null)
+const { open: menuOpen, toggle, close } = usePopover(panelEl, { closeOnOutside: true, closeOnEsc: true })
+const menuId = `user-menu-${Math.random().toString(36).slice(2)}`
 </script>
 <style scoped>
 .user-footer-panel { display:flex; align-items:center; gap:.75rem; padding:.6rem .65rem; border-radius:8px; cursor:pointer; transition:background .2s; position:relative; }

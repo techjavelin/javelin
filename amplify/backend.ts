@@ -4,7 +4,7 @@ import { runMigrations } from './data/migrations/runner';
 import { latestMigrationId } from './data/migrations';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations } from './api/admin/resource';
+import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations, clientLogIngest } from './api/admin/resource';
 import { updateUserProfileSecure, deleteUserProfileSecure } from './api/profile/resource';
 import { health } from './api/health/resource';
 import { storage } from './storage/resource';
@@ -29,6 +29,7 @@ const backend = defineBackend({
   activateOrganizationAdmin,
   runMigrations: runMigrationsFn,
   listMigrations,
+  clientLogIngest,
   updateUserProfileSecure,
   deleteUserProfileSecure,
   health,
@@ -142,9 +143,24 @@ runMigrationsPath.addMethod('POST', new LambdaIntegration(backend.runMigrations.
 const listMigrationsPath = sigintRest.root.addResource('migrations-state');
 listMigrationsPath.addMethod('GET', new LambdaIntegration(backend.listMigrations.resources.lambda), apiConfig);
 
+// Client log ingestion (POST). Accept logs from authenticated users; could be relaxed to NONE if public logging desired.
+const clientLogPath = sigintRest.root.addResource('client-log');
+clientLogPath.addMethod('POST', new LambdaIntegration(backend.clientLogIngest.resources.lambda), apiConfig);
+
 // Grant Dynamo table access (read/write) to the migrations lambda
 migrationStateTable.grantReadWriteData(backend.runMigrations.resources.lambda);
 migrationStateTable.grantReadData(backend.listMigrations.resources.lambda);
+// Explicitly grant Scan (and related read) permissions to list-migrations lambda.
+// Although grantReadData should include Scan, an authorization error was observed in runtime
+// (dynamodb:Scan not allowed). We defensively add an explicit policy to ensure the permission.
+backend.listMigrations.resources.lambda.addToRolePolicy(new PolicyStatement({
+  actions: [
+    'dynamodb:Scan',
+    'dynamodb:GetItem',
+    'dynamodb:DescribeTable'
+  ],
+  resources: [migrationStateTable.tableArn]
+}));
 // organizationPath.addMethod('GET', new LambdaIntegration(backend.getOrganization.resources.lambda), apiConfig);
 // organizationPath.addMethod('PUT', new LambdaIntegration(backend.updateOrganization.resources.lambda), apiConfig);
 // organizationPath.addMethod('DELETE', new LambdaIntegration(backend.deleteOrganization.resources.lambda), apiConfig);

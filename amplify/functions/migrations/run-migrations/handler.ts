@@ -1,4 +1,5 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
+import { withLogging } from '../../util/logging';
 // @ts-ignore - dependencies resolved in function bundling context
 import { DynamoDBClient, PutItemCommand, GetItemCommand, DeleteItemCommand, ScanCommand } from '@aws-sdk/client-dynamodb';
 // @ts-ignore - dependencies resolved in function bundling context
@@ -70,7 +71,7 @@ async function acquireLock(forceTakeover = false): Promise<boolean> {
   return false;
 }
 
-export const handler: APIGatewayProxyHandler = async (event) => {
+export const handler: APIGatewayProxyHandler = withLogging('run-migrations', async (event, log) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
@@ -92,25 +93,41 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   }
 
   let takeover = false;
+  let rerunIds: number[] = [];
   try {
     if(event.body){
       const parsed = JSON.parse(event.body);
       takeover = !!parsed.takeover;
+      if(Array.isArray(parsed.rerunIds)) {
+        rerunIds = parsed.rerunIds.filter((n: any)=> Number.isInteger(n) && n > 0);
+      }
     }
   } catch {}
 
+  log.info('parsed request', { takeover, rerunIds });
   const locked = await acquireLock(takeover);
   if(!locked){
+    log.warn('lock not acquired', { takeoverRequested: takeover });
     return { statusCode: 423, headers, body: JSON.stringify({ error: 'Locked', message: 'Another migration run in progress', takeoverRequested: takeover }) };
   }
 
   try {
+  // If specific migrations requested for re-run, delete their state records first (idempotent best effort)
+  if(rerunIds.length){
+    log.info('rerun purge start', { count: rerunIds.length });
+    for(const id of rerunIds){
+      try { await ddb.send(new DeleteItemCommand({ TableName: TABLE, Key: { pk: { S: `migration#${id}` }}})); log.debug('deleted prior state',{ id }); } catch {}
+    }
+  }
+  log.info('running migrations');
   const summary = await runMigrations({ storageAdapter, skipOnConfigError: false });
-  return { statusCode: 200, headers, body: JSON.stringify({ summary, takeover }) };
+  log.info('run complete', summary);
+  return { statusCode: 200, headers, body: JSON.stringify({ summary, takeover, rerunIds }) };
   } catch(e:any){
+    log.error('migration run failed', { error: e?.message || String(e) });
     return { statusCode: 500, headers, body: JSON.stringify({ error: 'MigrationFailed', message: e?.message || String(e) }) };
   } finally {
     // Release lock (best-effort). In case of concurrent delete ignore errors.
-    try { await ddb.send(new DeleteItemCommand({ TableName: TABLE, Key: { pk: { S: 'lock' }}})); } catch {}
+    try { await ddb.send(new DeleteItemCommand({ TableName: TABLE, Key: { pk: { S: 'lock' }}})); log.debug('lock released'); } catch {}
   }
-};
+});

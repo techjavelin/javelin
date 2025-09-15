@@ -95,6 +95,7 @@ export const data = defineData({
       expiresInDays: 30,
     },
   },
+  // Enable CloudWatch/AppSync logging (boolean true enables resolver & request summaries per Amplify Gen2 support)
   logging: true
 });
 

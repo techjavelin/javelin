@@ -48,3 +48,9 @@ export const listMigrations = defineFunction({
   name: 'list-migrations',
   entry: '../../functions/migrations/list-migrations/handler.ts'
 })
+
+// Client log ingestion function
+export const clientLogIngest = defineFunction({
+  name: 'client-log-ingest',
+  entry: '../../functions/logging/client-log-ingest/handler.ts'
+})

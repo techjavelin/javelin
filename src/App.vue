@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, provide } from 'vue'
+import ErrorBoundary from './components/ErrorBoundary.vue'
 import CommandPalette from './components/CommandPalette.vue'
 import { useRoute } from 'vue-router'
 import TopNav from './components/TopNav.vue'
@@ -227,6 +228,7 @@ function handleClickOutside() {
 </script>
 
 <template>
+  <ErrorBoundary>
   <div class="javelin-app" @click="handleClickOutside" style="background: var(--color-bg-light); color: var(--color-text-light);">
     <ToastHost />
     <!-- Top blue bar: only show on main site -->
@@ -252,7 +254,7 @@ function handleClickOutside() {
     @login-success="handleLoginSuccess"
   />
     <!-- Main content area for routed components -->
-    <router-view></router-view>
+  <router-view></router-view>
     <!-- Footer -->
     <footer class="site-footer">
       <div class="footer-content">
@@ -293,6 +295,8 @@ function handleClickOutside() {
   <!-- Cookies Warning Banner -->
   <CookiesWarning />
   </div>
+  </div>
+  </ErrorBoundary>
 </template>
 
 <style>

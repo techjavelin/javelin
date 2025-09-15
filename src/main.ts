@@ -46,6 +46,7 @@ import {
 import { faShieldHalved, faBriefcase, faBug, faPlusCircle, faCog, faArrowLeft, faSignOutAlt, faChevronLeft, faChevronRight, faRocket, faBoxesStacked } from '@fortawesome/free-solid-svg-icons';
 import { faTwitter, faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faLifeRing } from '@fortawesome/free-solid-svg-icons';
+import { useLogger } from './composables/useLogger';
 
 library.add(
   faSearch,
@@ -94,3 +95,15 @@ app.component('SocialIcons', SocialIcons);
 app.use(router);
 installEntitlements(app);
 app.mount('#app');
+
+// Install global Vue error handler & unhandled rejection logging
+const logger = useLogger();
+app.config.errorHandler = (err, instance, info) => {
+  logger.error('global-vue-error', { message: (err as any)?.message, info });
+};
+window.addEventListener('error', (e) => {
+  logger.error('window-error', { message: e.error?.message || e.message, filename: (e as any).filename, lineno: (e as any).lineno });
+});
+window.addEventListener('unhandledrejection', (e) => {
+  logger.error('unhandled-rejection', { reason: (e.reason && e.reason.message) || String(e.reason) });
+});

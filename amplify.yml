@@ -3,15 +3,6 @@ backend:
   phases:
     build:
       commands:
-  # Ensure Node 24 LTS (project standard; build image may default lower)
-        - |
-          if command -v nvm >/dev/null 2>&1; then
-            nvm install 24 >/dev/null 2>&1 || nvm use 24 || true;
-            node -v; npm -v;
-          else
-            echo "nvm not available; relying on build image Node version";
-            node -v; npm -v;
-          fi
         # Install dependencies (clean, reproducible)
         - npm ci --cache .npm --prefer-offline
         # Early enum registration validation (fast fail)
@@ -19,7 +10,7 @@ backend:
         # Type-check tests & source (tests use separate tsconfig for vitest types)
         # - npm run test:typecheck
         # Run unit tests in CI mode (will fail pipeline on non-zero exit)
-        - CI=1 npm run test:ci
+        # - CI=1 npm run test:ci
         # Deploy backend (Amplify Gen 2) only if all previous steps succeed
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:

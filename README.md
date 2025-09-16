@@ -6,6 +6,24 @@ This repository provides a starter template for creating applications using Vue.
 
 Javelin is a SaaS product offered by Tech Javelin Ltd (techjavelin.com), designed to provide a variety of information, application, and social security services to clients. Built on a scalable Vue.js and AWS Amplify foundation, Javelin streamlines service delivery for organizations and individuals seeking secure, reliable, and modern solutions.
 
+### Authorization Pattern (Frontend Data Access)
+
+As of commit 6e95613 the frontend now defaults all Amplify Data client calls to authenticated `userPool` auth via `DEFAULT_AUTH_MODE = 'userPool'` in `src/amplifyClient.ts`.
+
+Key conventions:
+* Use `withPublic()` for truly anonymous read operations (e.g. public blog content) that rely on model rules granting `publicApiKey` read.
+* Use bare `withAuth()` (or no wrapper for mutations where the second arg is the options object) for standard authenticated calls— it auto-injects `authMode: 'userPool'`.
+* Use `withUserAuth()` only when you want to be explicit/defensive in code review contexts (it now overlaps with the default but documents intent).
+* Never embed `authMode` inside a GraphQL input structure (pass it as the second argument to `create/update/delete/get/list`). A regression test (`applications.composable.test.ts`) guards this.
+
+Reference constants:
+```
+PUBLIC_READ_MODELS = ['BlogPost','Author','Comment','PostTag','PostCategory']
+```
+Add to this list (and wrap access in `withPublic()`) when introducing new public-facing models.
+
+Rationale: Minimizes accidental exposure of protected models through the apiKey while keeping public content accessible without requiring user sign-in.
+
 ## Features
 
 - **Authentication**: Setup with Amazon Cognito for secure user authentication.

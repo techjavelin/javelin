@@ -3,6 +3,15 @@ backend:
   phases:
     build:
       commands:
+        # Ensure Node 20 (some dependencies require >=20; build image may default to 18)
+        - |
+          if command -v nvm >/dev/null 2>&1; then
+            nvm install 20 >/dev/null 2>&1 || nvm use 20 || true;
+            node -v; npm -v;
+          else
+            echo "nvm not available; relying on build image Node version";
+            node -v; npm -v;
+          fi
         # Install dependencies (clean, reproducible)
         - npm ci --cache .npm --prefer-offline
         # Early enum registration validation (fast fail)

@@ -45,6 +45,17 @@ export function useLaunchpadModules() {
       canLaunch: () => userGroups.value.includes('pentester') || userGroups.value.includes('admin'),
       launch: () => { record('pentester','launch'); go('/pentester') },
       learn: () => { record('pentester','learn'); go('https://docs.pulse.techjavelin.com/pentester', true) }
+    },
+    {
+      key: 'hub',
+      title: 'Client Hub',
+      description: 'Client-facing Pulse Hub: view engagement progress, published findings, artifacts, and request new services in a unified dashboard.',
+      icon: '🌐',
+      status: 'Preview',
+      statusVariant: 'beta',
+      canLaunch: () => userGroups.value.includes('client-hub') || userGroups.value.includes('admin'),
+      launch: () => { record('hub','launch'); go('/hub') },
+      learn: () => { record('hub','learn'); go('https://docs.pulse.techjavelin.com/hub', true) }
     }
   ])
 

@@ -50,5 +50,22 @@ export function useEngagementParticipants() {
     } finally { loading.value = false }
   }
 
-  return { participants, loading, error, list, assign, remove }
+  async function updateRole(engagementId: string, userId: string, role: ParticipantAssignment['role']) {
+    if (!has('ENG.MANAGE', { engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value = true; error.value = null
+    try {
+      const res = await client.models.EngagementRoleAssignment.update({ engagementId, userId, role })
+      const updated = res.data
+      if (updated) {
+        const idx = participants.value.findIndex(p => p.engagementId === engagementId && p.userId === userId)
+        if (idx >= 0) participants.value[idx] = { ...participants.value[idx], role: updated.role }
+      }
+      return updated
+    } catch (e:any) {
+      error.value = e.message || 'Failed to update role'
+      throw e
+    } finally { loading.value = false }
+  }
+
+  return { participants, loading, error, list, assign, remove, updateRole }
 }

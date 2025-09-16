@@ -10,9 +10,9 @@
         <div class="cookies-message">
           <h4>We use cookies</h4>
           <p>
-            We use cookies to enhance your browsing experience, serve personalized ads or content, 
-            and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
-            <router-link to="/cookies-policy" class="cookies-link">Read our Cookie Policy</router-link>
+            We use essential cookies to secure your session and remember consent. Optional functional and analytics cookies improve user experience; marketing cookies are currently not in use.
+            By clicking "Accept All", you consent to optional categories. 
+            <router-link to="/cookies-policy" class="cookies-link">Cookie & Storage Policy</router-link>
           </p>
         </div>
       </div>
@@ -122,14 +122,18 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 
 // Local state
 const showBanner = ref(false)
 const showSettings = ref(false)
 
-// Cookie preferences
+// Policy / consent version (increment when storage practices materially change)
+const POLICY_VERSION = '2025-09-16-v1'
+const CONSENT_MAX_AGE_DAYS = 365
+
+// Cookie preferences (runtime reactive state)
 const preferences = reactive({
   essential: true, // Always true
   analytics: false,
@@ -137,31 +141,44 @@ const preferences = reactive({
   functional: false
 })
 
+interface StoredConsent {
+  essential: true
+  analytics: boolean
+  marketing: boolean
+  functional: boolean
+  timestamp: string
+  version: string
+}
+
 // Check if user has already made cookie choice
+const reopenHandler = () => { showBanner.value = true }
+
 onMounted(() => {
   const cookieConsent = localStorage.getItem('cookie-consent')
-  if (!cookieConsent) {
-    // No consent given yet - disable theme storage
-    window.themeStorageAllowed = false
-    
-    // Show banner after a short delay for better UX
-    setTimeout(() => {
-      showBanner.value = true
-    }, 1000)
-  } else {
-    // Load existing preferences
+  let needsPrompt = true
+  if (cookieConsent) {
     try {
-      const savedPreferences = JSON.parse(cookieConsent)
-      Object.assign(preferences, savedPreferences)
-      
-      // Apply cookie settings including theme storage
-      loadCookies(savedPreferences)
-    } catch (error) {
-      console.error('Error parsing cookie preferences:', error)
-      window.themeStorageAllowed = false
+      const saved: StoredConsent = JSON.parse(cookieConsent)
+      const savedDate = new Date(saved.timestamp)
+      const ageDays = (Date.now() - savedDate.getTime()) / (1000*60*60*24)
+      if (saved.version === POLICY_VERSION && ageDays <= CONSENT_MAX_AGE_DAYS) {
+        Object.assign(preferences, saved)
+        loadCookies(saved)
+        needsPrompt = false
+      }
+    } catch (e) {
+      console.warn('Invalid stored consent, prompting again.')
     }
   }
+  if (needsPrompt) {
+    window.themeStorageAllowed = false
+    setTimeout(()=>{ showBanner.value = true }, 600)
+  }
+
+  // Allow external reopening via window.dispatchEvent(new Event('show-cookie-banner'))
+  window.addEventListener('show-cookie-banner', reopenHandler)
 })
+onBeforeUnmount(()=> window.removeEventListener('show-cookie-banner', reopenHandler))
 
 // Accept all cookies
 function acceptAll() {
@@ -187,49 +204,42 @@ function savePreferences() {
 
 // Save consent choice to localStorage and hide banner
 function saveConsentChoice() {
-  const consentData = {
+  const consentData: StoredConsent = {
     essential: true,
     analytics: preferences.analytics,
     marketing: preferences.marketing,
     functional: preferences.functional,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: POLICY_VERSION
   }
-  
   localStorage.setItem('cookie-consent', JSON.stringify(consentData))
   showBanner.value = false
-  
-  // Trigger cookie loading based on preferences
   loadCookies(consentData)
-  
-  // Emit event for parent components if needed
-  window.dispatchEvent(new CustomEvent('cookie-consent-updated', { 
-    detail: consentData 
-  }))
+  window.dispatchEvent(new CustomEvent('cookie-consent-updated', { detail: consentData }))
 }
 
 // Load appropriate cookies based on consent
-function loadCookies(consent) {
-  if (consent.analytics) {
-    // Load Google Analytics or other analytics scripts
-    console.log('Loading analytics cookies')
-    // Example: gtag('consent', 'update', { analytics_storage: 'granted' })
-  }
-  
-  if (consent.marketing) {
-    // Load marketing/advertising scripts
-    console.log('Loading marketing cookies')
-    // Example: Load Facebook Pixel, Google Ads, etc.
-  }
-  
-  if (consent.functional) {
-    // Load functional cookies including theme preferences
-    console.log('Loading functional cookies including theme preferences')
-    // Allow theme storage and other UI preferences
-    enableThemeStorage()
-  } else {
-    // Disable theme storage if functional cookies not accepted
-    disableThemeStorage()
-  }
+function loadCookies(consent: StoredConsent) {
+  // Inject / remove analytics snippet
+  manageAnalytics(consent.analytics)
+  manageMarketing(consent.marketing)
+  if (consent.functional) enableThemeStorage(); else disableThemeStorage()
+}
+
+// Stub loader functions – replace with real integrations as needed
+function manageAnalytics(enabled: boolean){
+  const id = 'analytics-stub'
+  const existing = document.getElementById(id)
+  if(enabled && !existing){
+    const s = document.createElement('script'); s.id=id; s.type='text/plain'; s.dataset.category='analytics'; s.textContent='// analytics stub loaded'; document.head.appendChild(s)
+  } else if(!enabled && existing){ existing.remove() }
+}
+function manageMarketing(enabled: boolean){
+  const id = 'marketing-stub'
+  const existing = document.getElementById(id)
+  if(enabled && !existing){
+    const s = document.createElement('script'); s.id=id; s.type='text/plain'; s.dataset.category='marketing'; s.textContent='// marketing stub loaded'; document.head.appendChild(s)
+  } else if(!enabled && existing){ existing.remove() }
 }
 
 // Theme storage management
@@ -276,7 +286,8 @@ defineExpose({
   getConsent: () => {
     const consent = localStorage.getItem('cookie-consent')
     return consent ? JSON.parse(consent) : null
-  }
+  },
+  triggerReopen: () => window.dispatchEvent(new Event('show-cookie-banner'))
 })
 </script>
 

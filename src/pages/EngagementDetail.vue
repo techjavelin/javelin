@@ -1,51 +1,119 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthorization } from '@/composables/useAuthorization'
 import { useEngagementParticipants } from '@/composables/useEngagementParticipants'
+import { useEngagements } from '@/composables/useEngagements'
 import CapGate from '@/components/CapGate.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
+import SectionEditable from '@/components/SectionEditable.vue'
+import ParticipantsTab from '@/components/ParticipantsTab.vue'
+import { useFindings } from '@/composables/useFindings'
+import { useToasts } from '@/composables/useToasts'
+import FindingEditorModal from '@/components/FindingEditorModal.vue'
+import EditEngagementModal from '@/components/EditEngagementModal.vue'
 
-interface EngagementMinimal { id: string; title?: string | null }
 const route = useRoute()
 const engagementId = ref<string>('')
-const engagement = ref<EngagementMinimal | null>(null)
+// Track last engagement id we primed authorization context for to avoid re-priming loops
+const lastPrimedId = ref<string | null>(null)
 const activeTab = ref<'overview'|'findings'|'artifacts'|'participants'>('overview')
-const loading = ref(false)
-const error = ref<string | null>(null)
-const { primeContext, has } = useAuthorization()
-const { participants, list: listParticipants, assign, remove, loading: participantsLoading } = useEngagementParticipants()
-const newParticipant = ref({ userId: '', role: 'ENG_PENTESTER', applicationId: '' })
-const assigning = ref(false)
-
-async function onAssign() {
-  if (!engagement.value || !newParticipant.value.userId) return
-  assigning.value = true
-  try {
-    // For now use placeholder applicationId until UI adds selection; required by model.
-    const applicationId = newParticipant.value.applicationId || 'app-placeholder'
-    await assign({ engagementId: engagement.value.id, organizationId: (engagement.value as any).organizationId || 'org-unknown', userId: newParticipant.value.userId, role: newParticipant.value.role as any, applicationId })
-    newParticipant.value.userId = ''
-  } finally { assigning.value = false }
+const { has, primeContext } = useAuthorization()
+const { add: addToast } = useToasts()
+const { get, updateDetails, loading: egLoading, error: egError } = useEngagements()
+const engagement = ref<any | null>(null)
+// Findings state
+const { findings, listByEngagement } = useFindings()
+const showFindingModal = ref(false)
+const editingFinding = ref<any | null>(null)
+const showEditEngagement = ref(false)
+function openEditEngagement() { showEditEngagement.value = true }
+function onEngagementSaved(updated: any) { engagement.value = updated }
+function newFinding() { editingFinding.value = null; showFindingModal.value = true }
+function editFinding(f: any) { editingFinding.value = f; showFindingModal.value = true }
+async function onFindingSaved() {
+  if (engagement.value) await listByEngagement(engagement.value.id)
 }
+const findingsLoaded = ref(false)
+
+// Editable markdown fields
+type MdFieldKey = 'executiveSummary' | 'scopeNotes' | 'constraints'
+interface EditState { editing: boolean; draft: string }
+const fieldStates: Record<MdFieldKey, EditState> = {
+  executiveSummary: { editing: false, draft: '' },
+  scopeNotes: { editing: false, draft: '' },
+  constraints: { editing: false, draft: '' }
+}
+
+const savingField = ref<MdFieldKey | null>(null)
+
+function beginEdit(field: string) {
+  const f = field as MdFieldKey
+  if (!engagement.value) return
+  fieldStates[f].draft = engagement.value[f] || ''
+  fieldStates[f].editing = true
+}
+function cancelEdit(field: string) {
+  const f = field as MdFieldKey
+  fieldStates[f].editing = false
+  fieldStates[f].draft = ''
+}
+async function saveField(field: string) {
+  const f = field as MdFieldKey
+  if (!engagement.value) return
+  savingField.value = f
+  try {
+    const patch: any = { [f]: fieldStates[f].draft }
+    const updated = await updateDetails(engagement.value.id, patch)
+    if (updated) {
+      engagement.value = { ...engagement.value, ...updated }
+      addToast({ title: 'Saved', message: fieldLabel(f) + ' updated', type: 'success' })
+    }
+    fieldStates[f].editing = false
+  } catch (e: any) {
+    addToast({ title: 'Error', message: e.message || 'Failed to save', type: 'error' })
+  } finally { savingField.value = null }
+}
+
+function fieldLabel(f: MdFieldKey) {
+  return f === 'executiveSummary' ? 'Executive Summary' : f === 'scopeNotes' ? 'Scope Notes' : 'Constraints'
+}
+
+const loading = computed(() => egLoading.value)
+const error = computed(() => egError.value)
 
 async function load() {
   if (!engagementId.value) return
-  loading.value = true
-  error.value = null
-  try {
+  // Only prime context if we have not already for this engagement id
+  if (lastPrimedId.value !== engagementId.value) {
     await primeContext({ engagementId: engagementId.value })
-    engagement.value = { id: engagementId.value, title: 'Engagement ' + engagementId.value }
-    await listParticipants(engagementId.value)
-  } catch (e: any) {
-    error.value = e.message || 'Failed loading engagement'
-  } finally { loading.value = false }
+    lastPrimedId.value = engagementId.value
+  }
+  const data = await get(engagementId.value)
+  engagement.value = data
+  if (data && !findingsLoaded.value) {
+    await listByEngagement(data.id)
+    findingsLoaded.value = true
+  }
 }
 
-onMounted(() => { engagementId.value = route.params.id as string; load() })
-watch(() => route.params.id, (id) => { if (id) { engagementId.value = id as string; load() } })
+onMounted(() => {
+  const id = route.params.id as string | undefined
+  if (id) {
+    engagementId.value = id
+    load()
+  }
+})
+// Guard against redundant route param updates with same id
+watch(() => route.params.id, (id) => {
+  if (id && id !== engagementId.value) {
+    engagementId.value = id as string
+    load()
+  }
+})
 
-function tabClass(t: string) { return ['tab', activeTab.value === t ? 'active' : ''].join(' ') }
+function tabClass(t: string) { return ['tab-btn', activeTab.value === t ? 'active' : ''].join(' ') }
 </script>
 
 <template>
@@ -54,93 +122,126 @@ function tabClass(t: string) { return ['tab', activeTab.value === t ? 'active' :
       <h1 class="dashboard-title">Engagement Detail</h1>
     </template>
     <div class="engagement-detail">
-    <div v-if="loading" class="state">Loading…</div>
-    <div v-else-if="error" class="state error">{{ error }}</div>
-    <div v-else-if="!engagement" class="state empty">Engagement not found.</div>
-    <div v-else>
-      <header class="header">
-        <div>
-          <h1>{{ engagement.title || engagement.id }}</h1>
-          <p class="sub">ID: {{ engagement.id }}</p>
-        </div>
-        <div class="actions">
-          <CapGate capability="ENG.MANAGE" :ctx="{ engagementId: engagement.id }">
-            <button type="button">Edit</button>
-          </CapGate>
-        </div>
-      </header>
-      <nav class="tabs">
-        <button :class="tabClass('overview')" @click="activeTab='overview'">Overview</button>
-        <button :class="tabClass('findings')" @click="activeTab='findings'">Findings</button>
-        <button :class="tabClass('artifacts')" @click="activeTab='artifacts'">Artifacts</button>
-        <button :class="tabClass('participants')" @click="activeTab='participants'">Participants</button>
-      </nav>
-      <section class="tab-body" v-if="activeTab==='overview'">
-        <h2>Overview</h2>
-        <p class="placeholder">Overview content placeholder (summary, scope, constraints...).</p>
-      </section>
-      <section class="tab-body" v-else-if="activeTab==='findings'">
-        <h2>Findings</h2>
-        <p class="placeholder">Findings list placeholder – will integrate findings table.</p>
-        <CapGate capability="ENG.UPDATE_FINDING" :ctx="{ engagementId: engagement.id }">
-          <button type="button">New Finding</button>
-        </CapGate>
-      </section>
-      <section class="tab-body" v-else-if="activeTab==='artifacts'">
-        <h2>Artifacts</h2>
-        <p class="placeholder">Artifacts table placeholder.</p>
-      </section>
-      <section class="tab-body" v-else-if="activeTab==='participants'">
-        <h2>Participants</h2>
-  <div v-if="participantsLoading" class="placeholder">Loading participants…</div>
-  <table v-else-if="participants.length" class="part-table">
-          <thead>
-            <tr><th>User</th><th>Role</th><th></th></tr>
-          </thead>
+      <div v-if="loading" class="state">Loading…</div>
+      <div v-else-if="error" class="state error">{{ error }}</div>
+      <div v-else-if="!engagement" class="state empty">Engagement not found.</div>
+      <div v-else>
+        <header class="page-header">
+          <div class="title-block">
+            <h1 class="title">{{ engagement.title || engagement.code || engagement.id }}</h1>
+            <div class="meta-row">
+              <span class="badge phase">{{ engagement.phase }}</span>
+              <span class="badge status">{{ engagement.status }}</span>
+              <span class="id">ID: {{ engagement.id }}</span>
+            </div>
+          </div>
+          <div class="header-actions">
+            <button class="btn" @click="openEditEngagement">Edit</button>
+          </div>
+        </header>
+        <nav class="tabs modern">
+          <button :class="tabClass('overview')" @click="activeTab='overview'">Overview</button>
+          <button :class="tabClass('findings')" @click="activeTab='findings'">Findings</button>
+          <button :class="tabClass('artifacts')" @click="activeTab='artifacts'">Artifacts</button>
+          <button :class="tabClass('participants')" @click="activeTab='participants'">Participants</button>
+        </nav>
+
+        <!-- OVERVIEW TAB -->
+        <section v-if="activeTab==='overview'" class="tab-panel grid-cols">
+          <div class="panel-card span-2">
+            <SectionEditable :engagement="engagement" field="executiveSummary" label="Executive Summary" :state="fieldStates.executiveSummary" :saving="savingField==='executiveSummary'" @edit="beginEdit" @cancel="cancelEdit" @save="saveField" />
+          </div>
+          <div class="panel-card">
+            <SectionEditable :engagement="engagement" field="scopeNotes" label="Scope" :state="fieldStates.scopeNotes" :saving="savingField==='scopeNotes'" @edit="beginEdit" @cancel="cancelEdit" @save="saveField" />
+          </div>
+          <div class="panel-card">
+            <SectionEditable :engagement="engagement" field="constraints" label="Constraints" :state="fieldStates.constraints" :saving="savingField==='constraints'" @edit="beginEdit" @cancel="cancelEdit" @save="saveField" />
+          </div>
+        </section>
+
+        <!-- PLACEHOLDER OTHER TABS (future tables/components to integrate) -->
+        <section v-else-if="activeTab==='findings'" class="tab-panel">
+          <div class="panel-head">
+            <h2 class="section-title">Findings</h2>
+            <div class="actions">
+              <button class="btn primary" @click="newFinding">New Finding</button>
+            </div>
+          </div>
+          <div v-if="!findings.length" class="placeholder">No findings yet.</div>
+          <table v-else class="findings-table">
+            <thead><tr><th>Title</th><th>Severity</th><th>Status</th><th>Publication</th><th></th></tr></thead>
             <tbody>
-              <tr v-for="p in participants" :key="p.userId">
-                <td>{{ p.userId }}</td>
-                <td>{{ p.role }}</td>
-                <td class="actions-cell">
-                  <CapGate capability="ENG.MANAGE" :ctx="{ engagementId: engagement.id }">
-                    <button class="mini danger" @click="remove(p.userId, engagement.id)">Remove</button>
-                  </CapGate>
-                </td>
+              <tr v-for="f in findings" :key="f.id">
+                <td>{{ f.title }}</td>
+                <td>{{ f.severity }}</td>
+                <td>{{ f.status }}</td>
+                <td><span class="pub-pill" :class="f.publicationStatus.toLowerCase()">{{ f.publicationStatus }}</span></td>
+                <td><button class="link-btn" @click="editFinding(f)">Edit</button></td>
               </tr>
             </tbody>
-  </table>
-  <p v-else class="placeholder empty">No participants assigned.</p>
-        <CapGate capability="ENG.MANAGE" :ctx="{ engagementId: engagement.id }">
-          <form class="assign-form" @submit.prevent="onAssign">
-            <div class="row">
-              <input v-model="newParticipant.userId" placeholder="User ID" required />
-              <select v-model="newParticipant.role">
-                <option value="OWNER">OWNER</option>
-                <option value="LEAD">LEAD</option>
-                <option value="TESTER">TESTER</option>
-                <option value="VIEWER">VIEWER</option>
-              </select>
-              <button type="submit" :disabled="assigning">{{ assigning ? 'Assigning…' : 'Assign' }}</button>
-            </div>
-          </form>
-        </CapGate>
-      </section>
+          </table>
+          <FindingEditorModal v-if="engagement" v-model="showFindingModal" :engagement-id="engagement.id" :application-id="engagement.applicationId" :finding="editingFinding" @saved="onFindingSaved" />
+          <EditEngagementModal v-if="engagement" v-model="showEditEngagement" :engagement="engagement" @saved="onEngagementSaved" />
+        </section>
+        <section v-else-if="activeTab==='artifacts'" class="tab-panel">
+          <h2 class="section-title">Artifacts</h2>
+          <p class="placeholder">Artifacts management coming soon.</p>
+        </section>
+        <section v-else-if="activeTab==='participants'" class="tab-panel">
+          <h2 class="section-title">Participants</h2>
+          <ParticipantsTab v-if="engagement" :engagement-id="engagement.id" :organization-id="engagement.organizationId" />
+        </section>
+      </div>
     </div>
-  </div>
   </DashboardLayout>
 </template>
 
+<!-- Removed inline SectionEditable; now imported as a standalone component -->
+
 <style scoped>
-.header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1rem; }
-.header h1 { margin:0; font-size:1.4rem; }
-.sub { margin:0.25rem 0 0; font-size:0.75rem; opacity:0.7; }
-.actions button { background:#3b82f6; color:#fff; border:none; padding:0.45rem 0.8rem; border-radius:4px; cursor:pointer; }
-.tabs { display:flex; gap:0.25rem; margin-bottom:0.75rem; }
-.tab { background:#f3f4f6; border:none; padding:0.45rem 0.9rem; border-radius:4px; cursor:pointer; font-size:0.85rem; }
-.tab.active { background:#3b82f6; color:#fff; }
-.tab-body { background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:1rem; }
-.placeholder { opacity:0.7; font-size:0.85rem; }
+.page-header { margin-bottom:1rem; }
+.title { margin:0; font-size:1.55rem; letter-spacing:.5px; }
+.meta-row { display:flex; gap:.4rem; align-items:center; margin-top:.5rem; flex-wrap:wrap; }
+.header-actions { display:flex; align-items:center; gap:.5rem; }
+.badge { font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; padding:.25rem .45rem; border-radius:4px; background:var(--color-accent-soft,#eef2ff); color:#334155; font-weight:600; }
+[data-theme="dark"] .badge { background:#1e293b; color:#cbd5e1; }
+.id { font-size:.65rem; opacity:.65; }
+.tabs.modern { display:flex; gap:.35rem; margin-bottom:.9rem; }
+.tab-btn { background:var(--color-card,#f3f4f6); border:1px solid var(--color-border,#e5e7eb); padding:.5rem .95rem; border-radius:8px; font-size:.75rem; font-weight:500; letter-spacing:.03em; cursor:pointer; transition:.15s; }
+.tab-btn.active { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.12); }
+.tab-panel { background:var(--color-card,#fff); border:1px solid var(--color-border,#e5e7eb); border-radius:14px; padding:1.2rem 1.25rem; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+[data-theme="dark"] .tab-panel { background:#1f2735; border-color:#2c3848; }
+.grid-cols { display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:1rem; }
+.panel-card { background:var(--color-card,#fff); border:1px solid var(--color-border,#e5e7eb); border-radius:12px; padding:1rem 1rem 1.1rem; display:flex; flex-direction:column; gap:.75rem; position:relative; }
+[data-theme="dark"] .panel-card { background:#1f2735; border-color:#2c3848; }
+.section-editable { display:flex; flex-direction:column; gap:.65rem; }
+.section-head { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+.section-label { font-size:.85rem; margin:0; font-weight:600; letter-spacing:.04em; text-transform:uppercase; opacity:.85; }
+.markdown-body { font-size:.78rem; line-height:1.45; white-space:pre-wrap; word-wrap:break-word; }
+.markdown-body :deep(h1), .markdown-body :deep(h2) { font-size:1rem; }
+.markdown-body :deep(code) { background:rgba(0,0,0,.05); padding:2px 4px; border-radius:4px; font-size:.65rem; }
+[data-theme="dark"] .markdown-body :deep(code) { background:#273142; }
+.editor-wrap { display:flex; flex-direction:column; gap:.5rem; }
+.edit-actions { display:flex; gap:.5rem; }
+.btn { background:#e2e8f0; border:none; padding:.45rem .9rem; border-radius:6px; font-size:.7rem; cursor:pointer; font-weight:500; }
+.btn.primary { background:#3b82f6; color:#fff; }
+.btn.subtle { background:transparent; color:var(--color-text,#334155); }
+[data-theme="dark"] .btn { background:#273142; color:#cbd5e1; }
+[data-theme="dark"] .btn.primary { background:#3b82f6; }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
+.placeholder { opacity:.6; font-size:.75rem; }
 .state { padding:1rem; }
-.state.error { color:#b91c1c; }
-.state.empty { color:#555; }
+.state.error { color:#dc2626; }
+.state.empty { color:#64748b; }
+.panel-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
+.findings-table { width:100%; border-collapse:collapse; font-size:.7rem; }
+.findings-table th, .findings-table td { padding:.45rem .5rem; border-bottom:1px solid var(--color-border,#e5e7eb); text-align:left; }
+.findings-table th { font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; opacity:.75; }
+.link-btn { background:transparent; border:none; color:#2563eb; font-size:.65rem; cursor:pointer; }
+.pub-pill { display:inline-block; font-size:.55rem; padding:.25rem .4rem; border-radius:4px; font-weight:600; letter-spacing:.05em; }
+.pub-pill.draft { background:#fcd34d; color:#723b13; }
+.pub-pill.published { background:#4ade80; color:#064e3b; }
+[data-theme="dark"] .pub-pill.draft { background:#b45309; color:#fff; }
+[data-theme="dark"] .pub-pill.published { background:#15803d; color:#fff; }
+@media (max-width:800px){ .grid-cols { grid-template-columns:1fr; } }
 </style>

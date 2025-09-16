@@ -1,5 +1,13 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+// Use the application router directly instead of useRouter() to allow
+// palette usage in non-component (test) contexts. Using useRouter()
+// outside of a component setup caused getRoutes() to be undefined in
+// Vitest because no component instance existed. Importing the router
+// singleton gives us stable access to route definitions while keeping
+// navigation a best-effort (errors are swallowed in headless tests).
+import router from '../router'
+import { useAuth } from './useAuth'
+import { useRoles } from './useRoles'
 
 export interface Command {
   id: string
@@ -9,6 +17,9 @@ export interface Command {
   group?: string
   // Optional async hint (e.g., network) to show spinner
   async?: boolean
+  kind?: 'navigation' | 'action'
+  icon?: string // simple emoji or icon key consumed by component
+  hidden?: boolean // runtime visibility suppression (after filtering)
 }
 
 interface InternalCommandMeta {
@@ -25,6 +36,15 @@ const open = ref(false)
 const lastOpenedAt = ref<number | null>(null)
 const runningCommandId = ref<string | null>(null)
 const telemetryHandler = ref<TelemetryHandler | null>(null)
+const hideUnauthorized = ref(false)
+const pinned = ref<Set<string>>(new Set())
+
+const PREF_KEY = 'cp.hideUnauthorized.v1'
+const PIN_KEY = 'cp.pins.v1'
+try { const raw = localStorage.getItem(PREF_KEY); if(raw) hideUnauthorized.value = raw === 'true' } catch {/* ignore */}
+try { const p = localStorage.getItem(PIN_KEY); if(p) pinned.value = new Set(JSON.parse(p)) } catch {/* ignore */}
+function persistHidePref(){ try { localStorage.setItem(PREF_KEY, hideUnauthorized.value ? 'true':'false') } catch {/* ignore */} }
+function persistPins(){ try { localStorage.setItem(PIN_KEY, JSON.stringify(Array.from(pinned.value))) } catch {/* ignore */} }
 
 const RECENTS_KEY = 'cp.recents.v1'
 
@@ -87,21 +107,140 @@ function fuzzyScore(q: string, text: string, id: string): number {
 }
 
 export function useCommandPalette() {
-  const router = useRouter()
+
+  // Dynamically register route-based navigation commands (excluding parameterized & duplicate paths)
+  function humanize(name: string) {
+    return name.split(/[-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+  }
+
+  function buildRouteCommands(){
+    const { isAuthenticated } = useAuth()
+    const { isAdmin, isPentester } = useRoles()
+    let routes: any[] = []
+    try { routes = router.getRoutes ? router.getRoutes() : [] } catch { routes = [] }
+    const cmds: Command[] = []
+    const seen = new Set<string>()
+    for(const r of routes){
+      if(!r.path) continue
+      if(r.path.includes('/:')) continue // skip parameterized routes for palette
+      if(seen.has(r.path)) continue
+      seen.add(r.path)
+      const meta: any = r.meta || {}
+      // Visibility predicate based on meta flags
+      const requiresAuth = !!meta.requiresAuth
+      const requiresAdmin = !!meta.requiresAdmin
+      const requiresPentester = !!meta.requiresPentester
+      // Determine group
+      let group = 'Navigation'
+      if(r.path.startsWith('/admin')) group = 'Admin'
+      else if(r.path.startsWith('/pentester')) group = 'Pentester'
+      else if(r.path.startsWith('/blog')) group = 'Blog'
+      else if(r.path.startsWith('/pulse')) group = 'Pulse'
+      else if(r.path.startsWith('/security-demo')) group = 'Security Demos'
+  // Normalize possible symbol route names to string
+  const routeNameStr: string | undefined = r.name === undefined ? undefined : String(r.name)
+
+  // Title heuristics
+  let titleBase = routeNameStr ? humanize(routeNameStr) : humanize(r.path.replace(/^\//,''))
+  // Remove common prefixes in title for clarity
+  titleBase = titleBase.replace(/^Admin /,'').replace(/^Pentester /,'').replace(/ Dashboard$/,'')
+  // Role badges
+  const badges: string[] = []
+  if(requiresAdmin) badges.push('Admin')
+  else if(requiresPentester) badges.push('Pentester')
+  const badgeSuffix = badges.length ? ' ['+badges.join(', ')+']' : ''
+  const title = `Go: ${titleBase}${badgeSuffix}`
+  const idBase = routeNameStr ? routeNameStr : r.path.replace(/\//g,'_')
+  const id = 'nav.' + String(idBase)
+
+      cmds.push({
+        id,
+        title,
+        keywords: [routeNameStr, r.path, group, requiresAdmin?'admin':'', requiresPentester?'pentester':''].filter(Boolean).join(' '),
+        group,
+        kind: 'navigation',
+        icon: requiresAdmin ? '🛡️' : requiresPentester ? '🧪' : '🧭',
+        run: () => {
+          try {
+            // Auth gating at command level (router guard still applies)
+            if(requiresAuth && !(isAuthenticated?.value)) return router.push('/login')
+            if(requiresAdmin && !(isAdmin?.value)) return router.push('/login')
+            if(requiresPentester && !(isPentester?.value)) return router.push('/login')
+            return router.push(r.path)
+          } catch (e) {
+            // In headless test environments navigation isn't critical; swallow.
+            return undefined
+          }
+        },
+      })
+    }
+    return cmds
+  }
+
+  function removeRouteNavCommands(){
+    registered.value = registered.value.filter(c => !c.id.startsWith('nav.'))
+  }
+
+  function rebuildRouteCommands(){
+    removeRouteNavCommands()
+    registerCommands(buildRouteCommands())
+  }
 
   function ensureCore() {
-    if(registered.value.length === 0) {
+    // Base action always present
+    if(!registered.value.find(c=> c.id==='app.new')) {
       registerCommands([
-        { id:'nav.home', title:'Go: Home', keywords:'home root main', run: ()=> router.push('/') , group:'Navigation' },
-        { id:'nav.admin', title:'Go: Admin Dashboard', keywords:'admin dashboard', run: ()=> router.push('/admin'), group:'Navigation' },
-        { id:'nav.pentester', title:'Go: Pentester Portal', keywords:'pentest engagements', run: ()=> router.push('/pentester'), group:'Navigation' },
-        { id:'nav.pentesterApps', title:'Go: Applications (Pentester)', keywords:'applications apps pentest', run: ()=> router.push('/pentester/applications'), group:'Navigation' },
-        { id:'app.new', title:'Application: New', keywords:'create new application app', run: ()=> router.push('/pentester/applications'), group:'Applications' }
+        { id:'app.new', title:'Application: New', keywords:'create new application app', run: ()=> router.push('/pentester/applications'), group:'Applications', kind:'action', icon:'⚙️' }
       ])
     }
+    // Navigation commands if none currently registered
+    if(!registered.value.some(c=> c.id.startsWith('nav.'))){
+      rebuildRouteCommands()
+    }
+    // Preference commands
+    const prefCmds: Command[] = []
+    if(!registered.value.find(c=> c.id==='prefs.toggleHideUnauthorized')){
+      prefCmds.push({ id:'prefs.toggleHideUnauthorized', title: hideUnauthorized.value ? 'Prefs: Show Unauthorized Destinations' : 'Prefs: Hide Unauthorized Destinations', group:'Preferences', keywords:'preferences toggle auth visibility', kind:'action', icon:'👁️', run: ()=>{
+        hideUnauthorized.value = !hideUnauthorized.value
+        persistHidePref()
+        const cmd = registered.value.find(c=> c.id==='prefs.toggleHideUnauthorized')
+        if(cmd){ cmd.title = hideUnauthorized.value ? 'Prefs: Show Unauthorized Destinations' : 'Prefs: Hide Unauthorized Destinations' }
+      } })
+    }
+    if(!registered.value.find(c=> c.id==='prefs.togglePin')){
+      prefCmds.push({ id:'prefs.togglePin', title:'Command: Pin / Unpin Last Run', group:'Preferences', keywords:'pin favorite star', kind:'action', icon:'⭐', run: ()=>{
+        const sorted = Object.entries(metaMap.value).sort((a,b)=> (b[1].lastUsed||0)-(a[1].lastUsed||0))
+        if(sorted.length){
+          const targetId = sorted[0][0]
+          if(pinned.value.has(targetId)) pinned.value.delete(targetId); else pinned.value.add(targetId)
+          persistPins()
+        }
+      } })
+    }
+    if(prefCmds.length) registerCommands(prefCmds)
   }
 
   ensureCore()
+
+  // Auto hot-reload / dynamic update: track a signature of route names+paths; rebuild if changes
+  let lastSignature = ''
+  function computeSignature(){
+    return router.getRoutes()
+      .filter(r=>r.path && !r.path.includes('/:'))
+      .map(r=> (r.name !== undefined ? String(r.name) : '') + '|' + r.path)
+      .sort()
+      .join('#')
+  }
+  function maybeRebuild(){
+    const sig = computeSignature()
+    if(sig !== lastSignature){
+      lastSignature = sig
+      rebuildRouteCommands()
+    }
+  }
+  // Initialize signature
+  lastSignature = computeSignature()
+  router.afterEach(()=> maybeRebuild())
 
   function openPalette(){ if(!open.value){ open.value = true; lastOpenedAt.value = Date.now(); telemetryHandler.value?.({ type:'open', ts: Date.now() }) } }
   function closePalette(){ if(open.value){ open.value = false; query.value = ''; telemetryHandler.value?.({ type:'close', ts: Date.now() }) } }
@@ -129,13 +268,59 @@ export function useCommandPalette() {
     }
   }
 
+  // Parse inline search operators (group:, kind:, pinned:true, role:admin/pentester)
+  function parseFilters(raw: string){
+    const filters: any = { group: null, kind: null, pinned: null, role: null, text: '' }
+    const parts = raw.split(/\s+/).filter(Boolean)
+    for(const p of parts){
+      if(p.startsWith('group:')) filters.group = p.slice(6)
+      else if(p.startsWith('kind:')) filters.kind = p.slice(5)
+      else if(p.startsWith('pinned:')) filters.pinned = p.slice(7) === 'true'
+      else if(p.startsWith('role:')) filters.role = p.slice(5)
+      else filters.text += (filters.text ? ' ':'') + p
+    }
+    return filters
+  }
+
   const results = computed(()=>{
-    const q = query.value.trim()
-    const list = registered.value.map(c => ({ c, s: fuzzyScore(q, c.title + ' ' + (c.keywords||''), c.id) }))
+    const raw = query.value.trim()
+    const { group:groupFilter, kind:kindFilter, pinned:pinFilter, role:roleFilter, text } = parseFilters(raw)
+    const q = text
+    const { isAdmin, isPentester } = useRoles()
+    const list = registered.value
+      .filter(c => {
+        if(!hideUnauthorized.value) return true
+        // When hiding unauthorized, remove nav commands requiring auth/role user lacks
+        if(c.id.startsWith('nav.')) {
+          const lower = (c.keywords||'')
+          const { isAuthenticated } = useAuth()
+          const { isAdmin, isPentester } = useRoles()
+          const needAdmin = /admin\b/.test(lower) && /admin/.test(lower.split(' ').join('')) // heuristic
+          const needPentester = /pentester\b/.test(lower)
+          if(needAdmin && !isAdmin.value) return false
+          if(needPentester && !isPentester.value) return false
+          // Implicit requiresAuth detection: if keywords contains 'admin' or 'pentester' treat as restricted; else allow
+          if(/requiresAuth/.test(lower) && !isAuthenticated.value) return false
+        }
+        return true
+      })
+      .filter(c => groupFilter ? (c.group?.toLowerCase() === groupFilter.toLowerCase()) : true)
+      .filter(c => kindFilter ? (c.kind === kindFilter) : true)
+      .filter(c => pinFilter === null ? true : pinFilter === pinned.value.has(c.id))
+      .filter(c => {
+        if(!roleFilter) return true
+        if(roleFilter === 'admin') return /admin/.test(c.keywords||'')
+        if(roleFilter === 'pentester') return /pentester/.test(c.keywords||'')
+        return true
+      })
+      .map(c => ({ c, s: fuzzyScore(q, c.title + ' ' + (c.keywords||''), c.id) }))
       .filter(r => r.s > 0 || !q)
       .sort((a,b) => b.s - a.s)
       .map(r => r.c)
-    return list.slice(0, 30)
+    // Pin boost: stable ordering with pinned first (maintain fuzzy ordering inside buckets)
+    const pinnedList = list.filter(c=> pinned.value.has(c.id))
+    const unpinnedList = list.filter(c=> !pinned.value.has(c.id))
+    return [...pinnedList, ...unpinnedList].slice(0,30)
   })
 
   function onKey(e: KeyboardEvent){
@@ -152,7 +337,11 @@ export function useCommandPalette() {
     .slice(0,8)
     .map(([id])=> registered.value.find(c=>c.id===id)).filter(Boolean) as Command[])
 
-  return { open, query, results, recents, runningCommandId, registerCommands, setCommandTelemetry, run, openPalette, closePalette, toggle }
+  function listAllCommands(){ return [...registered.value] }
+  function isPinned(id: string){ return pinned.value.has(id) }
+  function togglePin(id: string){ if(pinned.value.has(id)) pinned.value.delete(id); else pinned.value.add(id); persistPins() }
+
+  return { open, query, results, recents, runningCommandId, registerCommands, setCommandTelemetry, run, openPalette, closePalette, toggle, rebuildRouteCommands, listAllCommands, hideUnauthorized, pinned, isPinned, togglePin }
 }
 
 // Simple singleton accessor for global palette usage
@@ -160,4 +349,15 @@ let singleton: ReturnType<typeof useCommandPalette> | null = null
 export function useGlobalCommandPalette(){
   if(!singleton) singleton = useCommandPalette()
   return singleton
+}
+
+// Test helper to reset internal state between suites (not used in prod code)
+export function resetCommandPaletteForTests(){
+  registered.value = []
+  metaMap.value = {}
+  query.value = ''
+  open.value = false
+  lastOpenedAt.value = null
+  runningCommandId.value = null
+  singleton = null
 }

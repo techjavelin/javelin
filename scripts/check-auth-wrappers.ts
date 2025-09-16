@@ -8,11 +8,17 @@
 
   Fails (exit 1) if any bare calls are found.
 */
-import { globby } from 'globby';
+// NOTE: There was a persistent TS phantom error referencing globby's default export even after
+// removing globby usage. We replaced implementation with fast-glob. If an editor cache still
+// surfaces a globby-related diagnostic, clear TS server cache. This file intentionally avoids
+// importing globby.
+// Use fast-glob directly to avoid ESM interop issues seen with globby in ts-node/tsx context
+import fg from 'fast-glob';
 import { readFileSync } from 'fs';
 
 async function main(){
-  const files = await globby(['src/**/*.{ts,vue}']);
+  // Support both ESM named export style (globby function) and potential CJS default interop
+  const files = await fg(['src/**/*.{ts,vue}'], { dot: false });
   const violations: { file: string; line: number; snippet: string }[] = [];
   const allowed = /(withAuth\(|withUserAuth\(|withPublic\()/;
   const listCall = /client\.models\.[A-Za-z0-9_]+\.list\s*\(/;

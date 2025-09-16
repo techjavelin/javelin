@@ -20,8 +20,11 @@
       </button>
     </div>
 
-    <!-- Navigation Menu -->
-    <nav class="sidebar-nav">
+  <!-- Launchpad + User Context (shared) -->
+  <SidebarLaunchpadUserBlock :collapsed="isCollapsed" class="lp-shared" />
+
+  <!-- Navigation Menu (Admin specific) -->
+  <nav class="sidebar-nav">
       <ul class="nav-menu">
         <!-- Dashboard -->
         <li class="nav-item">
@@ -159,36 +162,7 @@
           </router-link>
         </li>
 
-        <!-- Pentester Portal (visible to pentester or admin) -->
-        <template v-if="showPentesterSection">
-          <li class="nav-group" v-if="!isCollapsed">
-            <span class="group-title">Pentester</span>
-          </li>
-          <li class="nav-item">
-            <router-link to="/pentester" class="nav-link">
-              <span class="nav-icon"><font-awesome-icon :icon="faTachometerAlt" class="sidebar-png-icon" /></span>
-              <span class="nav-text" v-if="!isCollapsed">Pentester Dashboard</span>
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link to="/pentester/engagements" class="nav-link">
-              <span class="nav-icon"><font-awesome-icon :icon="faFileAlt" class="sidebar-png-icon" /></span>
-              <span class="nav-text" v-if="!isCollapsed">Engagements</span>
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link to="/pentester/vuln-library" class="nav-link">
-              <span class="nav-icon"><font-awesome-icon :icon="faTags" class="sidebar-png-icon" /></span>
-              <span class="nav-text" v-if="!isCollapsed">Vuln Library</span>
-            </router-link>
-          </li>
-          <li class="nav-item">
-            <router-link to="/engagements" class="nav-link">
-              <span class="nav-icon"><font-awesome-icon :icon="faFileAlt" class="sidebar-png-icon" /></span>
-              <span class="nav-text" v-if="!isCollapsed">Pentest Portal</span>
-            </router-link>
-          </li>
-        </template>
+        <!-- Pentester links moved into shared Launchpad block -->
       </ul>
     </nav>
 
@@ -200,19 +174,7 @@
       </router-link>
     </div>
 
-    <!-- User Info -->
-    <div class="sidebar-footer">
-      <UserFooterPanel
-        :userName="userName"
-        :userEmail="''"
-        roleLabel="Administrator"
-        :compact="isCollapsed"
-      >
-        <template #menu="slotProps">
-          <UserContextMenu :visible="slotProps.open" :menuId="'admin-user-menu'" />
-        </template>
-      </UserFooterPanel>
-    </div>
+    <!-- Footer user info now provided by Launchpad block (no duplicate) -->
   </aside>
 </template>
 
@@ -221,8 +183,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoles } from '../composables/useRoles'
 import { getCurrentUser } from 'aws-amplify/auth'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import UserContextMenu from './UserContextMenu.vue'
-import UserFooterPanel from './UserFooterPanel.vue'
+import UserContextMenu from './UserContextMenu.vue' // still used inside shared block indirect
+import UserFooterPanel from './UserFooterPanel.vue' // retained for compatibility if referenced
+import SidebarLaunchpadUserBlock from './SidebarLaunchpadUserBlock.vue'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
   faTachometerAlt,
@@ -290,8 +253,8 @@ const userInitials = computed(() => {
 })
 
 // Roles
-const { isPentester, isAdmin } = useRoles()
-const showPentesterSection = computed(() => isPentester.value || isAdmin.value)
+const { isPentester, isAdmin } = useRoles() // pentester visibility handled in shared block
+const showPentesterSection = computed(() => false)
 
 // Methods
 const toggleSidebar = () => {

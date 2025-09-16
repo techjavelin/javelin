@@ -22,21 +22,21 @@ export function useApplicationService() {
   async function updateApplication(input: Partial<Schema['Application']['type']> & { id: string }) {
     await ensureUser()
     // Prime context for org-level roles first
-    const existing = await client.models.Application.get({ id: input.id })
+  const existing = await client.models.Application.get({ id: input.id })
     if (!existing.data) throw new Error('Application not found')
     await primeContext({ organizationId: existing.data.organizationId })
     requireCapability('APP.MANAGE', { organizationId: existing.data.organizationId })
     const { id, ...rest } = input
-    return client.models.Application.update({ id, ...rest })
+  return client.models.Application.update({ id, ...rest })
   }
 
   async function deleteApplication(id: string) {
     await ensureUser()
-    const existing = await client.models.Application.get({ id })
+  const existing = await client.models.Application.get({ id })
     if (!existing.data) throw new Error('Application not found')
     await primeContext({ organizationId: existing.data.organizationId })
     requireCapability('APP.MANAGE', { organizationId: existing.data.organizationId })
-    return client.models.Application.delete({ id })
+  return client.models.Application.delete({ id })
   }
 
   return {

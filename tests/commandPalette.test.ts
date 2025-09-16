@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useGlobalCommandPalette, registerCommands } from '@/composables/useCommandPalette'
+import { useGlobalCommandPalette, registerCommands, resetCommandPaletteForTests } from '@/composables/useCommandPalette'
 
 describe('Command Palette basic behavior', () => {
   beforeEach(()=>{
+    resetCommandPaletteForTests()
     // Force singleton reset by re-registering (IDs will override)
     registerCommands([
       { id:'x.alpha', title:'Alpha Command', run: ()=>{} },

@@ -102,12 +102,11 @@ export const blogPostService = {
       if (options.authorId) {
         filter.authorId = { eq: options.authorId }
       }
-
-  const result = await client.models.BlogPost.list(withPublic({
+      const result = await client.models.BlogPost.list(withPublic({
         filter: Object.keys(filter).length > 0 ? filter : undefined,
         limit: options.limit || 20,
         nextToken: options.nextToken
-      })
+      }))
       
       return result
     } catch (error) {
@@ -132,10 +131,10 @@ export const blogPostService = {
   async getBySlug(slug: string) {
     const client = generateClient<Schema>()
     try {
-  const result = await client.models.BlogPost.list(withPublic({
+      const result = await client.models.BlogPost.list(withPublic({
         filter: { slug: { eq: slug } },
         limit: 1
-      })
+      }))
       return result.data[0] || null
     } catch (error) {
       console.error('Error getting blog post by slug:', error)
@@ -210,7 +209,7 @@ export const authorService = {
     try {
   const result = await client.models.Author.list(withPublic({
         filter: { isActive: { eq: true } }
-      })
+      }))
       return result
     } catch (error) {
       console.error('Error listing authors:', error)
@@ -298,7 +297,7 @@ export const tagService = {
     try {
   const result = await client.models.PostTag.list(withPublic({
         filter: { postId: { eq: postId } }
-      })
+      }))
       return result
     } catch (error) {
       console.error('Error getting tags for post:', error)
@@ -355,7 +354,7 @@ export const categoryService = {
     try {
   const result = await client.models.PostCategory.list(withPublic({
         filter: { postId: { eq: postId } }
-      })
+      }))
       return result
     } catch (error) {
       console.error('Error getting categories for post:', error)
@@ -391,7 +390,7 @@ export const commentService = {
         filter.isSpam = { eq: false }
       }
 
-  const result = await client.models.Comment.list(withPublic({ filter }))
+    const result = await client.models.Comment.list(withPublic({ filter }))
       return result
     } catch (error) {
       console.error('Error getting comments for post:', error)
@@ -453,7 +452,7 @@ export const newsletterService = {
       // Find the subscription
   const subscriptions = await client.models.Newsletter.list(withAuth({
         filter: { email: { eq: email } }
-      })
+      }))
       
       if (subscriptions.data.length > 0) {
         const subscription = subscriptions.data[0]
@@ -476,7 +475,7 @@ export const newsletterService = {
     try {
   const result = await client.models.Newsletter.list(withAuth({
         filter: { isSubscribed: { eq: true } }
-      })
+      }))
       return result
     } catch (error) {
       console.error('Error getting newsletter subscribers:', error)
@@ -516,7 +515,7 @@ export const analyticsService = {
         filter.timestamp = { ...filter.timestamp, lte: endDate }
       }
 
-  const result = await client.models.BlogAnalytics.list(withAuth({ filter }))
+    const result = await client.models.BlogAnalytics.list(withAuth({ filter }))
       return result
     } catch (error) {
       console.error('Error getting post analytics:', error)

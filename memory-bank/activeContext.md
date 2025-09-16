@@ -267,7 +267,7 @@ flowchart TD
 
 ## Current Goals
 
-- Current focus: UI theme consistency (light/dark), feature card styling, modal dark mode, subscribe bar alignment; enforce Conventional Commit messages for all future git commits.
+- Designing Pulse Hub client-facing app architecture (frontend structure, navigation, data/contracts, role-based access, multi-service dashboards).
 
 ## Current Blockers
 

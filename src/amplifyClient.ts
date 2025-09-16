@@ -26,15 +26,18 @@ try {
 }
 import type { Schema } from '../amplify/data/resource';
 
-// Central place to adjust the default auth mode used across the app.
-// Currently many composables explicitly specify { authMode: 'userPool' } on calls
-// because backend defaultAuthorizationMode is apiKey to allow public read of
-// certain blog-related models. If we later flip backend default to userPool
-// we can remove most explicit overrides and optionally set FALLBACK_AUTH_MODE
-// to 'apiKey' only for public list/read needs.
-// We now default all client calls to userPool (authenticated) and explicitly mark truly public
-// operations with withPublic(). This reduces the need to sprinkle withUserAuth everywhere and
-// ensures protected models aren't accidentally accessed via apiKey.
+// Central auth-mode strategy:
+// Backend defaultAuthorizationMode (in amplify/data/resource.ts) is now 'userPool'.
+// That means any call without an explicit authMode must originate from an authenticated user.
+// For genuinely public content (marketing/blog newsletter flows) we must explicitly opt-in
+// via withPublic()/authMode:'apiKey'. Keeping helpers here makes future migrations (e.g. 
+// adding OIDC or IAM modes) simpler and centralizes review of security-sensitive defaults.
+//
+// Helper usage guidelines:
+//   withAuth()      -> Standard authenticated calls (implicitly userPool via DEFAULT_AUTH_MODE)
+//   withUserAuth()  -> Explicit userPool (rarely needed now, kept for clarity in some mutations)
+//   withPublic()    -> Deliberate public/apiKey access (blog lists, newsletter opt-in, etc.)
+// Avoid passing authMode inside model input objects (must be separate options argument).
 export const DEFAULT_AUTH_MODE: 'userPool' | undefined = 'userPool';
 
 // If certain models should still be accessed publicly without auth, explicitly call withPublic().

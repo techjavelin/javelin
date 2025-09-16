@@ -64,6 +64,39 @@ Tests: See `tests/blogPublicAccess.test.ts` for regression coverage (anonymous f
 Extending: If adding new publicly readable blog-adjacent models (e.g., `Series`, `Newsletter` subscription confirmation listing), ensure they are added to `PUBLIC_READ_MODELS` and their reads are wrapped with `withPublic()`; add specific tests mirroring the existing pattern.
 
 
+### Command Palette (Global Navigation Coverage)
+
+The in-app Command Palette (⌘K / Ctrl+K) now auto-registers every non-parameter route so users can jump anywhere via fuzzy search.
+
+Implementation highlights:
+* Dynamic enumeration of `router.getRoutes()` on first palette usage (and auto re-build on route changes / HMR via a signature watch).
+* Skips routes containing `/:` (parameterized detail/edit pages) to avoid noisy, non-directable commands.
+* Generates command IDs: `nav.<routeName>` (fallback to path-derived token when `name` absent).
+* Humanizes titles: `Go: <Name>` (strips prefixes like `Admin`, `Pentester` and suffix `Dashboard`).
+* Role / scope badges appended: `[Admin]` or `[Pentester]` where route meta requires them.
+* Group assignment by path prefix: `/admin` -> `Admin`, `/pentester` -> `Pentester`, `/blog` -> `Blog`, `/pulse` -> `Pulse`, `/security-demo` -> `Security Demos`, default -> `Navigation`.
+* Permission-aware execution: Commands for protected routes still appear (so users learn destinations) but redirect unauthenticated / unauthorized users to `/login` (router guards enforce final access).
+* Recency ranking: Recent commands are boosted even with empty query (stored under `localStorage` key `cp.recents.v1`).
+* Manual refresh API: `rebuildRouteCommands()` and introspection `listAllCommands()` exported for debugging/tests.
+
+Special / non-route commands (e.g., future quick actions) can still be manually added via `registerCommands` (see the static `app.new` example).
+
+Test Coverage: `tests/commandPaletteRoutes.test.ts` asserts a `nav.*` command exists for each non-parameter route path to prevent regressions (e.g., future route additions silently missing from the palette).
+
+Extending:
+1. Add a new page route in `router.ts`.
+2. Provide a meaningful `name` property—this becomes the command identity and influences fuzzy scoring keywords.
+3. (Optional) Adjust grouping logic in `useCommandPalette.ts` if introducing a new top-level namespace (e.g., `/research`).
+4. For parameterized detail pages you want exposed (rare), convert them into a virtual command manually with a user-provided identifier (e.g., last opened entity) rather than enumerating raw IDs.
+
+Planned enhancements (not yet implemented):
+* Action mode: Distinguish navigation (Go:) from data mutations (Create / Import / Sync).
+* Visual section dividers and pinned favorites.
+* Inline search operators (e.g., `group:Admin admin`).
+
+Rationale: Ensures discoverability, reduces dependency on multiple nav components, and provides power-user acceleration for large admin + pentester surface areas.
+
+
 ## Features
 
 - **Authentication**: Setup with Amazon Cognito for secure user authentication.
@@ -279,6 +312,39 @@ Pentester routes (all `requiresAuth` + `requiresPentester` meta; admins implicit
 ```
 
 Navigation exposure: `AdminSidebar.vue` dynamically shows a Pentester section for users with `admin` or `pentester` role.
+
+### Unified Sidebar Launchpad & User Context
+
+All dashboard-style surfaces (Admin, Hub, Pentester, Generic App) now share a consistent launchpad + user context block provided by the Vue component `SidebarLaunchpadUserBlock.vue`.
+
+Goals:
+* Single source of truth for quick environment switching (Home / Launchpad, Admin, Client Hub, Pentester Portal).
+* Consistent display of user identity, email, role badges (Admin / Pentester) and contextual menu.
+* Reduced duplication of pentester/admin conditional nav logic across sidebars.
+
+Implementation Notes:
+* `AdminSidebar.vue` renders the shared block at the top; legacy inline pentester links removed.
+* `hub/HubSidebar.vue` injects the block below brand + collapse toggle.
+* Role-gated items: Admin link requires `admin` group; Pentester link requires `pentester` OR `admin` (admin inherits pentester semantics via `useRoles`).
+* Collapse support: component receives a single `collapsed` boolean prop and automatically switches to icon-only mode with native title tooltips.
+* User menu: reuses existing `UserContextMenu` portal actions; no duplicate footer panel required.
+
+Extending:
+* To add a new cross-surface module, append to `items` array inside `SidebarLaunchpadUserBlock.vue` with optional `requires` gate.
+* Keep icon set FontAwesome (solid) for consistency; supply tuple `[ 'fas', 'icon-name' ]`.
+* Avoid embedding surface-specific links (e.g. deep Hub pages) here—only top-level portals.
+
+Testing Suggestions:
+* Snapshot render in collapsed vs expanded (mount with prop variation).
+* Simulate roles by mocking `useRoles()` to assert visibility of gated links.
+* Accessibility: verify each icon link has a `title` attribute when collapsed.
+
+Migration Checklist (done):
+* Admin sidebar integrated.
+* Hub sidebar integrated.
+* Removed redundant pentester group block in Admin sidebar.
+* Documented pattern (this section).
+
 
 ### Composables
 Implemented composables under `src/composables/`:

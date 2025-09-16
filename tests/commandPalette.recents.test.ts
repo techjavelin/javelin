@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useGlobalCommandPalette, registerCommands } from '@/composables/useCommandPalette'
+import { useGlobalCommandPalette, registerCommands, resetCommandPaletteForTests } from '@/composables/useCommandPalette'
 
 // NOTE: relies on localStorage; jsdom provides a stub. We clear usage metadata by re-registering.
 
 describe('Command Palette recents & usage ordering', () => {
   beforeEach(()=>{
+    resetCommandPaletteForTests()
     registerCommands([
       { id:'t.alpha', title:'Alpha Admin', run: ()=>{} },
       { id:'t.beta', title:'Beta Build', run: ()=>{} },
@@ -13,7 +14,7 @@ describe('Command Palette recents & usage ordering', () => {
   })
 
   it('promotes recently run command to recents list head', async () => {
-    const pal = useGlobalCommandPalette()
+  const pal = useGlobalCommandPalette()
     // run beta then gamma
     const beta = pal.results.value.find(c=>c.id==='t.beta')!
     pal.run(beta)

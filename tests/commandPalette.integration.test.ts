@@ -1,19 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { useGlobalCommandPalette, registerCommands } from '@/composables/useCommandPalette'
+import { useGlobalCommandPalette, resetCommandPaletteForTests } from '@/composables/useCommandPalette'
 
-// Mock vue-router push used inside commands
-vi.mock('vue-router', () => {
-  return {
-    useRouter: () => ({ push: vi.fn().mockImplementation((p)=>{ mockPushes.push(p) }) })
-  }
-})
+// Since useCommandPalette imports the router singleton directly, mock that module.
 const mockPushes: any[] = []
+vi.mock('../src/router', () => ({
+  default: {
+    getRoutes: () => [
+      { path: '/', name: 'home', meta: {} },
+      { path: '/about', name: 'about', meta: {} }
+    ],
+    afterEach: () => {},
+    push: (p: any) => { mockPushes.push(p) }
+  }
+}))
 
 describe('Command Palette integration', () => {
   beforeEach(()=>{ mockPushes.length = 0 })
 
   it('runs a navigation command and closes palette', async () => {
-    const pal = useGlobalCommandPalette()
+  resetCommandPaletteForTests()
+  const pal = useGlobalCommandPalette()
     pal.openPalette()
     expect(pal.open.value).toBe(true)
     // Find a built-in nav command 'Go: Home'

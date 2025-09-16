@@ -335,6 +335,55 @@ const routes = [
     props: true,
     meta: { requiresAuth: true, hideTopNav: true }
   }
+  ,{
+    path: '/hub',
+    component: () => import('./pages/hub/HubDashboard.vue'),
+    name: 'hub-dashboard',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.VIEW_ORG_DASH' }
+  }
+  ,{
+    path: '/hub/engagements',
+    component: () => import('./pages/hub/HubEngagements.vue'),
+    name: 'hub-engagements',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.VIEW_ENGAGEMENT' }
+  }
+  ,{
+    path: '/hub/engagements/:id',
+    component: () => import('./pages/hub/HubEngagementDetail.vue'),
+    name: 'hub-engagement-detail',
+    props: true,
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.VIEW_ENGAGEMENT' }
+  }
+  ,{
+    path: '/hub/findings',
+    component: () => import('./pages/hub/HubFindings.vue'),
+    name: 'hub-findings',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.VIEW_PUBLISHED_FINDINGS' }
+  }
+  ,{
+    path: '/hub/requests',
+    component: () => import('./pages/hub/HubRequests.vue'),
+    name: 'hub-requests',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.REQUEST_SERVICE' }
+  }
+  ,{
+    path: '/hub/artifacts',
+    component: () => import('./pages/hub/HubArtifacts.vue'),
+    name: 'hub-artifacts',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.DOWNLOAD_ARTIFACT' }
+  }
+  ,{
+    path: '/hub/users',
+    component: () => import('./pages/hub/HubUsers.vue'),
+    name: 'hub-users',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.MANAGE_ORG_USERS' }
+  }
+  ,{
+    path: '/hub/settings',
+    component: () => import('./pages/hub/HubSettings.vue'),
+    name: 'hub-settings',
+    meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.VIEW_ORG_DASH' }
+  }
 ];
 
 const router = createRouter({
@@ -347,6 +396,7 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin)
   const requiresPentester = to.matched.some(record => record.meta.requiresPentester)
+  const hubCapability = to.matched.map(r => r.meta.hubCapability).find(v => !!v) as string | undefined
   
   if (requiresAuth || requiresAdmin || requiresPentester) {
     try {
@@ -372,6 +422,23 @@ router.beforeEach(async (to, from, next) => {
         console.warn('Pentester (or admin) access required')
         next('/login')
         return
+      }
+
+      if (hubCapability) {
+        // Lazy-load hub auth to avoid import cost when not navigating to hub
+        try {
+          const { useHubAuth } = await import('./composables/useHubAuth')
+          const { has } = useHubAuth()
+          if (!has(hubCapability)) {
+            console.warn('Missing hub capability', hubCapability)
+            next('/login')
+            return
+          }
+        } catch (e) {
+          console.error('Hub capability check failed', e)
+          next('/login')
+          return
+        }
       }
 
       next()

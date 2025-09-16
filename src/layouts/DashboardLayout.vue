@@ -4,13 +4,19 @@
     :class="{
       'admin-mode': isAdminRoute,
       'admin-collapsed': isAdminRoute && sidebarCollapsed,
-      'generic-mode': !isAdminRoute,
-      'generic-collapsed': !isAdminRoute && genericCollapsed
+      'generic-mode': !isAdminRoute && !hasCustomSidebar,
+      'generic-collapsed': !isAdminRoute && !hasCustomSidebar && genericCollapsed,
+      'custom-sidebar': hasCustomSidebar
     }"
   >
-    <!-- Sidebar: Admin or generic -->
-    <AdminSidebar v-if="isAdminRoute" @toggle="handleAdminSidebarToggle" />
-  <AppSidebar v-else :appName="appName" :collapsed="genericCollapsed" @toggle="handleGenericSidebarToggle">
+    <!-- Custom sidebar slot (e.g., Hub) -->
+    <template v-if="hasCustomSidebar">
+      <slot name="sidebar" />
+    </template>
+    <!-- Fallback: Admin or generic app sidebar -->
+    <template v-else>
+      <AdminSidebar v-if="isAdminRoute" @toggle="handleAdminSidebarToggle" />
+      <AppSidebar v-else :appName="appName" :collapsed="genericCollapsed" @toggle="handleGenericSidebarToggle">
       <template #header>
         <span class="app-title">{{ appName }}</span>
       </template>
@@ -36,7 +42,8 @@
           </template>
         </UserFooterPanel>
       </template>
-    </AppSidebar>
+      </AppSidebar>
+    </template>
 
     <!-- Content -->
     <div class="dashboard-content">
@@ -63,7 +70,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, inject, watch } from 'vue'
+import { ref, computed, inject, watch, useSlots } from 'vue'
+const slots = useSlots()
+const hasCustomSidebar = computed(() => !!slots.sidebar)
 import { useRoute, useRouter } from 'vue-router'
 import ThemeSwitcher from '../components/ThemeSwitcher.vue'
 import AppSidebar from '../components/nav/AppSidebar.vue'
@@ -132,11 +141,13 @@ function handleThemeToggle(nextTheme: string) {
   min-height: 100vh;
   background: var(--color-bg-light);
   width: 100%;
-  overflow-x: hidden; /* guard against any accidental overflow */
-  padding-left: var(--generic-sidebar-width, 260px); /* default for generic AppSidebar */
+  overflow-x: hidden;
+  padding-left: var(--generic-sidebar-width, 260px);
   transition: padding-left 0.25s ease;
   box-sizing: border-box;
 }
+/* When using a custom sidebar slot (Hub), remove inherited padding and rely on slot component width */
+.dashboard-layout.custom-sidebar { padding-left: 0; }
 
 /* Admin mode overrides (AdminSidebar is fixed @ 280px / 80px collapsed) */
 .dashboard-layout.admin-mode {
@@ -149,9 +160,7 @@ function handleThemeToggle(nextTheme: string) {
 }
 
 /* When not admin mode, generic sidebar participates in normal flow (not fixed), so remove forced padding */
-.dashboard-layout:not(.admin-mode) {
-  padding-left: var(--generic-sidebar-width, 280px);
-}
+.dashboard-layout:not(.admin-mode):not(.custom-sidebar) { padding-left: var(--generic-sidebar-width, 280px); }
 /* Generic collapsed */
 .dashboard-layout.generic-mode.generic-collapsed { padding-left: var(--generic-sidebar-collapsed-width, 80px); }
 

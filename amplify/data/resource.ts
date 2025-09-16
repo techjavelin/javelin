@@ -27,13 +27,15 @@ import { Application, ApplicationType, UserType } from "./models/Application.mod
 import { Engagement, EngagementPhase, EngagementStatus } from "./models/Engagement.model";
 import { ApplicationEngagement } from "./models/ApplicationEngagement.model";
 import { VulnerabilityTemplate, VulnerabilityCategory, Severity } from "./models/VulnerabilityTemplate.model";
-import { VulnerabilityFinding, FindingStatus } from "./models/VulnerabilityFinding.model";
+import { VulnerabilityFinding, FindingStatus, PublicationStatus } from "./models/VulnerabilityFinding.model";
 import { ArtifactLink, ArtifactProvider, DocumentType, ArtifactStatus } from "./models/ArtifactLink.model";
 import { OrganizationMembership, OrgRole } from "./models/OrganizationMembership.model";
 import { ApplicationRoleAssignment, ApplicationRole } from "./models/ApplicationRoleAssignment.model";
 import { EngagementRoleAssignment, EngagementUserRole } from "./models/EngagementRoleAssignment.model";
 import { Migration } from "./models/Migration.model";
 import { Project, ProjectStatus } from "./models/Project.model";
+import { MfaBackupCode } from "./models/MfaBackupCode.model";
+import { ServiceRequest, ServiceRequestStatus, ServiceRequestType } from "./models/ServiceRequest.model";
 
 const schema = a.schema({
   BlogPost,
@@ -72,6 +74,7 @@ const schema = a.schema({
   VulnerabilityTemplate,
   VulnerabilityFinding,
   FindingStatus,
+  PublicationStatus,
   ArtifactLink,
   ArtifactProvider,
   DocumentType,
@@ -85,6 +88,10 @@ const schema = a.schema({
   Migration,
   Project,
   ProjectStatus,
+  MfaBackupCode,
+  ServiceRequest,
+  ServiceRequestStatus,
+  ServiceRequestType,
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -92,9 +99,12 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
-    // API Key is used for a.allow.public() rules
+    // Flip default to userPool so all unspecified operations require authentication.
+    // Public/unauthenticated access now relies on explicit a.allow.public() rules AND
+    // frontend callers using withPublic()/authMode:'apiKey' where appropriate.
+    defaultAuthorizationMode: "userPool",
     apiKeyAuthorizationMode: {
+      // Retain short-lived API key to power truly public content (blog, marketing).
       expiresInDays: 30,
     },
   },
@@ -102,12 +112,9 @@ export const data = defineData({
   logging: true
 });
 
-// NOTE: Many frontend composables now explicitly specify { authMode: 'userPool' } for
-// protected models. We intentionally keep the project default as apiKey to allow
-// public read access for blog and marketing content models (BlogPost, Tag, Category, Author, etc.).
-// If/when we decide most traffic should require authentication, flip
-//   defaultAuthorizationMode: 'userPool'
-// and then remove explicit overrides where not needed, re-adding apiKey only for
-// the handful of public read paths. A centralized helper (withAuth) exists in
-// src/amplifyClient.ts to simplify a future migration.
+// NOTE: Default authorization mode flipped to 'userPool'. Public read access is now
+// intentional and minimal—callers must specify authMode:'apiKey' (via withPublic())
+// for models that expose unauthenticated content. Keep API key lifetime short and
+// periodically rotate. Review PUBLIC_READ_MODELS in src/amplifyClient.ts when adding
+// or removing public data surfaces.
 

@@ -19,11 +19,25 @@
   </section>
     <div class="card-grid">
       <LaunchpadTile
-        v-for="m in modules"
+        v-for="m in primaryModules"
         :key="m.key"
         :title="m.title"
         :description="m.description"
-  :canLaunch="m.canLaunch()"
+        :canLaunch="m.canLaunch()"
+        :icon="m.icon"
+        :status="m.status"
+        :status-variant="m.statusVariant"
+        @launch="() => handleLaunch(m)"
+        @learn="() => handleLearn(m)"
+      />
+    </div>
+    <div v-if="hubModules.length" class="card-grid secondary">
+      <LaunchpadTile
+        v-for="m in hubModules"
+        :key="m.key"
+        :title="m.title"
+        :description="m.description"
+        :canLaunch="m.canLaunch()"
         :icon="m.icon"
         :status="m.status"
         :status-variant="m.statusVariant"
@@ -36,7 +50,7 @@
 
 <script setup lang="ts">
 
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import PageWrapper from '@/components/PageWrapper.vue'
 import { useAuth } from '@/composables/useAuth'
 import LaunchpadTile from '@/components/LaunchpadTile.vue'
@@ -44,6 +58,8 @@ import { useLaunchpadModules } from '@/composables/useLaunchpadModules'
 
 const { loadCurrentUser } = useAuth()
 const { modules } = useLaunchpadModules()
+const primaryModules = computed(() => modules.value.filter(m => m.key !== 'hub'))
+const hubModules = computed(() => modules.value.filter(m => m.key === 'hub'))
 
 onMounted(async () => {
   // Ensure user groups are loaded early; modules computed reacts afterwards
@@ -69,11 +85,9 @@ function handleLearn(m: any) { m.learn?.() }
 </script>
 
 <style scoped>
-.card-grid {
-  display: flex;
-  gap: 2rem;
-  margin-top: 2rem;
-}
+.card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:2rem; margin-top:2rem; align-items:stretch; }
+.card-grid.secondary { margin-top:1.75rem; }
+@media (max-width:1000px){ .card-grid { grid-template-columns:1fr; } }
 /* LaunchpadTile styles are self-contained; legacy module styles removed */
 @media (max-width:900px){ .card-grid { flex-direction:column; } .module-card { max-width:100%; } }
 /* Launchpad Branding */

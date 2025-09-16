@@ -27,6 +27,85 @@
     </section>
 
     <section class="policy-section">
+      <h2>Local Storage & Session Storage Inventory</h2>
+      <p>We also use browser storage mechanisms (Local Storage and Session Storage) to persist certain preferences. These are not traditional HTTP cookies but may fall under similar consent requirements where they are not strictly necessary.</p>
+      <p><strong>Versioning & Re-Consent:</strong> This policy is versioned. When we materially change storage practices or after 12 months, we will re-display the consent banner even if you previously made a choice. Your stored consent record includes a version and timestamp used for this purpose.</p>
+      <div class="storage-table-wrapper">
+        <table class="storage-table">
+          <thead>
+            <tr>
+              <th>Name / Key</th>
+              <th>Type</th>
+              <th>Purpose</th>
+              <th>Category</th>
+              <th>Retention</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>cookie-consent</td>
+              <td>localStorage</td>
+              <td>Records your cookie preference selections (essential, analytics, marketing, functional) with timestamp.</td>
+              <td>Essential (legal compliance)</td>
+              <td>12 months (reset on update)</td>
+            </tr>
+            <tr>
+              <td>user-theme</td>
+              <td>localStorage</td>
+              <td>Stores chosen UI theme (light/dark) if functional cookies accepted.</td>
+              <td>Functional (requires consent)</td>
+              <td>Until user clears or withdraws functional consent</td>
+            </tr>
+            <tr>
+              <td>pending-theme</td>
+              <td>sessionStorage</td>
+              <td>Temporarily holds a theme selection before consent is granted.</td>
+              <td>Functional (transient)</td>
+              <td>Session (cleared on tab close or consent application)</td>
+            </tr>
+            <tr>
+              <td>cp.recents.v1</td>
+              <td>localStorage</td>
+              <td>Maintains recent command usage for the command palette to improve productivity.</td>
+              <td>Functional (requires consent)</td>
+              <td>Until cleared / preference withdrawn</td>
+            </tr>
+            <tr>
+              <td>cp.hideUnauthorized.v1</td>
+              <td>localStorage</td>
+              <td>Stores user preference to hide unauthorized navigation destinations in the command palette.</td>
+              <td>Functional (requires consent)</td>
+              <td>Until cleared / preference withdrawn</td>
+            </tr>
+            <tr>
+              <td>adminSidebarCollapsed</td>
+              <td>localStorage</td>
+              <td>Remembers collapse state of the admin sidebar UI.</td>
+              <td>Functional</td>
+              <td>Until cleared</td>
+            </tr>
+            <tr>
+              <td>appSidebarCollapsed</td>
+              <td>localStorage</td>
+              <td>Remembers general app sidebar collapse state.</td>
+              <td>Functional</td>
+              <td>Until cleared</td>
+            </tr>
+            <tr>
+              <td>sigintSidebarCollapsed</td>
+              <td>localStorage</td>
+              <td>Persists SIGINT feature sidebar collapse choice.</td>
+              <td>Functional</td>
+              <td>Until cleared</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note"><strong>Authentication Tokens:</strong> Sign-in session tokens used by AWS Amplify/Cognito may be stored in browser storage (Secure HTTP-only cookies or Web Storage depending on configuration). These are essential for providing secure account access and are not used for marketing or analytics profiling.</p>
+      <p>You may clear these items at any time via your browser settings. Removing essential consent or auth tokens could require you to sign in again or re-set preferences. You can also click “Reset Personalization” on the Preferences page to remove functional storage (e.g., theme, UI collapse states) without affecting essential session security.</p>
+    </section>
+
+    <section class="policy-section">
       <h2>Manage cookie preferences</h2>
       <p>You can change your cookie preferences any time by clicking the cookie settings button. This will let you revisit the cookie consent banner and change your preferences or withdraw your consent right away.</p>
       
@@ -110,6 +189,13 @@
   margin-bottom: 0.5rem;
   line-height: 1.6;
 }
+
+.storage-table-wrapper { overflow-x:auto; margin-top:1rem; }
+.storage-table { width:100%; border-collapse: collapse; font-size:0.85rem; }
+.storage-table th, .storage-table td { border:1px solid #ddd; padding:.5rem .6rem; text-align:left; vertical-align:top; }
+.storage-table th { background:#f1f5f9; font-weight:600; }
+.storage-table tbody tr:nth-child(even){ background:#f8fafc; }
+.note { font-size:.85rem; background:#f8f9fa; padding:.75rem 1rem; border-left:4px solid #2566af; border-radius:4px; }
 
 .browser-links li {
   margin-bottom: 0.75rem;

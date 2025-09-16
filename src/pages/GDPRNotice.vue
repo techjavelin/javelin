@@ -51,6 +51,18 @@
     </section>
 
     <section class="policy-section">
+      <h2>Client-Side Storage (Cookies & Local Storage)</h2>
+      <p>We use limited client-side storage (HTTP cookies, Local Storage, Session Storage) to support essential authentication, remember your preferences, and—when consent is granted—enhance usability. We do <strong>not</strong> use these mechanisms to build marketing profiles without your explicit consent.</p>
+      <ul>
+        <li><strong>Essential (Legitimate Interest / Contract):</strong> Authentication tokens required to keep you signed in and apply security controls; the <code>cookie-consent</code> record proving consent choices.</li>
+        <li><strong>Functional (Consent):</strong> UI preferences (theme, sidebar state, command palette visibility choices).</li>
+        <li><strong>Analytics (Consent):</strong> Only loaded if you enable analytics in the cookie banner (currently no third-party analytics scripts are loaded by default).</li>
+        <li><strong>Marketing (Consent):</strong> Not presently in active use; any future addition will require an explicit opt-in.</li>
+      </ul>
+      <p>For a detailed inventory of storage keys, their purposes, and retention periods, see the <router-link to="/cookies-policy">Cookie Policy</router-link>.</p>
+    </section>
+
+    <section class="policy-section">
       <h2>International Data Transfers</h2>
       <p>When we transfer personal data outside the European Economic Area (EEA), we ensure appropriate safeguards are in place to protect your data in accordance with GDPR requirements.</p>
     </section>
@@ -69,6 +81,22 @@
     <section class="policy-section">
       <h2>Complaints</h2>
       <p>If you believe we have not handled your personal data in accordance with GDPR, you have the right to lodge a complaint with your local supervisory authority.</p>
+    </section>
+
+    <section class="policy-section">
+      <h2>Withdrawing Consent & Preference Management</h2>
+      <p>You can withdraw consent for non-essential cookies or functional personalization at any time by reopening the cookie banner (Preferences → Reopen Cookie Banner) or using the Reset Personalization feature. Withdrawal does not affect the lawfulness of processing based on consent before its withdrawal.</p>
+      <p>Essential authentication and security storage remain active to maintain a secure session; logging out will remove session tokens.</p>
+    </section>
+
+    <section class="policy-section">
+      <h2>Data Subject Access Requests (DSAR)</h2>
+      <p>To initiate a DSAR (access, rectification, deletion, portability) contact us at <a href="mailto:privacy@techjavelin.com">privacy@techjavelin.com</a> with subject line “DSAR Request”. We verify identity via existing account email confirmation or additional verification if required.</p>
+      <ul>
+        <li><strong>Response SLA:</strong> We aim to respond within 30 days (may extend by 60 days for complex cases).</li>
+        <li><strong>Scope:</strong> Includes application data stored in Amplify-managed services (DynamoDB / AppSync) associated with your account.</li>
+        <li><strong>Exclusions:</strong> Aggregated or anonymized analytics not reasonably linkable to your identity.</li>
+      </ul>
     </section>
 
     <footer class="policy-footer">

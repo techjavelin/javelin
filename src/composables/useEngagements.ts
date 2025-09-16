@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
-import { withAuth } from '../amplifyClient'
+import { withAuth, withUserAuth } from '../amplifyClient'
 import type { Schema } from '@/../amplify/data/resource'
 import { useAuthorization } from './useAuthorization'
 
@@ -14,6 +14,8 @@ export interface UseEngagementsApi {
   list: (params?: { organizationId?: string; phase?: string; status?: string; limit?: number; nextToken?: string }) => Promise<{ nextToken?: string | null }>
   get: (id: string) => Promise<Schema['Engagement']['type'] | null>
   updateState: (id: string, data: Partial<Pick<Schema['Engagement']['type'],'phase'|'status'>>) => Promise<Schema['Engagement']['type'] | null>
+  updateMeta: (id: string, data: Partial<Pick<Schema['Engagement']['type'],'title'|'code'|'startDate'|'endDate'|'actualStart'|'actualEnd'|'contacts'>>) => Promise<Schema['Engagement']['type'] | null>
+  updateDetails: (id: string, data: Partial<Pick<Schema['Engagement']['type'],'executiveSummary'|'scopeNotes'|'constraints'|'exceptions'>>) => Promise<Schema['Engagement']['type'] | null>
   primeContext: (ctx: any) => Promise<void>
   // Backward-compat (legacy pages expect these)
   engagements: ReturnType<typeof ref<Schema['Engagement']['type'][]>>
@@ -45,8 +47,10 @@ export function useEngagements(): UseEngagementsApi {
   async function get(id: string) {
     loading.value = true; error.value = null
     try {
-      const resp = await client.models.Engagement.get({ id })
-      return resp.data || null
+  // Bypass deep conditional type instantiation: cast models to any
+  const anyClient: any = client
+  const resp = await (anyClient.models.Engagement.get({ id }, withAuth()))
+  return resp?.data || null
     } catch (e: any) {
       error.value = e.message || 'Failed to load engagement'
       return null
@@ -57,10 +61,45 @@ export function useEngagements(): UseEngagementsApi {
     if (!has('ENG.MANAGE', { engagementId: id })) throw new Error('Forbidden: ENG.MANAGE required')
     loading.value = true; error.value = null
     try {
-      const resp = await client.models.Engagement.update({ id, ...data })
+  const resp = await client.models.Engagement.update({ id, ...data }, withUserAuth())
       return resp.data || null
     } catch (e: any) {
       error.value = e.message || 'Failed to update engagement'
+      throw e
+    } finally { loading.value = false }
+  }
+
+  async function updateMeta(id: string, data: Partial<Pick<Schema['Engagement']['type'],'title'|'code'|'startDate'|'endDate'|'actualStart'|'actualEnd'|'contacts'>>) {
+    if (!has('ENG.MANAGE', { engagementId: id })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value = true; error.value = null
+    try {
+      const resp = await client.models.Engagement.update({ id, ...data }, withUserAuth())
+      const updated = resp.data || null
+      if (updated) {
+        const idx = items.value.findIndex(e => e.id === id)
+        if (idx >= 0) items.value[idx] = { ...items.value[idx], ...updated }
+      }
+      return updated
+    } catch (e: any) {
+      error.value = e.message || 'Failed to update engagement metadata'
+      throw e
+    } finally { loading.value = false }
+  }
+
+  async function updateDetails(id: string, data: Partial<Pick<Schema['Engagement']['type'],'executiveSummary'|'scopeNotes'|'constraints'|'exceptions'>>) {
+    if (!has('ENG.MANAGE', { engagementId: id })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value = true; error.value = null
+    try {
+      const resp = await client.models.Engagement.update({ id, ...data }, withUserAuth())
+      // sync local cache item if present
+      const updated = resp.data || null
+      if (updated) {
+        const idx = items.value.findIndex(e => e.id === id)
+        if (idx >= 0) items.value[idx] = { ...items.value[idx], ...updated }
+      }
+      return updated
+    } catch (e: any) {
+      error.value = e.message || 'Failed to update engagement details'
       throw e
     } finally { loading.value = false }
   }
@@ -77,7 +116,7 @@ export function useEngagements(): UseEngagementsApi {
         phase: (input as any).phase || 'PLANNING',
         status: (input as any).status || 'ACTIVE'
       }
-      const resp = await client.models.Engagement.create(base)
+  const resp = await client.models.Engagement.create(base, withUserAuth())
       if (resp.data) items.value.push(resp.data)
       return resp.data || null
     } catch (e: any) {
@@ -89,5 +128,5 @@ export function useEngagements(): UseEngagementsApi {
   // Expose legacy alias 'engagements'
   const engagements = items
 
-  return { items, engagements, loading, error, list, get, updateState, primeContext, create }
+  return { items, engagements, loading, error, list, get, updateState, updateMeta, updateDetails, primeContext, create }
 }

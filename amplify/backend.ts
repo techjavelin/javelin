@@ -7,6 +7,7 @@ import { data } from './data/resource';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations, clientLogIngest } from './api/admin/resource';
 import { updateUserProfileSecure, deleteUserProfileSecure } from './api/profile/resource';
 import { health } from './api/health/resource';
+import { backupCodes } from './functions/mfa/backupCodes';
 import { storage } from './storage/resource';
 // import { createOrganization, deleteOrganization, getOrganization, inviteUserToOrganization, listOrganizations, updateOrganization } from './api/sigint/Organization.api';
 import { OrganizationAPI } from './api/resource';
@@ -33,6 +34,7 @@ const backend = defineBackend({
   updateUserProfileSecure,
   deleteUserProfileSecure,
   health,
+  backupCodes,
   createOrganization: OrganizationAPI.create,
   // deleteOrganization: OrganizationAPI.delete,
   // getOrganization: OrganizationAPI.get,
@@ -48,7 +50,9 @@ runMigrations({ skipOnConfigError: true }).catch(e => {
 });
 
 // Create a policy for Cognito user management
-const cognitoUserManagementPolicy = new ManagedPolicy(backend.auth.resources.userPool, 'CognitoUserManagementPolicy', {
+// Cast auth resources to any to access underlying CDK constructs (userPool, groups)
+const authResources: any = backend.auth.resources as any;
+const cognitoUserManagementPolicy = new ManagedPolicy(authResources.userPool, 'CognitoUserManagementPolicy', {
   document: new PolicyDocument({
     statements: [
       new PolicyStatement({
@@ -74,9 +78,9 @@ const cognitoUserManagementPolicy = new ManagedPolicy(backend.auth.resources.use
 });
 
 // Attach the policy to the admin group role
-backend.auth.resources.groups["admin"].role.addManagedPolicy(cognitoUserManagementPolicy);
+authResources.groups["admin"].role.addManagedPolicy(cognitoUserManagementPolicy);
 
-const api = backend.createStack('pulse-sigint=-api');
+const api = backend.createStack('pulse-sigint-api');
 // Separate stack for migration infrastructure (DynamoDB state table)
 const migrationsInfra = backend.createStack('migrations');
 
@@ -106,7 +110,7 @@ const sigintRest = new RestApi(api, 'SigintRestApi', {
 
 // Authorizer
 const apiAuth = new CognitoUserPoolsAuthorizer(api, 'apiAuth', {
-  cognitoUserPools: [backend.auth.resources.userPool]
+  cognitoUserPools: [authResources.userPool]
 });
 
 const apiConfig: MethodOptions = {
@@ -146,6 +150,14 @@ listMigrationsPath.addMethod('GET', new LambdaIntegration(backend.listMigrations
 // Client log ingestion (POST). Accept logs from authenticated users; could be relaxed to NONE if public logging desired.
 const clientLogPath = sigintRest.root.addResource('client-log');
 clientLogPath.addMethod('POST', new LambdaIntegration(backend.clientLogIngest.resources.lambda), apiConfig);
+
+// MFA Backup Codes routes (auth required)
+const mfaPath = sigintRest.root.addResource('mfa');
+const backupCodesPath = mfaPath.addResource('backupCodes');
+const redeemPath = backupCodesPath.addResource('redeem');
+redeemPath.addMethod('POST', new LambdaIntegration(backend.backupCodes.resources.lambda), apiConfig);
+const regeneratePath = backupCodesPath.addResource('regenerate');
+regeneratePath.addMethod('POST', new LambdaIntegration(backend.backupCodes.resources.lambda), apiConfig);
 
 // Centralized log group env var injection (optional)
 const centralLogGroupName = process.env.CENTRAL_LOG_GROUP || 'com/techjavelin/javelin';
@@ -207,8 +219,8 @@ const apiRestPolicy = new Policy(api, 'RestApiPolicy', {
   ]
 });
 
-backend.auth.resources.authenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
-backend.auth.resources.unauthenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
+authResources.authenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
+authResources.unauthenticatedUserIamRole.attachInlinePolicy(apiRestPolicy);
 
 backend.addOutput({
   custom: {

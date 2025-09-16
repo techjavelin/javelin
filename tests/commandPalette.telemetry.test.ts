@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { useGlobalCommandPalette, registerCommands, setCommandTelemetry } from '@/composables/useCommandPalette'
+import { useGlobalCommandPalette, registerCommands, setCommandTelemetry, resetCommandPaletteForTests } from '@/composables/useCommandPalette'
 
 describe('Command Palette telemetry events', () => {
   beforeEach(()=>{
+    resetCommandPaletteForTests()
     registerCommands([
       { id:'tl.alpha', title:'Telemetry Alpha', run: ()=>{} }
     ])

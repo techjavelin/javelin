@@ -17,6 +17,7 @@
 		"lint:fix": "eslint --ext .ts,.vue src --fix",
 		"validate:enums": "tsx scripts/validate-enums.ts",
 		"test": "vitest run",
+		"test:ci": "vitest run --no-color",
 		"test:watch": "vitest",
 		"test:typecheck": "tsc -p tsconfig.test.json --noEmit",
 		"health:api": "tsx scripts/check-api-health.ts"

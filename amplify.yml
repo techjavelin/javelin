@@ -10,7 +10,7 @@ backend:
         # Type-check tests & source (tests use separate tsconfig for vitest types)
         # - npm run test:typecheck
         # Run unit tests in CI mode (will fail pipeline on non-zero exit)
-        - CI=1 npm run test
+        - CI=1 npm run test:ci
         # Deploy backend (Amplify Gen 2) only if all previous steps succeed
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
 frontend:

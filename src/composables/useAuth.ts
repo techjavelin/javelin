@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { getCurrentUser, fetchUserAttributes, type AuthUser, changePassword as amplifyChangePassword, confirmSignIn } from 'aws-amplify/auth'
+import { getCurrentUser, fetchUserAttributes, type AuthUser, updatePassword, confirmSignIn } from 'aws-amplify/auth'
 
 // Global state for user authentication
 const currentUser = ref<AuthUser | null>(null)
@@ -112,7 +112,7 @@ export function useAuth() {
       if (!currentUser.value) throw new Error('Not authenticated')
       try {
         loading.value = true
-        await amplifyChangePassword({ oldPassword, newPassword })
+        await updatePassword({ oldPassword, newPassword })
         return true
       } catch (e: any) {
         error.value = e?.message || 'Change password failed'

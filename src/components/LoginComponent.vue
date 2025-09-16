@@ -27,7 +27,7 @@
         </button>
       </div>
 
-      <form v-if="!forceChangeStep" @submit.prevent="handleSubmit" class="login-form">
+      <form v-if="!auth.needsNewPassword && !showForgotPassword" @submit.prevent="handleSubmit" class="login-form">
         <div v-if="error" class="error-message">
           <svg class="error-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -171,7 +171,7 @@
         </div>
       </div>
       <!-- Force change password screen -->
-      <div v-else class="login-form force-change-wrapper">
+      <div v-else-if="auth.needsNewPassword" class="login-form force-change-wrapper">
         <h3 class="force-title">Set a New Password</h3>
         <p class="force-sub">You need to set a new password before continuing.</p>
         <div v-if="error" class="error-message">{{ error }}</div>
@@ -228,7 +228,6 @@ const form = ref({
 
 // Force change password state
 const auth = useAuth()
-const forceChangeStep = ref(false)
 const newPassword = ref('')
 const confirmNewPassword = ref('')
 const canSubmitNewPassword = computed(()=> newPassword.value.length>=8 && newPassword.value===confirmNewPassword.value)
@@ -302,8 +301,7 @@ async function handleSignIn() {
       emit('success', { type: 'signin', user: { email: form.value.email } })
     } else if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
       error.value = 'Please check your email and confirm your account first.'
-  } else if (nextStep.signInStep === 'NEW_PASSWORD_REQUIRED' || nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
-      forceChangeStep.value = true
+    } else if (nextStep.signInStep === 'NEW_PASSWORD_REQUIRED' || nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
       auth.markNewPasswordRequired(nextStep)
     }
   } catch (error) {

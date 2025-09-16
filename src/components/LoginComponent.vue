@@ -302,7 +302,7 @@ async function handleSignIn() {
       emit('success', { type: 'signin', user: { email: form.value.email } })
     } else if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
       error.value = 'Please check your email and confirm your account first.'
-    } else if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+  } else if (nextStep.signInStep === 'NEW_PASSWORD_REQUIRED' || nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
       forceChangeStep.value = true
       auth.markNewPasswordRequired(nextStep)
     }

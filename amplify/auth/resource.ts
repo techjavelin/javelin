@@ -13,6 +13,12 @@ export const preTokenEntitlements = defineFunction({
   entry: '../functions/user-management/pre-token/handler.ts'
 });
 
+// Custom message trigger
+export const customMessage = defineFunction({
+  name: 'custom-message-trigger',
+  entry: '../functions/user-management/custom-message/handler.ts'
+});
+
 /**
  * Define and configure your auth resource
  * @see https://docs.amplify.aws/gen2/build-a-backend/auth
@@ -24,6 +30,7 @@ export const auth = defineAuth({
   triggers: {
     postConfirmation: postConfirmActivateOrg,
     preTokenGeneration: preTokenEntitlements,
+    customMessage // add custom message trigger
   },
   groups: ["admin", "editor", "author", "client"],
   userAttributes: {

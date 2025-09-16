@@ -1,7 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda'
 import { logger } from '../../logger'
 import { Amplify } from 'aws-amplify'
-import outputs from '../../../../amplify_outputs.json'
+import { getAmplifyOutputs } from '../../../outputs'
 import { generateClient } from 'aws-amplify/data'
 import {
   CognitoIdentityProviderClient,
@@ -11,7 +11,7 @@ import {
 import type { Schema } from '../../../../amplify/data/resource'
 import { getUserPoolId } from '../../getUserPoolId'
 
-Amplify.configure(outputs)
+Amplify.configure(getAmplifyOutputs())
 const client = generateClient<Schema>()
 const cognito = new CognitoIdentityProviderClient({ region: process.env.AWS_REGION })
 

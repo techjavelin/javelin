@@ -2,10 +2,10 @@ import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { withLogging } from '../../util/logging';
 // @ts-ignore
 import { DynamoDBClient, GetItemCommand, ScanCommand } from '@aws-sdk/client-dynamodb';
-import outputs from '../../../../amplify_outputs.json';
+import { getAmplifyOutputs } from '../../../../amplify/outputs';
 
 const ddb = new DynamoDBClient({});
-const TABLE = (outputs as any)?.custom?.MIGRATIONS?.stateTableName;
+const TABLE = (getAmplifyOutputs() as any)?.custom?.MIGRATIONS?.stateTableName;
 
 export const handler: APIGatewayProxyHandler = withLogging('list-migrations', async (event, log) => {
   const headers = {

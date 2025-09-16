@@ -6,10 +6,10 @@ import { DynamoDBClient, PutItemCommand, GetItemCommand, DeleteItemCommand, Scan
 import { unmarshall } from '@aws-sdk/util-dynamodb';
 import { runMigrations } from '../../../data/migrations/runner';
 import type { MigrationStorageAdapter } from '../../../data/migrations/runner';
-import outputs from '../../../../amplify_outputs.json';
+import { getAmplifyOutputs } from '../../../outputs';
 
 const ddb = new DynamoDBClient({});
-const TABLE = (outputs as any)?.custom?.MIGRATIONS?.stateTableName;
+const TABLE = (getAmplifyOutputs() as any)?.custom?.MIGRATIONS?.stateTableName;
 
 if(!TABLE) {
   // eslint-disable-next-line no-console

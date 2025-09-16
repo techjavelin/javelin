@@ -1,11 +1,11 @@
 import type { PostConfirmationTriggerHandler } from 'aws-lambda'
 import { logger } from '../../logger'
 import { Amplify } from 'aws-amplify'
-import outputs from '../../../../amplify_outputs.json'
+import { getAmplifyOutputs } from '../../../outputs'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../../../amplify/data/resource'
 
-Amplify.configure(outputs)
+Amplify.configure(getAmplifyOutputs())
 const client = generateClient<Schema>()
 
 // Strategy: find first PENDING organization whose invitedAdminEmail matches confirmed user's email and activate.

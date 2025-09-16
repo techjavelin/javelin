@@ -1,7 +1,7 @@
 import { generateClient } from 'aws-amplify/data';
 import { Amplify } from 'aws-amplify';
 import { parseAmplifyConfig } from 'aws-amplify/utils';
-import outputs from '../../../amplify_outputs.json';
+import { getAmplifyOutputs } from '../../outputs';
 import type { Schema } from '../resource';
 import { migrations } from './index.js';
 
@@ -64,7 +64,7 @@ export async function runMigrations(opts: RunMigrationsOptions = {}): Promise<Mi
   // Ensure Amplify configured (during CDK synth this may lack full categories)
   try {
     if (!(Amplify as any)._config) {
-      const cfg = parseAmplifyConfig(outputs as any);
+  const cfg = parseAmplifyConfig(getAmplifyOutputs() as any);
       Amplify.configure(cfg);
     }
   } catch (e:any) {

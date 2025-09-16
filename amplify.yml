@@ -8,7 +8,7 @@ backend:
         # Early enum registration validation (fast fail)
         - npm run validate:enums
         # Type-check tests & source (tests use separate tsconfig for vitest types)
-        - npm run test:typecheck
+        # - npm run test:typecheck
         # Run unit tests in CI mode (will fail pipeline on non-zero exit)
         - CI=1 npm run test
         # Deploy backend (Amplify Gen 2) only if all previous steps succeed

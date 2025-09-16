@@ -3,10 +3,10 @@ backend:
   phases:
     build:
       commands:
-        # Ensure Node 20 (some dependencies require >=20; build image may default to 18)
+  # Ensure Node 24 LTS (project standard; build image may default lower)
         - |
           if command -v nvm >/dev/null 2>&1; then
-            nvm install 20 >/dev/null 2>&1 || nvm use 20 || true;
+            nvm install 24 >/dev/null 2>&1 || nvm use 24 || true;
             node -v; npm -v;
           else
             echo "nvm not available; relying on build image Node version";

@@ -33,6 +33,7 @@ import { OrganizationMembership, OrgRole } from "./models/OrganizationMembership
 import { ApplicationRoleAssignment, ApplicationRole } from "./models/ApplicationRoleAssignment.model";
 import { EngagementRoleAssignment, EngagementUserRole } from "./models/EngagementRoleAssignment.model";
 import { Migration } from "./models/Migration.model";
+import { Project, ProjectStatus } from "./models/Project.model";
 
 const schema = a.schema({
   BlogPost,
@@ -82,6 +83,8 @@ const schema = a.schema({
   EngagementRoleAssignment,
   EngagementUserRole,
   Migration,
+  Project,
+  ProjectStatus,
 });
 
 export type Schema = ClientSchema<typeof schema>;

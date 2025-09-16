@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, ref } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 const props = defineProps<{ userName: string, userEmail: string }>()
 const menuOpen = ref(false)

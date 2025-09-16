@@ -63,4 +63,13 @@ describe('useMigrations', () => {
     const body = JSON.parse(runCall![1].body)
     expect(body.takeover).toBe(true)
   })
+
+  it('sends rerunIds when provided', async () => {
+    const { runPending } = useMigrations()
+    await runPending({ rerunIds: [2,3] })
+    const runCall = fetchSpy.mock.calls.reverse().find(c => (c[0] as string).endsWith('/run-migrations'))
+    expect(runCall).toBeTruthy()
+    const body = JSON.parse(runCall![1].body)
+    expect(body.rerunIds).toEqual([2,3])
+  })
 })

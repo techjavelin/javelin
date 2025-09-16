@@ -26,7 +26,7 @@ export function useApplicationTypes(){
   async function create(input: Partial<Schema['ApplicationType']['type']>){
     try {
       if(!input.key || !input.label) throw new Error('Key and label are required')
-      const res = await client.models.ApplicationType.create(withUserAuth({ key: input.key, label: input.label, description: input.description, rank: input.rank, active: input.active ?? true }))
+  const res = await client.models.ApplicationType.create({ key: input.key, label: input.label, description: input.description, rank: input.rank, active: input.active ?? true }, withUserAuth())
       if(res.data) types.value.push(res.data)
       return res.data
     } catch(e:any){
@@ -37,7 +37,7 @@ export function useApplicationTypes(){
 
   async function update(id: string, patch: Partial<Schema['ApplicationType']['type']>){
     try {
-      const res = await client.models.ApplicationType.update(withUserAuth({ id, ...patch }))
+  const res = await client.models.ApplicationType.update({ id, ...patch }, withUserAuth())
       if(res.data){
         const idx = types.value.findIndex(t=>t.id===id)
         if(idx>=0) types.value[idx] = res.data
@@ -51,7 +51,7 @@ export function useApplicationTypes(){
 
   async function remove(id: string){
     try {
-      await client.models.ApplicationType.delete(withUserAuth({ id }))
+  await client.models.ApplicationType.delete({ id }, withUserAuth())
       types.value = types.value.filter(t=>t.id!==id)
     } catch(e:any){
       error.value = normalizeError(e,'Failed to delete application type').message

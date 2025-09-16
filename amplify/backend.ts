@@ -147,6 +147,29 @@ listMigrationsPath.addMethod('GET', new LambdaIntegration(backend.listMigrations
 const clientLogPath = sigintRest.root.addResource('client-log');
 clientLogPath.addMethod('POST', new LambdaIntegration(backend.clientLogIngest.resources.lambda), apiConfig);
 
+// Centralized log group env var injection (optional)
+const centralLogGroupName = process.env.CENTRAL_LOG_GROUP || 'com/techjavelin/javelin';
+// Attach to all custom lambdas we defined (extend list as needed)
+[
+  backend.runMigrations.resources.lambda,
+  backend.listMigrations.resources.lambda,
+  backend.clientLogIngest.resources.lambda,
+  backend.inviteAdminUser.resources.lambda,
+  backend.activateOrganizationAdmin.resources.lambda,
+  backend.createUser.resources.lambda,
+  backend.updateUser.resources.lambda,
+  backend.deleteUser.resources.lambda,
+  backend.resetUserPassword.resources.lambda,
+  backend.listUsers.resources.lambda,
+  backend.updateUserProfileSecure.resources.lambda,
+  backend.deleteUserProfileSecure.resources.lambda,
+  backend.health.resources.lambda
+].forEach(fn => {
+  // Some generated resource.lambda types are surfaced as IFunction which doesn't expose addEnvironment in typing.
+  // Cast to any to attach env var (runtime supports it on actual Function object).
+  (fn as any).addEnvironment('CENTRAL_LOG_GROUP', centralLogGroupName);
+});
+
 // Grant Dynamo table access (read/write) to the migrations lambda
 migrationStateTable.grantReadWriteData(backend.runMigrations.resources.lambda);
 migrationStateTable.grantReadData(backend.listMigrations.resources.lambda);

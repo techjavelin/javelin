@@ -295,7 +295,6 @@ function handleClickOutside() {
   <!-- Cookies Warning Banner -->
   <CookiesWarning />
   </div>
-  </div>
   </ErrorBoundary>
 </template>
 

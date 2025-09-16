@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
 const props = defineProps<{ title: string, defaultOpen?: boolean }>()
 const open = ref(props.defaultOpen ?? false)
 function toggle() { open.value = !open.value }

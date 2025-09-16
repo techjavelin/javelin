@@ -98,7 +98,7 @@ export function useMigrations(){
     } finally { loading.value = false }
   }
 
-  async function runPending(opts: { takeover?: boolean } = {}){
+  async function runPending(opts: { takeover?: boolean; rerunIds?: number[] } = {}){
     if(running.value) return
     running.value = true; error.value=''; logs.value=[]
     try {
@@ -119,7 +119,12 @@ export function useMigrations(){
       }
       const url = restEntry.endpoint.replace(/\/$/, '') + '/run-migrations'
       const headers = await authHeaders()
-      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ takeover: !!opts.takeover }) })
+      const payload: any = { takeover: !!opts.takeover }
+      if(Array.isArray(opts.rerunIds) && opts.rerunIds.length){
+        payload.rerunIds = opts.rerunIds
+        log(`Requesting rerun for ids: ${opts.rerunIds.join(',')}`)
+      }
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) })
       if(!res.ok){
         const body = await res.text();
         log(`Run failed status=${res.status}`)
@@ -129,7 +134,7 @@ export function useMigrations(){
       const json = await res.json()
       lastRunSummary.value = json.summary
       lastRunAt.value = new Date().toISOString()
-      log(`Run complete: applied=${json.summary?.applied} skipped=${json.summary?.skipped} failed=${json.summary?.failed?1:0}`)
+  log(`Run complete: applied=${json.summary?.applied} skipped=${json.summary?.skipped} failed=${json.summary?.failed?1:0} rerunIds=${(json.rerunIds||[]).join(',')}`)
     } catch(e:any){
       error.value = normalizeError(e,'Migration run failed').message
     } finally { running.value = false; await refreshApplied() }

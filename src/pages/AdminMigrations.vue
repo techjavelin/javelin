@@ -42,13 +42,16 @@
         <span class="count">Showing {{ pagedMigs.length }} of {{ appliedList.length }}</span>
       </div>
       <table class="migs-table" v-if="appliedList.length">
-        <thead><tr><th>ID</th><th>Name</th><th>Applied At</th><th>Checksum</th></tr></thead>
+        <thead><tr><th>ID</th><th>Name</th><th>Applied At</th><th>Checksum</th><th>Actions</th></tr></thead>
         <tbody>
           <tr v-for="m in pagedMigs" :key="m.id">
             <td>{{ m.id }}</td>
             <td>{{ m.name }}</td>
             <td>{{ m.appliedAt }}</td>
             <td>{{ m.checksum }}</td>
+            <td>
+              <button class="mini-btn" :disabled="running" @click="onRerun(m.id)">Re-run</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -106,6 +109,19 @@ async function onTakeoverRun(){
   }
 }
 
+async function onRerun(id: number){
+  if(running.value) return
+  if(!confirm(`Re-run migration #${id}? This will delete its state record and run pending migrations.`)) return
+  const before = latestApplied.value
+  await runPending({ rerunIds: [id] })
+  await fetchState()
+  if(error.value){
+    pushToast({ message: `Re-run of #${id} failed`, type: 'error' })
+  } else if((latestApplied.value||0) >= (before||0)) {
+    pushToast({ message: `Re-run requested for #${id} (check logs)`, type: 'info', duration: 3000 })
+  }
+}
+
 onMounted(()=> { fetchState() })
 
 const lockStale = computed(()=> {
@@ -131,6 +147,7 @@ function formatEpoch(n:string){
 .card { background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:0.75rem 1rem; min-width:220px; }
 .migs-table { width:100%; border-collapse:collapse; }
 .migs-table th, .migs-table td { border:1px solid #e5e7eb; padding:0.4rem 0.6rem; font-size:0.8rem; }
+.mini-btn { background:#6b7280; color:#fff; border:none; padding:0.25rem 0.5rem; font-size:0.65rem; border-radius:4px; cursor:pointer; }
 .placeholder { opacity:0.6; font-size:0.85rem; }
 .logs pre { background:#111; color:#0f0; padding:0.75rem; font-size:0.7rem; border-radius:4px; max-height:240px; overflow:auto; }
 .stale { color:#d97706; font-weight:600; }

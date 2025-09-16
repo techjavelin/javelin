@@ -14,7 +14,7 @@
 <script setup>
 import { NSwitch } from 'naive-ui'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { defineProps, defineEmits } from 'vue'
+// defineProps / defineEmits are compiler macros; no import needed
 
 const props = defineProps({
   theme: {

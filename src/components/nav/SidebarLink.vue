@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+// defineProps macro used implicitly; explicit import removed
 const props = defineProps<{ to: string }>()
 </script>
 

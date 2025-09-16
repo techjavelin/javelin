@@ -9,3 +9,9 @@ export const Project = a.model({
   }),
   status: a.ref('ProjectStatus').required()
 })
+.authorization((allow) => [
+  // Admins manage full lifecycle
+  allow.group('admin').to(['create','update','delete','read']),
+  // Any signed-in user can read project metadata
+  allow.authenticated().to(['read'])
+]);

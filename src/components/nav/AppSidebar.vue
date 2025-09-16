@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, computed, watchEffect, defineEmits } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 const props = defineProps<{ appName: string, collapsed?: boolean }>()
 const emit = defineEmits<{ (e:'toggle', value:boolean):void }>()

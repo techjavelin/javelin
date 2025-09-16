@@ -1,18 +1,17 @@
-# Progress (Updated: 2025-09-14)
+# Progress (Updated: 2025-09-15)
 
 ## Done
 
-- Added client group to auth
-- Updated activation lambda to assign client group
-- Updated invite lambda message
-- Updated documentation for client group flow
-- Ran type-check (passed)
+- Implemented migrations UI, auth headers, takeover button, composable changes
+- Fixed unauthorized metadata listing by enforcing userPool auth
+- Added unit tests for migrations composable
+- Updated seed migration to use authMode userPool
 
 ## Doing
 
-- Summarizing impact and migration steps for existing users
+- Preparing commit & push; updating memory bank entries
 
 ## Next
 
-- (Optional) Script to reconcile existing admin users wrongly assigned
-- Add future promotion/demotion Lambda design
+- Commit & push changes to main
+- Potential migration 002 for reseed or admin reseed action

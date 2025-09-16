@@ -22,7 +22,9 @@ export function useApplications() {
       const filter: any = {}
       if (params.organizationId) filter.organizationId = { eq: params.organizationId }
       if (params.applicationTypeKey) filter.applicationTypeKey = { eq: params.applicationTypeKey }
-      const res = await client.models.Application.list(withAuth({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken }))
+  // Use explicit userPool auth for Application list because model authorization
+  // requires either admin group or authenticated user; project default auth is apiKey.
+  const res = await client.models.Application.list(withUserAuth({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken }))
       applications.value = res.data || []
       return { nextToken: res.nextToken }
     } catch (e) {

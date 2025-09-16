@@ -15,6 +15,7 @@ export default defineConfig({
     globals: true,
     include: ['tests/**/*.test.ts'],
     reporters: process.env.CI ? ['default'] : ['default'],
-    coverage: { enabled: false }
+    coverage: { enabled: false },
+    setupFiles: ['tests/test.setup.ts']
   }
 });

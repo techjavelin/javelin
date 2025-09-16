@@ -1,7 +1,24 @@
 import { generateClient } from 'aws-amplify/data';
 import { Amplify } from 'aws-amplify';
 import { parseAmplifyConfig } from 'aws-amplify/utils';
-import outputs from '../amplify_outputs.json';
+// In normal runtime this static import is fine. During isolated unit tests (CI) the
+// generated `amplify_outputs.json` may not exist (frontend bundle not built yet).
+// We attempt a dynamic require guarded in try/catch so tests can proceed with
+// a minimal stub (only data API endpoint & region if needed).  This prevents
+// vitest from throwing a hard module resolution error.
+let outputs: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  outputs = require('../amplify_outputs.json');
+} catch (e) {
+  // Provide a very small stub so parseAmplifyConfig doesn't explode; models
+  // calls are mocked in unit tests anyway. Keep shape shallow.
+  outputs = {
+    aws_project_region: process.env.AWS_REGION || 'us-east-1'
+  };
+  // eslint-disable-next-line no-console
+  if (process.env.VITEST) console.warn('[Amplify] Using stub amplify_outputs.json for tests');
+}
 import type { Schema } from '../amplify/data/resource';
 
 // Central place to adjust the default auth mode used across the app.

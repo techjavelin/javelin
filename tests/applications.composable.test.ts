@@ -50,6 +50,11 @@ describe('useApplications composable', () => {
     const { create, applications } = useApplications()
   await create({ organizationId: 'org1', name: 'App1', applicationTypeKey: 'web_app', userTypeKeys: ['customer'] })
     expect(applications.value.length).toBe(1)
+    // Ensure create called with input object lacking authMode and second arg options containing authMode
+    expect(createMock).toHaveBeenCalledTimes(1)
+    const call = createMock.mock.calls[0]
+    expect(call[0].authMode).toBeUndefined()
+    expect(call[1]?.authMode).toBeDefined()
   })
 
   it('lists applications', async () => {

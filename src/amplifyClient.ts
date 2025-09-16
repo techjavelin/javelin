@@ -32,7 +32,16 @@ import type { Schema } from '../amplify/data/resource';
 // certain blog-related models. If we later flip backend default to userPool
 // we can remove most explicit overrides and optionally set FALLBACK_AUTH_MODE
 // to 'apiKey' only for public list/read needs.
-export const DEFAULT_AUTH_MODE: 'userPool' | undefined = undefined; // undefined lets Amplify pick project default
+// We now default all client calls to userPool (authenticated) and explicitly mark truly public
+// operations with withPublic(). This reduces the need to sprinkle withUserAuth everywhere and
+// ensures protected models aren't accidentally accessed via apiKey.
+export const DEFAULT_AUTH_MODE: 'userPool' | undefined = 'userPool';
+
+// If certain models should still be accessed publicly without auth, explicitly call withPublic().
+// Maintain a reference list here to aid reviewers (purely informational; not enforced in code):
+export const PUBLIC_READ_MODELS = [
+  'BlogPost', 'Author', 'Comment', 'PostTag', 'PostCategory'
+];
 
 let _client: ReturnType<typeof generateClient<Schema>> | null = null;
 let _configured = false;

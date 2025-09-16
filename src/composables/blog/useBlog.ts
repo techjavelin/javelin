@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import type { Schema } from '../../../amplify/data/resource';
-import { getClient, withUserAuth } from '../../amplifyClient';
+import { getClient, withUserAuth, withPublic } from '../../amplifyClient';
 import { useApi } from '../useApi';
 
 type BlogPost = Schema['BlogPost']['type'];
@@ -12,7 +12,8 @@ export function useBlog() {
   const fetchPostBySlug = async (slug: string) => {
     loading.value = true; error.value = null;
     try {
-  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.list(withUserAuth({ filter: { slug: { eq: slug } }, limit: 1 }) as any));
+  // Public read: slug lookup can use apiKey for anonymous access
+  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.list(withPublic({ filter: { slug: { eq: slug } }, limit: 1 }) as any));
       const data = (result as any).data || [];
       currentPost.value = data.length ? data[0] : null;
       if (!currentPost.value) error.value = 'Blog post not found.';
@@ -32,7 +33,8 @@ export function useBlog() {
     if (!options?.force && posts.value.length > 0) return;
     loading.value = true; error.value = null;
     try {
-  const result = await withErrorToast('Load Posts', async () => client.models.BlogPost.list(withUserAuth() as any));
+  // Public read: list posts (only published filtering handled at higher layer) via apiKey
+  const result = await withErrorToast('Load Posts', async () => client.models.BlogPost.list(withPublic() as any));
       posts.value = (result as any).data || [];
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch posts';
@@ -42,7 +44,8 @@ export function useBlog() {
   const fetchPostById = async (id: string) => {
     loading.value = true; error.value = null;
     try {
-  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.get({ id }, withUserAuth()));
+  // Public read: get post by ID
+  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.get({ id }, withPublic()));
       const data = (result as any).data || null;
       currentPost.value = data;
       return data;

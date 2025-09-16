@@ -27,7 +27,7 @@
         </button>
       </div>
 
-      <form @submit.prevent="handleSubmit" class="login-form">
+      <form v-if="!forceChangeStep" @submit.prevent="handleSubmit" class="login-form">
         <div v-if="error" class="error-message">
           <svg class="error-icon" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -151,7 +151,7 @@
         </p>
       </form>
 
-      <div v-if="showForgotPassword" class="forgot-password-overlay" @click.self="showForgotPassword = false">
+  <div v-if="showForgotPassword" class="forgot-password-overlay" @click.self="showForgotPassword = false">
         <div class="forgot-password-form">
           <h3>Reset Password</h3>
           <p>Enter your email address and we'll send you a link to reset your password.</p>
@@ -170,6 +170,24 @@
           </form>
         </div>
       </div>
+      <!-- Force change password screen -->
+      <div v-else class="login-form force-change-wrapper">
+        <h3 class="force-title">Set a New Password</h3>
+        <p class="force-sub">You need to set a new password before continuing.</p>
+        <div v-if="error" class="error-message">{{ error }}</div>
+        <div v-if="success" class="success-message">{{ success }}</div>
+        <form @submit.prevent="submitNewPassword" class="force-change-form">
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input id="newPassword" v-model="newPassword" type="password" required :disabled="loading" minlength="8" />
+          </div>
+          <div class="form-group">
+            <label for="confirmNewPassword">Confirm New Password</label>
+            <input id="confirmNewPassword" v-model="confirmNewPassword" type="password" required :disabled="loading" minlength="8" />
+          </div>
+          <button type="submit" class="login-button" :disabled="loading || !canSubmitNewPassword">{{ loading ? 'Updating...' : 'Update Password' }}</button>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -177,6 +195,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { signUp, signIn, resetPassword, confirmSignUp } from 'aws-amplify/auth'
+import { useAuth } from '@/composables/useAuth'
 
 // Props
 const props = defineProps({
@@ -206,6 +225,13 @@ const form = ref({
   confirmPassword: '',
   rememberMe: false
 })
+
+// Force change password state
+const auth = useAuth()
+const forceChangeStep = ref(false)
+const newPassword = ref('')
+const confirmNewPassword = ref('')
+const canSubmitNewPassword = computed(()=> newPassword.value.length>=8 && newPassword.value===confirmNewPassword.value)
 
 // Computed
 const isFormValid = computed(() => {
@@ -271,15 +297,33 @@ async function handleSignIn() {
       username: form.value.email,
       password: form.value.password
     })
-
     if (isSignedIn) {
       success.value = 'Successfully signed in!'
       emit('success', { type: 'signin', user: { email: form.value.email } })
     } else if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
       error.value = 'Please check your email and confirm your account first.'
+    } else if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+      forceChangeStep.value = true
+      auth.markNewPasswordRequired(nextStep)
     }
   } catch (error) {
     throw error
+  }
+}
+
+async function submitNewPassword(){
+  if(!canSubmitNewPassword.value) return
+  loading.value = true
+  error.value = ''
+  success.value = ''
+  try {
+    await auth.completeNewPassword(newPassword.value)
+    success.value = 'Password updated! You are now signed in.'
+    emit('success', { type: 'signin', user: { email: form.value.email } })
+  } catch(e){
+    error.value = e.message || 'Failed to set new password'
+  } finally {
+    loading.value = false
   }
 }
 

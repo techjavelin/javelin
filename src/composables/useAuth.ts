@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { getCurrentUser, fetchUserAttributes, type AuthUser } from 'aws-amplify/auth'
+import { getCurrentUser, fetchUserAttributes, type AuthUser, changePassword as amplifyChangePassword, confirmSignIn } from 'aws-amplify/auth'
 
 // Global state for user authentication
 const currentUser = ref<AuthUser | null>(null)
@@ -7,6 +7,10 @@ const userAttributes = ref<Record<string, any> | null>(null)
 const userGroups = ref<string[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+// Force new password challenge state (e.g., admin created user must set password)
+const needsNewPassword = ref(false)
+// Stash the latest sign-in session object if we need to confirm with a new password
+const pendingSignIn = ref<any | null>(null)
 
 export function useAuth() {
   // Computed properties
@@ -68,6 +72,8 @@ export function useAuth() {
     userAttributes.value = null
     userGroups.value = []
     error.value = null
+    needsNewPassword.value = false
+    pendingSignIn.value = null
   }
   
   const checkAdminAccess = () => {
@@ -89,6 +95,7 @@ export function useAuth() {
     userGroups,
     loading,
     error,
+    needsNewPassword,
     
     // Computed
     isAuthenticated,
@@ -99,7 +106,43 @@ export function useAuth() {
     // Methods
     loadCurrentUser,
     clearUser,
-    checkAdminAccess
+    checkAdminAccess,
+    // Password management
+    async changePassword(oldPassword: string, newPassword: string) {
+      if (!currentUser.value) throw new Error('Not authenticated')
+      try {
+        loading.value = true
+        await amplifyChangePassword({ oldPassword, newPassword })
+        return true
+      } catch (e: any) {
+        error.value = e?.message || 'Change password failed'
+        throw e
+      } finally {
+        loading.value = false
+      }
+    },
+    // Handle a sign-in response that indicates NEW_PASSWORD_REQUIRED.
+    markNewPasswordRequired(signInResult: any) {
+      needsNewPassword.value = true
+      pendingSignIn.value = signInResult
+    },
+    async completeNewPassword(newPassword: string) {
+      if (!needsNewPassword.value || !pendingSignIn.value) throw new Error('No pending new password challenge')
+      try {
+        loading.value = true
+        const res = await confirmSignIn({ challengeResponse: newPassword })
+        needsNewPassword.value = false
+        pendingSignIn.value = null
+        // After completion, refresh user context
+        await loadCurrentUser()
+        return res
+      } catch (e: any) {
+        error.value = e?.message || 'Failed to set new password'
+        throw e
+      } finally {
+        loading.value = false
+      }
+    }
   }
 }
 

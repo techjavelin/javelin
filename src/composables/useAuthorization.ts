@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '../../amplify/data/resource'
 import { useAuth } from './useAuth'
 
@@ -93,7 +94,7 @@ export function useAuthorization() {
     if (cache.loadedOrgs.has(organizationId)) return
     loading.value = true
     try {
-      const resp = await client.models.OrganizationMembership.list({ filter: { organizationId: { eq: organizationId }, userId: { eq: userId } } })
+  const resp = await client.models.OrganizationMembership.list(withAuth({ filter: { organizationId: { eq: organizationId }, userId: { eq: userId } } }))
       const set = new Set<string>()
       resp.data?.forEach(m => { if (m.role) set.add(m.role) })
       cache.org.set(organizationId, set)
@@ -107,7 +108,7 @@ export function useAuthorization() {
     if (cache.loadedApps.has(applicationId)) return
     loading.value = true
     try {
-      const resp = await client.models.ApplicationRoleAssignment.list({ filter: { applicationId: { eq: applicationId }, userId: { eq: userId } } })
+  const resp = await client.models.ApplicationRoleAssignment.list(withAuth({ filter: { applicationId: { eq: applicationId }, userId: { eq: userId } } }))
       const set = new Set<string>()
       resp.data?.forEach(r => { if (r.role) set.add(r.role) })
       cache.app.set(applicationId, set)
@@ -124,7 +125,7 @@ export function useAuthorization() {
     if (cache.loadedEngs.has(engagementId)) return
     loading.value = true
     try {
-      const resp = await client.models.EngagementRoleAssignment.list({ filter: { engagementId: { eq: engagementId }, userId: { eq: userId } } })
+  const resp = await client.models.EngagementRoleAssignment.list(withAuth({ filter: { engagementId: { eq: engagementId }, userId: { eq: userId } } }))
       const set = new Set<string>()
       resp.data?.forEach(r => { if (r.role) set.add(r.role) })
       cache.eng.set(engagementId, set)

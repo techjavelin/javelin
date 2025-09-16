@@ -24,6 +24,46 @@ Add to this list (and wrap access in `withPublic()`) when introducing new public
 
 Rationale: Minimizes accidental exposure of protected models through the apiKey while keeping public content accessible without requiring user sign-in.
 
+### Auth Wrapper Lint (Security Guardrail)
+
+Custom script: `npm run lint:auth` (`scripts/check-auth-wrappers.ts`)
+
+Purpose: Statically scan the `src/` tree for any direct `client.models.<Model>.list(` invocation that is NOT wrapped with one of the approved auth helpers: `withAuth`, `withUserAuth`, or `withPublic`.
+
+Why only `list`? List queries are the most common accidental data exfil vector (broad enumeration). By enforcing explicit auth intent here we reduce risk of unintentionally using a permissive `apiKey` context for protected models. (We still encourage wrapping `get`, `create`, etc.; future iterations may extend lint coverage.)
+
+Failure Output Example:
+```
+Auth Wrapper Lint: Found unwrapped list() calls:
+	src/composables/useFoo.ts:42 -> const resp = await client.models.SecretStuff.list({ filter })
+Each client.models.<Model>.list call must use withAuth/withUserAuth/withPublic.
+```
+
+Remediation: Wrap the options object, e.g.:
+```
+await client.models.SecretStuff.list(withAuth({ filter }))
+```
+or for a public model:
+```
+await client.models.BlogPost.list(withPublic({ filter: { status: { eq: 'PUBLISHED' } } }))
+```
+
+CI Recommendation: Add this script to a pre-test or lint job to block merges introducing unguarded list calls.
+
+### Blog Public Content Access Policy
+
+Anonymous users (apiKey context) are constrained to published posts only:
+* `useBlog.fetchPosts` automatically applies `filter: { status: { eq: 'PUBLISHED' } }` via `withPublic()` when `!isAuthenticated`.
+* Fetch by slug / id uses `withPublic()` for anonymous users but performs a defensive client-side check to suppress unpublished results even if backend rules evolve (defense in depth).
+* Authenticated users use `withAuth()` and can retrieve drafts / scheduled posts as permitted by upstream model auth.
+
+Rationale: Ensures no stale draft or archived content leaks through edge caching or future schema auth adjustments; keeps behavior explicit and test-covered.
+
+Tests: See `tests/blogPublicAccess.test.ts` for regression coverage (anonymous filter presence, unpublished gating, authenticated access). The lint test (`tests/authWrapperLint.test.ts`) ensures blog composable changes continue to respect wrapper rules.
+
+Extending: If adding new publicly readable blog-adjacent models (e.g., `Series`, `Newsletter` subscription confirmation listing), ensure they are added to `PUBLIC_READ_MODELS` and their reads are wrapped with `withPublic()`; add specific tests mirroring the existing pattern.
+
+
 ## Features
 
 - **Authentication**: Setup with Amazon Cognito for secure user authentication.

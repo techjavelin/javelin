@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '@/../amplify/data/resource'
 import { useAuthorization } from './useAuthorization'
 
@@ -16,7 +17,7 @@ export function useArtifacts() {
     try {
       const filter: any = { engagementId: { eq: engagementId } }
       if (params.status) filter.status = { eq: params.status }
-      const resp = await client.models.ArtifactLink.list({ filter, limit: params.limit, nextToken: params.nextToken })
+  const resp = await client.models.ArtifactLink.list(withAuth({ filter, limit: params.limit, nextToken: params.nextToken }))
       artifacts.value = resp.data || []
       return { nextToken: resp.nextToken }
     } catch (e: any) {
@@ -56,7 +57,7 @@ export function useArtifacts() {
     try {
       const filter: any = {}
       if (params.provider) filter.provider = { eq: params.provider }
-      const resp = await client.models.ArtifactLink.list({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken })
+  const resp = await client.models.ArtifactLink.list(withAuth({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken }))
       artifacts.value = resp.data || []
       return { nextToken: resp.nextToken }
     } catch (e: any) {

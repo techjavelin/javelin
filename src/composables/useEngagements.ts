@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '@/../amplify/data/resource'
 import { useAuthorization } from './useAuthorization'
 
@@ -32,7 +33,7 @@ export function useEngagements(): UseEngagementsApi {
       if (params.organizationId) filter.organizationId = { eq: params.organizationId }
       if (params.phase) filter.phase = { eq: params.phase }
       if (params.status) filter.status = { eq: params.status }
-      const resp = await client.models.Engagement.list({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken })
+  const resp = await client.models.Engagement.list(withAuth({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken }))
       items.value = resp.data || []
       return { nextToken: resp.nextToken }
     } catch (e: any) {

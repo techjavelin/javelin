@@ -1,4 +1,5 @@
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '@/../amplify/data/resource'
 
 const client = generateClient<Schema>()
@@ -23,7 +24,7 @@ export const authorizationGuards = {
 
   /** Prevent removing the last org admin */
   async ensureNotLastOrgAdmin(organizationId: string, userId: string) {
-    const list = await client.models.OrganizationMembership.list({ filter: { organizationId: { eq: organizationId }, role: { eq: 'ORG_ADMIN' } } })
+  const list = await client.models.OrganizationMembership.list(withAuth({ filter: { organizationId: { eq: organizationId }, role: { eq: 'ORG_ADMIN' } } }))
     const admins = (list.data || []).map(r => r.userId)
     if (admins.length === 1 && admins[0] === userId) {
       throw new AuthorizationError('Cannot remove the last organization admin', 'LAST_ORG_ADMIN')
@@ -52,7 +53,7 @@ export const authorizationGuards = {
     if (scope === 'org') {
       await this.ensureNotLastOrgAdmin(scopeId, userId)
     } else {
-      const list = await client.models.ApplicationRoleAssignment.list({ filter: { applicationId: { eq: scopeId }, role: { eq: 'APP_ADMIN' } } })
+  const list = await client.models.ApplicationRoleAssignment.list(withAuth({ filter: { applicationId: { eq: scopeId }, role: { eq: 'APP_ADMIN' } } }))
       const admins = (list.data || []).map(r => r.userId)
       if (admins.length === 1 && admins[0] === userId) {
         throw new AuthorizationError('Cannot downgrade last application admin', 'LAST_APP_ADMIN')

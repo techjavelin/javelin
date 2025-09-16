@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '../../amplify/data/resource'
 import { useAuthorization } from './useAuthorization'
 
@@ -14,7 +15,7 @@ export function useFindings() {
   async function listByEngagement(engagementId: string) {
     loading.value = true; error.value = null
     try {
-      const resp = await client.models.VulnerabilityFinding.list({ filter: { engagementId: { eq: engagementId } } })
+  const resp = await client.models.VulnerabilityFinding.list(withAuth({ filter: { engagementId: { eq: engagementId } } }))
       findings.value = resp.data || []
     } catch (e: any) {
       error.value = e.message || 'Failed to load findings'

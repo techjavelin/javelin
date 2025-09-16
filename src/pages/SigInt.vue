@@ -146,6 +146,7 @@ function toggleTheme(val: string) {
 
 import { ref, onMounted, computed, watch } from 'vue'
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '../../amplify/data/resource'
 import PageWrapper from '@/components/PageWrapper.vue'
 import CardGrid from '@/components/CardGrid.vue'
@@ -214,7 +215,7 @@ type TargetType = typeof targetTypes[number]
 function fetchScopesForOrg(orgId: string) {
   scopesLoading.value = true
   scopesError.value = null
-  client.models.Scope.list({ filter: { organizationId: { eq: orgId } } })
+  client.models.Scope.list(withAuth({ filter: { organizationId: { eq: orgId } } }))
     .then(({ data }) => { scopes.value = data ?? [] })
     .catch((e: any) => { scopesError.value = e.message || 'Failed to load scopes.' })
     .finally(() => { scopesLoading.value = false })
@@ -285,7 +286,7 @@ function closeScopeTargets() {
 function fetchTargetsForScope(scopeId: string) {
   targetsLoading.value = true
   targetsError.value = null
-  client.models.Target.list({ filter: { scopeId: { eq: scopeId } } })
+  client.models.Target.list(withAuth({ filter: { scopeId: { eq: scopeId } } }))
     .then(({ data }) => { targets.value = data ?? [] })
     .catch((e: any) => { targetsError.value = e.message || 'Failed to load targets.' })
     .finally(() => { targetsLoading.value = false })
@@ -347,7 +348,7 @@ async function fetchOrganizations() {
   error.value = null
   try {
     console.log('[SigInt] Fetching organizations...')
-    const { data } = await client.models.Organization.list({})
+  const { data } = await client.models.Organization.list(withAuth({}))
     console.log('[SigInt] Organizations fetched:', data)
     organizations.value = data ?? []
   } catch (e: any) {

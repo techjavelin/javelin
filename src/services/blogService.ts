@@ -1,4 +1,5 @@
 import { generateClient } from 'aws-amplify/data'
+import { withPublic, withAuth } from '../amplifyClient'
 import type { Schema } from '../../amplify/data/resource'
 
 const client = generateClient<Schema>()
@@ -102,7 +103,7 @@ export const blogPostService = {
         filter.authorId = { eq: options.authorId }
       }
 
-      const result = await client.models.BlogPost.list({
+  const result = await client.models.BlogPost.list(withPublic({
         filter: Object.keys(filter).length > 0 ? filter : undefined,
         limit: options.limit || 20,
         nextToken: options.nextToken
@@ -131,7 +132,7 @@ export const blogPostService = {
   async getBySlug(slug: string) {
     const client = generateClient<Schema>()
     try {
-      const result = await client.models.BlogPost.list({
+  const result = await client.models.BlogPost.list(withPublic({
         filter: { slug: { eq: slug } },
         limit: 1
       })
@@ -207,7 +208,7 @@ export const authorService = {
 
   async list() {
     try {
-      const result = await client.models.Author.list({
+  const result = await client.models.Author.list(withPublic({
         filter: { isActive: { eq: true } }
       })
       return result
@@ -252,7 +253,7 @@ export const tagService = {
 
   async list() {
     try {
-      const result = await client.models.Tag.list()
+  const result = await client.models.Tag.list(withPublic())
       return result
     } catch (error) {
       console.error('Error listing tags:', error)
@@ -295,7 +296,7 @@ export const tagService = {
   // Get tags for a specific post
   async getByPost(postId: string) {
     try {
-      const result = await client.models.PostTag.list({
+  const result = await client.models.PostTag.list(withPublic({
         filter: { postId: { eq: postId } }
       })
       return result
@@ -320,7 +321,7 @@ export const categoryService = {
 
   async list() {
     try {
-      const result = await client.models.Category.list()
+  const result = await client.models.Category.list(withPublic())
       return result
     } catch (error) {
       console.error('Error listing categories:', error)
@@ -352,7 +353,7 @@ export const categoryService = {
   // Get categories for a specific post
   async getByPost(postId: string) {
     try {
-      const result = await client.models.PostCategory.list({
+  const result = await client.models.PostCategory.list(withPublic({
         filter: { postId: { eq: postId } }
       })
       return result
@@ -390,7 +391,7 @@ export const commentService = {
         filter.isSpam = { eq: false }
       }
 
-      const result = await client.models.Comment.list({ filter })
+  const result = await client.models.Comment.list(withPublic({ filter }))
       return result
     } catch (error) {
       console.error('Error getting comments for post:', error)
@@ -450,7 +451,7 @@ export const newsletterService = {
   async unsubscribe(email: string) {
     try {
       // Find the subscription
-      const subscriptions = await client.models.Newsletter.list({
+  const subscriptions = await client.models.Newsletter.list(withAuth({
         filter: { email: { eq: email } }
       })
       
@@ -473,7 +474,7 @@ export const newsletterService = {
 
   async getSubscribers() {
     try {
-      const result = await client.models.Newsletter.list({
+  const result = await client.models.Newsletter.list(withAuth({
         filter: { isSubscribed: { eq: true } }
       })
       return result
@@ -515,7 +516,7 @@ export const analyticsService = {
         filter.timestamp = { ...filter.timestamp, lte: endDate }
       }
 
-      const result = await client.models.BlogAnalytics.list({ filter })
+  const result = await client.models.BlogAnalytics.list(withAuth({ filter }))
       return result
     } catch (error) {
       console.error('Error getting post analytics:', error)

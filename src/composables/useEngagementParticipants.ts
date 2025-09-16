@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
+import { withAuth } from '../amplifyClient'
 import type { Schema } from '../../amplify/data/resource'
 import { useAuthorization } from './useAuthorization'
 
@@ -16,7 +17,7 @@ export function useEngagementParticipants() {
   async function list(engagementId: string) {
     loading.value = true; error.value = null
     try {
-      const res = await client.models.EngagementRoleAssignment.list()
+  const res = await client.models.EngagementRoleAssignment.list(withAuth())
       participants.value = (res.data || []).filter(r => r.engagementId === engagementId)
     } catch (e: any) {
       error.value = e.message || 'Failed to load participants'

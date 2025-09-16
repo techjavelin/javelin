@@ -1,7 +1,7 @@
 import { generateClient } from 'aws-amplify/data';
 import { Amplify } from 'aws-amplify';
 import { parseAmplifyConfig } from 'aws-amplify/utils';
-import { getAmplifyOutputs } from '../../outputs';
+import { getAmplifyOutputs, isAmplifyOutputsStub } from '../../outputs';
 import type { Schema } from '../resource';
 import { migrations } from './index.js';
 
@@ -61,6 +61,11 @@ export interface RunMigrationsOptions {
 
 export async function runMigrations(opts: RunMigrationsOptions = {}): Promise<MigrationRunSummary> {
   const logger = opts.logger || createLogger();
+  // If amplify_outputs is absent (synth phase), skip migrations entirely.
+  if (isAmplifyOutputsStub()) {
+    logger.info('Skipping migrations (amplify outputs missing)');
+    return { attempted: 0, applied: 0, skipped: 0, failed: undefined, latestId: migrations[migrations.length - 1]?.id || 0 };
+  }
   // Ensure Amplify configured (during CDK synth this may lack full categories)
   try {
     if (!(Amplify as any)._config) {

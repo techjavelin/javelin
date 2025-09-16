@@ -13,11 +13,16 @@ try {
 } catch (e) {
   // Provide a very small stub so parseAmplifyConfig doesn't explode; models
   // calls are mocked in unit tests anyway. Keep shape shallow.
+  // Guard against process not being defined in browser ESM bundles.
+  const hasProcess = typeof process !== 'undefined' && !!(process as any).env;
+  // Prefer Vite's import.meta.env if available (browser build), else process.env, else default.
+  const viteEnvRegion = (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_AWS_REGION) || undefined;
+  const region = viteEnvRegion || (hasProcess ? (process as any).env.AWS_REGION : undefined) || 'us-east-1';
   outputs = {
-    aws_project_region: process.env.AWS_REGION || 'us-east-1'
+    aws_project_region: region
   };
   // eslint-disable-next-line no-console
-  if (process.env.VITEST) console.warn('[Amplify] Using stub amplify_outputs.json for tests');
+  if (hasProcess && (process as any).env.VITEST) console.warn('[Amplify] Using stub amplify_outputs.json for tests');
 }
 import type { Schema } from '../amplify/data/resource';
 

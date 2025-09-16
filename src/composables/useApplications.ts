@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
 import type { Schema } from '../../amplify/data/resource'
-import { withAuth } from '../amplifyClient'
+import { withAuth, withUserAuth } from '../amplifyClient'
 import { normalizeError } from './useError'
 import { useAuthorization } from './useAuthorization'
 import { useApplicationService } from './useApplicationService'
@@ -42,7 +42,10 @@ export function useApplications() {
     try {
       await primeContext({ organizationId: input.organizationId })
       if(!has('APP.MANAGE', { organizationId: input.organizationId })) throw new Error('Forbidden: APP.MANAGE required')
-      const resp = await client.models.Application.create(withAuth({ ...input }))
+  // Application model requires admin group for create; pass authMode as options, not inside input.
+  // Previously we embedded authMode in the input object via withUserAuth({...input}) which caused
+  // GraphQL error: field 'authMode' not defined on CreateApplicationInput.
+  const resp = await client.models.Application.create({ ...input }, withUserAuth())
       if(resp.data) applications.value.push(resp.data)
       return resp.data || null
     } catch (e){

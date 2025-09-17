@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Javelin REST API
+  version: 0.1.0
+  description: >-
+    Initial REST surface for Javelin.
+    Includes health, vulnerability templates CRUD (API key auth), and migrations admin.
+servers:
+  - url: https://YOUR_REST_API_ID.execute-api.us-east-1.amazonaws.com/dev
+    description: Dev stage
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+    CognitoAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    VulnerabilityTemplate:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        severity: { type: string }
+        description: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+      required: [id, title]
+    MigrationSummary:
+      type: object
+      properties:
+        attempted: { type: integer }
+        applied: { type: integer }
+        skipped: { type: integer }
+        latestId: { type: integer }
+        failed:
+          type: object
+          nullable: true
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            error: { type: string }
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns 200 if service is up.
+      security: []
+      responses:
+        '200': { description: OK }
+  /vuln-templates:
+    get:
+      summary: List vulnerability templates
+      security: [ { ApiKeyAuth: [] } ]
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/VulnerabilityTemplate' }
+    post:
+      summary: Create vulnerability template
+      security: [ { ApiKeyAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VulnerabilityTemplate' }
+      responses:
+        '201': { description: Created }
+        '400': { description: Validation error }
+  /vuln-templates/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    get:
+      summary: Get vulnerability template
+      security: [ { ApiKeyAuth: [] } ]
+      responses:
+        '200': { description: Found, content: { application/json: { schema: { $ref: '#/components/schemas/VulnerabilityTemplate' } } } }
+        '404': { description: Not found }
+    put:
+      summary: Update vulnerability template
+      security: [ { ApiKeyAuth: [] } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VulnerabilityTemplate' }
+      responses:
+        '200': { description: Updated }
+        '400': { description: Validation error }
+        '404': { description: Not found }
+    delete:
+      summary: Delete vulnerability template
+      security: [ { ApiKeyAuth: [] } ]
+      responses:
+        '200': { description: Deleted }
+        '404': { description: Not found }
+  /run-migrations:
+    post:
+      summary: Trigger migrations (admin only)
+      security: [ { CognitoAuth: [] } ]
+      responses:
+        '200': { description: Migration run summary, content: { application/json: { schema: { $ref: '#/components/schemas/MigrationSummary' } } } }
+        '403': { description: Forbidden }
+  /migrations-state:
+    get:
+      summary: List applied migrations (admin only)
+      security: [ { CognitoAuth: [] } ]
+      responses:
+        '200': { description: Summaries }
+        '403': { description: Forbidden }

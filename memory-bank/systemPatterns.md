@@ -15,6 +15,9 @@
 - Sidebar in `src/components/AdminSidebar.vue`
 - Routing in `src/router.ts`
 - Amplify Data client with generated types
+- Risk derivation centralized in `src/services/risk.ts`
+- Live template reuse pattern in finding editor
+- Graceful schema mismatch fallback (retry create without unknown field)
 
 ## Theme Support (Dark/Light)
 All UI components and pages support both dark and light themes. Theme switching is seamless and accessible from any page, using CSS variables and modular styles for maintainability.
@@ -29,3 +32,5 @@ All data-access composables now consistently use withUserAuth for protected admi
 - useApplicationTypes.ts uses withUserAuth
 - useUserTypes.ts uses withUserAuth
 - useMigrations.ts adds Authorization header for REST endpoints
+- useVulnerabilityTemplates.ts implements safe create with impactLevel retry
+- FindingEditorModal auto-fills from template and derives severity reactively

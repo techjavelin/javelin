@@ -1,17 +1,25 @@
-# Progress (Updated: 2025-09-15)
+# Progress (Updated: 2025-09-16)
 
 ## Done
 
-- Implemented migrations UI, auth headers, takeover button, composable changes
-- Fixed unauthorized metadata listing by enforcing userPool auth
-- Added unit tests for migrations composable
-- Updated seed migration to use authMode userPool
+- Implemented risk-based severity derivation (likelihood x impactLevel) for templates & findings
+- Added CVSS builder & score parity across vulnerability templates and findings
+- Integrated rich Markdown editors (description, impact, remediation, reproduction)
+- Added live vulnerability template selector with auto-fill in finding creation modal
+- Introduced QuickBooks client linking modal & composable for organizations
+- Added user directory composable to map userId -> email in UI
+- Sidebar/layout refinements (Documents renaming, user tile, scroll & alignment tweaks)
+- Added impactLevel & likelihood fields to models (templates & findings) with graceful fallback on create
+- Committed and pushed consolidated feature updates
 
 ## Doing
 
-- Preparing commit & push; updating memory bank entries
+- Capturing architectural decisions & updating memory banks
 
 ## Next
 
-- Commit & push changes to main
-- Potential migration 002 for reseed or admin reseed action
+- (Optional) Add provenance field `templateId` to `VulnerabilityFinding`
+- Keyboard navigation + debounce for template search dropdown
+- Remove obsolete OWASP category references (schema & UI cleanup)
+- Centralize risk computation usage in reports/export services
+- Consider migration to backfill impactLevel/likelihood for existing records

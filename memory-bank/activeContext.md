@@ -1,3 +1,9 @@
+## Current Focus (2025-09-16)
+
+- Recently shipped: risk-based severity matrix (likelihood x impactLevel), CVSS builder parity, live template selector & auto-fill in finding editor, QuickBooks org linking, user email directory mapping.
+- Stabilizing new template-driven finding workflow; monitoring for schema drift (impactLevel field) across environments.
+- Potential near-term enhancements: store templateId provenance on findings, keyboard navigation for template dropdown, remove deprecated OWASP category remnants, unify risk service usage in reporting exports.
+
 
 ### Organizational Hierarchy: Scopes & Targets
 

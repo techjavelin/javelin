@@ -10,3 +10,6 @@
 | 2025-09-15 | Force userPool auth for ApplicationType/UserType operations | Models restrict create/update/delete to admin group; default API auth mode remains apiKey for public blog reads so explicit userPool mode prevents Unauthorized errors. |
 | 2025-09-15 | Expose takeover flag in migrations run endpoint and UI | Allows admins to recover from stale or stuck migration lock without manual Dynamo edits; improves operability. |
 | 2025-09-15 | Seed migration uses explicit userPool auth | Ensures seeding succeeds despite project default apiKey authorization mode for public content models. |
+| 2025-09-16 | Adopt risk-based severity derivation (likelihood x impactLevel) replacing manual severity selection in templates & findings. | Ensures consistent, explainable severity scoring and reduces human error; aligns with future analytics. |
+| 2025-09-16 | Introduce live vulnerability template selector in finding creation modal. | Speeds reporter workflow and enforces standardized descriptions/remediations. |
+| 2025-09-16 | Graceful fallback when backend schema lacks new optional fields (impactLevel) on create mutations. | Allows staggered environment updates without blocking feature usage; retries without unknown fields. |

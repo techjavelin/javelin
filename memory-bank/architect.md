@@ -12,6 +12,8 @@ Integrate PandaDoc and GitHub for contracts and code.
 Use Amplify Gen2 and npx ampx for backend.
 Centralize business logic in composables.
 Sidebar navigation as source of truth for admin routes.
+Risk-based severity matrix (likelihood x impactLevel) supersedes manual severity selection.
+Live vulnerability template reuse to accelerate finding creation and ensure consistency.
 
 ## Design Considerations
 
@@ -23,6 +25,7 @@ Strict TypeScript typing.
 Amplify Gen2 workflows (npx ampx).
 Modular architecture.
 Full-width responsive UI.
+Deterministic severity derivation (data -> severity) for auditability.
 
 
 
@@ -67,3 +70,10 @@ Custom sidebar navigation, full-width layout, persistent state, modular page vie
 ### Amplify Data Client
 Strictly typed data access using generated Schema types, CRUD via composables.
 - Store and retrieve files
+ - Derive risk severity on the fly using shared risk service utilities (no duplicated matrices in components)
+
+### Risk & Severity Derivation
+Central utility (`risk.ts`) maps (likelihood, impactLevel) -> severity via matrix and can infer defaults from CVSS base metrics. Components watch likelihood/impactLevel changes and recompute severity automatically instead of storing redundant state. This reduces user error and enables future tuning of the matrix without mass data migrations.
+
+### Template Reuse Flow
+Finding creation modal performs in-memory filtered search over loaded `VulnerabilityTemplate` records. On selection, content fields (title, description, impact, remediation, references, cvssVector, likelihood, impactLevel) are populated; severity becomes derived and editable only through risk inputs, not directly.

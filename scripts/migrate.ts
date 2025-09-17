@@ -24,15 +24,25 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-interface CliArgs { silent?: boolean; debug?: boolean; json?: boolean }
+interface CliArgs { silent?: boolean; debug?: boolean; json?: boolean; outputsPath?: string }
 
 function parseArgs(): CliArgs {
   const args = process.argv.slice(2);
   const flags: CliArgs = {};
-  for (const a of args) {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
     if (a === '--silent') flags.silent = true;
-    if (a === '--debug') { flags.debug = true; flags.silent = false; }
-    if (a === '--json') flags.json = true;
+    else if (a === '--debug') { flags.debug = true; flags.silent = false; }
+    else if (a === '--json') flags.json = true;
+    else if (a === '--amplify-outputs') {
+      const next = args[i + 1];
+      if (!next || next.startsWith('--')) {
+        console.error('[migrate] --amplify-outputs flag requires a path argument');
+        process.exit(1);
+      }
+      flags.outputsPath = next;
+      i++; // skip path token
+    }
   }
   return flags;
 }
@@ -42,7 +52,12 @@ async function main(){
   // Load amplify_outputs.json directly (mirrors seed script approach; keep it simple)
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const outputsPath = resolve(__dirname, '../..', 'amplify_outputs.json');
+  const outputsPath = flags.outputsPath
+    ? resolve(process.cwd(), flags.outputsPath)
+    : resolve(__dirname, '..', 'amplify_outputs.json');
+  if (flags.outputsPath) {
+    console.log('[migrate] Using custom amplify outputs path:', outputsPath);
+  }
   if (!existsSync(outputsPath)) {
     console.error('[migrate] amplify_outputs.json not found at', outputsPath, '\nEnsure pipeline-deploy ran before migrations.');
     process.exit(1);

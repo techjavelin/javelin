@@ -13,6 +13,7 @@
       </div>
       <div class="filters">
         <input v-model="q" placeholder="Search name" />
+        <button v-if="canUpload" class="mini-btn" @click="showUploadModal=true">Upload</button>
       </div>
   <div v-if="loading" class="loading">Loading documents…</div>
       <div v-else-if="error" class="error-box"><p class="err-msg">{{ error }}</p><button class="retry" @click="reload">Retry</button></div>
@@ -44,6 +45,8 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import HubSidebar from '@/components/hub/HubSidebar.vue'
 import { useHubArtifacts } from '@/composables/useHubArtifacts'
 import { useCurrentOrg } from '@/composables/useCurrentOrg'
+import { getUrl } from 'aws-amplify/storage'
+import { useAuthorization } from '@/composables/useAuthorization'
 
 const { artifacts, loading, error, listByOrg } = useHubArtifacts()
 const { currentOrgId, organizations, orgsLoading, setCurrentOrg } = useCurrentOrg()
@@ -51,6 +54,9 @@ const selectedOrgId = ref<string | null>(currentOrgId.value)
 
 const q = ref('')
 const downloadingId = ref<string | null>(null)
+const showUploadModal = ref(false)
+const { has } = useAuthorization()
+const canUpload = computed(()=> has('ORG.MANAGE', { organizationId: selectedOrgId.value || undefined }))
 const filtered = computed(()=> artifacts.value.filter(a => {
   if (q.value){ const n = q.value.toLowerCase(); if (!a.name.toLowerCase().includes(n)) return false }
   return true
@@ -71,8 +77,15 @@ async function download(a: any){
   if (!a.storageKey) return
   try {
     downloadingId.value = a.id
-    // TODO: Implement signed URL retrieval & trigger browser download (deferred until upload modal in place)
-  } finally { downloadingId.value = null }
+    const { url } = await getUrl({ key: a.storageKey })
+    const link = document.createElement('a')
+    link.href = url.toString()
+    link.download = a.name || 'download'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  } catch {/* silently ignore or add toast later */}
+  finally { downloadingId.value = null }
 }
 
 onMounted(()=> reload())

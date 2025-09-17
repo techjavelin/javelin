@@ -229,7 +229,7 @@ function formatDateTime(value?: string){ if(!value) return '—'; const d=new Da
 function renderMd(md?: string){ if(!md) return ''; return marked.parse(md) }
 // Authorization
 const { has } = useAuthorization()
-const canManage = computed(() => has('ENG.MANAGE', { engagementId: route.params.id as string }))
+const canManage = computed(() => has('ENG.MANAGE', { engagementId: route.params.id as string }) || has('ORG.MANAGE', { organizationId: (engagement.value as any)?.organizationId || currentOrgId.value || '' }))
 // Modal state
 const showParticipantsModal = ref(false)
 const showArtifactModal = ref(false)

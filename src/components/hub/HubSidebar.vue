@@ -7,7 +7,7 @@
       <button class="collapse-btn" @click="toggle" :title="collapsed ? 'Expand' : 'Collapse'">{{ collapsed ? '›' : '‹' }}</button>
     </div>
     <nav class="nav">
-      <RouterLink to="/" class="nav-item launchpad-link" :class="{ active: route.path==='/' }" :title="collapsed ? 'Launchpad' : undefined">
+      <RouterLink to="/pulse" class="nav-item launchpad-link" :class="{ active: route.path.startsWith('/pulse') }" :title="collapsed ? 'Launchpad' : undefined">
         <span class="icon">🚀</span>
         <span class="label" v-show="!collapsed">Launchpad</span>
       </RouterLink>

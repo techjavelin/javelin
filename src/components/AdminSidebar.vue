@@ -22,7 +22,7 @@
 
   <!-- Single Launchpad Link (top) -->
   <nav class="launchpad-top" :class="{ collapsed: isCollapsed }">
-    <router-link to="/" class="lp-link" :title="isCollapsed ? 'Launchpad' : undefined">
+    <router-link to="/pulse" class="lp-link" :title="isCollapsed ? 'Launchpad' : undefined">
       <span class="lp-icon">🚀</span>
       <span class="lp-text" v-if="!isCollapsed">Launchpad</span>
     </router-link>

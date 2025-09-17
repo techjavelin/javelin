@@ -17,7 +17,7 @@
           <component
             :is="item.component"
             v-bind="item.props"
-            ref="setItemRef"
+            :ref="setItemRef"
             class="ucm-item"
             role="menuitem"
             tabindex="-1"
@@ -29,8 +29,8 @@
   </transition>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, nextTick, onBeforeUpdate } from 'vue'
 import { useAuth } from '../composables/useAuth'
 
 const props = defineProps({ visible: Boolean, menuId: { type: String, default: undefined } })
@@ -38,8 +38,10 @@ const props = defineProps({ visible: Boolean, menuId: { type: String, default: u
 const { logout } = useAuth()
 
 const menuEl = ref(null)
-const itemRefs = ref([])
-function setItemRef(el){ if(el) itemRefs.value.push(el) }
+const itemRefs = ref<HTMLElement[]>([])
+function setItemRef(el: HTMLElement | null){ if(el) itemRefs.value.push(el) }
+// Clear refs before each v-for re-render to prevent accumulation
+onBeforeUpdate(()=>{ itemRefs.value = [] })
 const items = computed(()=>[
   { key:'home', label:'Home', component:'router-link', props:{ to:'/' } },
   { key:'profile', label:'Profile', component:'router-link', props:{ to:'/profile' } },

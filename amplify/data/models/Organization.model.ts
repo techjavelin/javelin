@@ -24,6 +24,10 @@ export const Organization = a.model({
   createdAt: a.datetime(),
   updatedAt: a.datetime(),
 
+  // External Integrations
+  quickbooksClientId: a.string(), // ID of linked QuickBooks customer (if associated)
+  quickbooksClientName: a.string(), // Cached customer display name for convenience
+
 })
 // Authorization Rules
 .authorization((allow) => [

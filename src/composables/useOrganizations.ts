@@ -120,12 +120,16 @@ export function useOrganizations() {
     return await attemptInvite({ orgId: org.id, email: org.invitedAdminEmail, name: org.name })
   }
 
-  async function updateOrganization(orgId: string, updates: { name?: string }) {
+  async function updateOrganization(orgId: string, updates: { name?: string; quickbooksClientId?: string | null; quickbooksClientName?: string | null }) {
     error.value = null
     try {
-      if (!updates.name || !updates.name.trim()) throw new Error('Name is required')
+      if (updates.name && !updates.name.trim()) throw new Error('Name is required')
+      const payload: any = { id: orgId, updatedAt: new Date().toISOString() }
+      if (updates.name) payload.name = updates.name.trim()
+      if (updates.quickbooksClientId !== undefined) payload.quickbooksClientId = updates.quickbooksClientId || null
+      if (updates.quickbooksClientName !== undefined) payload.quickbooksClientName = updates.quickbooksClientName || null
       const { data } = await withErrorToast('Update Organization', async () =>
-        client.models.Organization.update({ id: orgId, name: updates.name!.trim(), updatedAt: new Date().toISOString() }, withUserAuth())
+        client.models.Organization.update(payload, withUserAuth())
       )
       if (!data) throw new Error('Update returned empty result')
       organizations.value = organizations.value.map(o => o.id === orgId ? { ...o, ...data } : o)

@@ -41,14 +41,14 @@ const metrics = ref<HubMetric[]>([
   { key: 'eng_total', label: 'Active Engagements', value: 0, sub: 'All phases' },
   { key: 'find_open', label: 'Open Findings', value: 0 },
   { key: 'sev_high', label: 'High Severity', value: 0 },
-  { key: 'artifacts', label: 'Artifacts', value: 0 }
+  { key: 'artifacts', label: 'Documents', value: 0 }
 ])
 const recentEngagements = ref([] as any[])
 const latestFindings = ref([] as any[])
 </script>
 
 <style scoped>
-.hub-page { padding:1.25rem 1.4rem 2rem; display:flex; flex-direction:column; gap:1.25rem; }
+.hub-page { padding:1.1rem 1.25rem 1.4rem; display:flex; flex-direction:column; gap:1.1rem; min-height:0; flex:1 1 auto; }
 .page-title { font-size:1rem; margin:0 0 .5rem; letter-spacing:.5px; }
 .metrics-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:.85rem; }
 .metric-card { background:var(--color-card,#1e293b); border:1px solid rgba(255,255,255,0.05); padding:.8rem .9rem; border-radius:12px; display:flex; flex-direction:column; gap:.35rem; }

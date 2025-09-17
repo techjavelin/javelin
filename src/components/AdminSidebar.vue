@@ -20,8 +20,13 @@
       </button>
     </div>
 
-  <!-- Launchpad + User Context (shared) -->
-  <SidebarLaunchpadUserBlock :collapsed="isCollapsed" class="lp-shared" />
+  <!-- Single Launchpad Link (top) -->
+  <nav class="launchpad-top" :class="{ collapsed: isCollapsed }">
+    <router-link to="/" class="lp-link" :title="isCollapsed ? 'Launchpad' : undefined">
+      <span class="lp-icon">🚀</span>
+      <span class="lp-text" v-if="!isCollapsed">Launchpad</span>
+    </router-link>
+  </nav>
 
   <!-- Navigation Menu (Admin specific) -->
   <nav class="sidebar-nav">
@@ -174,7 +179,10 @@
       </router-link>
     </div>
 
-    <!-- Footer user info now provided by Launchpad block (no duplicate) -->
+    <!-- User Tile at Bottom -->
+    <div class="user-tile-wrapper">
+      <UserTile :collapsed="isCollapsed" />
+    </div>
   </aside>
 </template>
 
@@ -185,7 +193,7 @@ import { getCurrentUser } from 'aws-amplify/auth'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import UserContextMenu from './UserContextMenu.vue' // still used inside shared block indirect
 import UserFooterPanel from './UserFooterPanel.vue' // retained for compatibility if referenced
-import SidebarLaunchpadUserBlock from './SidebarLaunchpadUserBlock.vue'
+import UserTile from './UserTile.vue'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
   faTachometerAlt,
@@ -287,6 +295,7 @@ onMounted(async () => {
   top: 0;
   left: 0;
   height: 100vh;
+  max-height:100vh;
   width: 280px;
   background: linear-gradient(180deg, #1a1f36 0%, #2d3748 100%);
   color: white;
@@ -295,7 +304,16 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+  box-sizing:border-box;
+  padding-bottom:calc(env(safe-area-inset-bottom,0));
 }
+/* Launchpad top link */
+.launchpad-top { padding:0 .5rem .25rem; }
+.launchpad-top.collapsed { padding:0 .35rem .25rem; }
+.lp-link { display:flex; align-items:center; gap:.6rem; padding:.55rem .75rem; color:#e2e8f0; text-decoration:none; font-size:.8rem; font-weight:500; border-radius:8px; background:rgba(255,255,255,0.05); }
+.lp-link:hover { background:rgba(255,255,255,0.12); }
+.lp-icon { font-size:1rem; }
+.lp-text { letter-spacing:.5px; }
 
 .admin-sidebar.collapsed {
   width: 80px;
@@ -315,7 +333,9 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s;
-}
+  position:relative;
+  z-index:5;
+ }
 
 
  .sidebar-toggle:hover {
@@ -331,9 +351,9 @@ onMounted(async () => {
 
 /* Header */
  .sidebar-header {
-  padding: 1rem 0.75rem 0.75rem 0.75rem;
+  padding: .85rem .65rem .65rem .65rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 1rem;
+  margin-bottom: .65rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -357,9 +377,10 @@ onMounted(async () => {
 
 /* Navigation */
 .sidebar-nav {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding: 0 0.5rem;
+  padding: 0 .45rem .4rem;
+  min-height:0;
 }
 
 .nav-menu {
@@ -439,9 +460,12 @@ onMounted(async () => {
   opacity: 0;
 }
 
+/* User tile wrapper */
+.user-tile-wrapper { margin-top:auto; border-top:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); }
+
 /* Quick Actions */
 .sidebar-actions {
-  padding: 1rem;
+  padding: .85rem .85rem .75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }

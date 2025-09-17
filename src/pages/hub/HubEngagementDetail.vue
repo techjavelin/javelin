@@ -69,10 +69,10 @@
             </template>
           </section>
           <section class="panel">
-            <h3>Artifacts</h3>
+            <h3>Documents</h3>
             <div v-if="canManage" class="actions-line"><button class="mini-btn" @click="showArtifactModal=true">Link</button></div>
             <div v-if="artifactsError" class="error-box small"><p class="err-msg">{{ artifactsError }}</p></div>
-            <div v-else-if="artifactsLoading" class="loading small">Loading artifacts…</div>
+            <div v-else-if="artifactsLoading" class="loading small">Loading documents…</div>
             <template v-else>
               <ul v-if="artifacts.length" class="artifacts">
                 <li v-for="a in artifacts" :key="a.id">
@@ -80,7 +80,7 @@
                   <span class="atype">{{ a.provider || 'GENERIC' }}</span>
                 </li>
               </ul>
-              <p v-else class="placeholder">No artifacts linked.</p>
+              <p v-else class="placeholder">No documents linked.</p>
             </template>
           </section>
         </div>
@@ -106,8 +106,8 @@
         </div>
         <div v-else-if="currentTab==='artifacts'" class="panel-grid">
           <section class="panel wide">
-            <h3>Artifacts</h3>
-            <p class="placeholder">Artifacts placeholder.</p>
+            <h3>Documents</h3>
+            <p class="placeholder">Documents placeholder.</p>
           </section>
         </div>
         <div v-else-if="currentTab==='activity'" class="panel-grid">
@@ -167,7 +167,7 @@ const { engagements, listByOrg, loading: engagementsLoading, error: engagementsE
 const tabs = [
   { key: 'overview', label: 'Overview' },
   { key: 'findings', label: 'Findings' },
-  { key: 'artifacts', label: 'Artifacts' },
+  { key: 'artifacts', label: 'Documents' },
   { key: 'activity', label: 'Activity' }
 ]
 const currentTab = ref('overview')

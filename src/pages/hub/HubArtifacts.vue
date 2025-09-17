@@ -3,7 +3,7 @@
     <template #sidebar><HubSidebar /></template>
     <div class="hub-page">
       <div class="head-row">
-        <h1 class="page-title">Artifacts</h1>
+  <h1 class="page-title">Documents</h1>
         <div class="org-select" v-if="organizations.length || orgsLoading">
           <select v-model="selectedOrgId" :disabled="orgsLoading">
             <option v-if="orgsLoading" value="">Loading…</option>
@@ -22,7 +22,7 @@
         </select>
         <input v-model="q" placeholder="Search name" />
       </div>
-      <div v-if="loading" class="loading">Loading artifacts…</div>
+  <div v-if="loading" class="loading">Loading documents…</div>
       <div v-else-if="error" class="error-box"><p class="err-msg">{{ error }}</p><button class="retry" @click="reload">Retry</button></div>
       <div v-else>
         <table v-if="filtered.length" class="art-table">
@@ -39,7 +39,7 @@
               </tr>
             </tbody>
         </table>
-        <p v-else class="empty">No artifacts match filters.</p>
+  <p v-else class="empty">No documents match filters.</p>
       </div>
     </div>
   </DashboardLayout>

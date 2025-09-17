@@ -43,7 +43,7 @@ import {
   faTimes,
   faTags
 } from '@fortawesome/free-solid-svg-icons';
-import { faShieldHalved, faBriefcase, faBug, faPlusCircle, faCog, faArrowLeft, faSignOutAlt, faChevronLeft, faChevronRight, faRocket, faBoxesStacked } from '@fortawesome/free-solid-svg-icons';
+import { faShieldHalved, faBriefcase, faBug, faPlusCircle, faCog, faArrowLeft, faSignOutAlt, faChevronLeft, faChevronRight, faRocket, faBoxesStacked, faEllipsisVertical, faGaugeHigh, faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
 import { faTwitter, faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faLifeRing } from '@fortawesome/free-solid-svg-icons';
 import { useLogger } from './composables/useLogger';
@@ -87,6 +87,9 @@ library.add(
   ,faChevronRight
   ,faRocket
   ,faBoxesStacked
+  ,faEllipsisVertical
+  ,faGaugeHigh
+  ,faPeopleGroup
 );
 
 const app = createApp(App);

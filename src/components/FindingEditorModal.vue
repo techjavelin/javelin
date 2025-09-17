@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useFindings } from '@/composables/useFindings'
 import type { Schema } from '../../amplify/data/resource'
 import { useAuthorization } from '@/composables/useAuthorization'
 import { useToasts } from '@/composables/useToasts'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { calculate, nextVector } from '@/services/cvss'
+import { useVulnerabilityTemplates } from '@/composables/useVulnerabilityTemplates'
+import { likelihoodFromVector, impactFromCvssBase, severityFrom } from '@/services/risk'
 
 interface Props {
   engagementId: string
@@ -22,7 +24,9 @@ const { add: addToast } = useToasts()
 
 const local = ref<any>({
   title: '',
-  severity: 'MEDIUM',
+  severity: 'MEDIUM', // computed from likelihood + impactLevel if present
+  impactLevel: '',
+  likelihood: '',
   status: 'OPEN',
   publicationStatus: 'DRAFT',
   description: '',
@@ -38,22 +42,24 @@ const local = ref<any>({
 const mode = computed(() => props.finding ? 'edit' : 'create')
 const canPublish = computed(() => has('ENG.UPDATE_FINDING',{ engagementId: props.engagementId }) && (local.value.publicationStatus === 'DRAFT'))
 
-// CVSS derived severity handling
-const autoSeverity = ref<string>('')
-const overridden = computed(() => !!autoSeverity.value && autoSeverity.value !== local.value.severity)
+// Derived severity handling (likelihood + impactLevel; fallback to CVSS heuristics)
+const derivedLikelihood = computed(()=> local.value.likelihood || (local.value.cvssVector ? likelihoodFromVector(local.value.cvssVector) : ''))
+const derivedImpactLevel = computed(()=> local.value.impactLevel || (local.value.cvssVector ? impactFromCvssBase(calculate(local.value.cvssVector)?.score) : ''))
+const autoSeverity = computed(()=> {
+  const imp = derivedImpactLevel.value; const lik = derivedLikelihood.value
+  if (!imp || !lik) return ''
+  return severityFrom(imp as any, lik as any)
+})
+watch([derivedImpactLevel, derivedLikelihood], () => {
+  if (autoSeverity.value) local.value.severity = autoSeverity.value
+})
 
 function recomputeCvss() {
-  if (!local.value.cvssVector) { autoSeverity.value=''; return }
+  if (!local.value.cvssVector) { local.value.cvssScore = undefined; return }
   const res = calculate(local.value.cvssVector)
   if (res) {
-    autoSeverity.value = res.severity
     local.value.cvssScore = res.score
-    // If severity matches previous auto OR not explicitly changed, sync severity
-    if (!overridden.value) {
-      local.value.severity = res.severity
-    }
-  } else {
-    autoSeverity.value=''
+    // severity will be recalculated by watcher
   }
 }
 
@@ -64,6 +70,8 @@ watch(() => props.finding, (f) => {
     local.value = {
       title: f.title,
       severity: f.severity,
+      impactLevel: (f as any).impactLevel || '',
+      likelihood: (f as any).likelihood || '',
       status: f.status,
       publicationStatus: f.publicationStatus,
       description: f.description || '',
@@ -83,12 +91,56 @@ watch(() => props.finding, (f) => {
 
 function reset() {
   local.value = {
-    title: '', severity: 'MEDIUM', status: 'OPEN', publicationStatus: 'DRAFT', description: '', impact: '', reproduction: '', remediation: '', references: '', affectedAssets: '', cvssVector: '', cvssScore: undefined,
+    title: '', severity: 'MEDIUM', impactLevel:'', likelihood:'', status: 'OPEN', publicationStatus: 'DRAFT', description: '', impact: '', reproduction: '', remediation: '', references: '', affectedAssets: '', cvssVector: '', cvssScore: undefined,
   }
-  autoSeverity.value = ''
 }
 
 const busy = ref(false)
+
+// --- Template selection & auto-fill ---
+const { templates, list: listTemplates, loading: loadingTemplates } = useVulnerabilityTemplates()
+const templateQuery = ref('')
+const showTemplateDropdown = ref(false)
+const selectedTemplateId = ref<string>('')
+const filteredTemplates = computed(()=>{
+  const q = templateQuery.value.trim().toLowerCase()
+  if (!q) return templates.value.slice(0, 12)
+  return templates.value.filter(t => {
+    const title = (t.title||'').toLowerCase()
+    const tags = ((t.tags||[]) as (string|null)[]).filter(Boolean).map(x=> (x as string).toLowerCase())
+    const desc = (t.description||'').toLowerCase()
+    return title.includes(q) || desc.includes(q) || tags.some(tag => tag.includes(q))
+  }).slice(0, 15)
+})
+
+function applyTemplate(t: any) {
+  if (!t) return
+  selectedTemplateId.value = t.id
+  templateQuery.value = t.title
+  // Overwrite fields with template content
+  local.value.title = t.title || ''
+  local.value.description = t.description || ''
+  local.value.impact = t.impact || ''
+  local.value.remediation = t.remediation || ''
+  local.value.references = (t.references||[]).join('\n')
+  local.value.cvssVector = t.cvssVector || ''
+  local.value.likelihood = (t as any).likelihood || ''
+  local.value.impactLevel = (t as any).impactLevel || ''
+  // severity will update via watchers; recompute score
+  recomputeCvss()
+  showTemplateDropdown.value = false
+}
+
+function clearTemplate() {
+  selectedTemplateId.value = ''
+  templateQuery.value = ''
+}
+
+onMounted(()=>{
+  if (mode.value === 'create' && !templates.value.length) {
+    listTemplates()
+  }
+})
 
 // CVSS builder state & helpers
 const showCvss = ref(false)
@@ -131,7 +183,9 @@ async function save(publish = false) {
       engagementId: props.engagementId,
       applicationId: props.applicationId,
       title: local.value.title,
-      severity: local.value.severity,
+  severity: local.value.severity,
+  impactLevel: local.value.impactLevel || undefined,
+  likelihood: local.value.likelihood || undefined,
       status: local.value.status,
       publicationStatus: publish ? 'PUBLISHED' : local.value.publicationStatus,
       description: local.value.description || undefined,
@@ -170,22 +224,80 @@ function close() { emit('update:modelValue', false) }
       </header>
       <div class="modal-body">
         <div class="form-grid">
+          <div v-if="mode==='create'" class="field template-field full">
+            <span>Use Template</span>
+            <div class="template-input-row">
+              <input
+                v-model="templateQuery"
+                placeholder="Search vulnerability templates..."
+                @focus="showTemplateDropdown = true"
+                @input="showTemplateDropdown = true"
+              />
+              <button
+                v-if="selectedTemplateId"
+                type="button"
+                class="btn tiny clear-btn"
+                @click="clearTemplate"
+              >Clear</button>
+            </div>
+            <div
+              v-if="showTemplateDropdown"
+              class="template-dropdown"
+              @mousedown.prevent
+            >
+              <div v-if="loadingTemplates" class="template-loading">Loading templates...</div>
+              <div v-else>
+                <div
+                  v-for="t in filteredTemplates"
+                  :key="t.id"
+                  class="template-item"
+                  @click="applyTemplate(t)"
+                >
+                  <div class="ti-top">
+                    <strong class="ti-title">{{ t.title }}</strong>
+                    <span v-if="(t as any).impactLevel || (t as any).likelihood" class="ti-risk">{{ (t as any).impactLevel || '—' }}/{{ (t as any).likelihood || '—' }}</span>
+                  </div>
+                  <div class="ti-meta">
+                    <span class="ti-sev" :class="(t.severity||'').toLowerCase()">{{ t.severity }}</span>
+                    <span v-if="t.cvssVector" class="ti-cvss">CVSS</span>
+                    <span v-for="tag in ((t.tags||[]) as (string|null)[]).filter(Boolean).slice(0,3)" :key="tag || ''" class="ti-tag">{{ tag }}</span>
+                  </div>
+                  <p v-if="t.description" class="ti-desc">{{ t.description.slice(0,100) }}<span v-if="t.description.length>100">…</span></p>
+                </div>
+                <div v-if="!filteredTemplates.length" class="template-empty">No templates match.</div>
+              </div>
+            </div>
+            <div v-if="selectedTemplateId" class="applied-note">Applied from template. You can edit any field.</div>
+          </div>
           <label class="field span-2 full">
             <span>Title</span>
             <input v-model="local.title" placeholder="Finding title" />
           </label>
-          <label class="field severity-main">
-            <span>Severity</span>
-            <select v-model="local.severity">
+          <label class="field">
+            <span>Likelihood</span>
+            <select v-model="local.likelihood">
+              <option value="">(auto)</option>
+              <option value="VERY_HIGH">VERY_HIGH</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+              <option value="VERY_LOW">VERY_LOW</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Impact Level</span>
+            <select v-model="local.impactLevel">
+              <option value="">(auto)</option>
               <option value="CRITICAL">CRITICAL</option>
               <option value="HIGH">HIGH</option>
               <option value="MEDIUM">MEDIUM</option>
               <option value="LOW">LOW</option>
-              <option value="INFO">INFO</option>
             </select>
-            <p v-if="autoSeverity && autoSeverity!==local.severity" class="override-note-2">Overriding CVSS derived severity of {{ autoSeverity }}</p>
-            <p v-else-if="autoSeverity" class="derived-match">Matches CVSS derived severity ({{ autoSeverity }})</p>
           </label>
+          <div class="field severity-main">
+            <span>Derived Severity</span>
+            <div class="sev-pill" :class="(autoSeverity||'').toLowerCase()">{{ autoSeverity || '—' }}</div>
+          </div>
           <label class="field">
             <span>Status</span>
             <select v-model="local.status">
@@ -337,4 +449,30 @@ textarea { min-height:60px; }
 .override-note-2 { margin:.3rem 0 0; font-size:.55rem; opacity:.75; }
 [data-theme="dark"] .override-note-2 { opacity:.85; }
 .derived-match { margin:.3rem 0 0; font-size:.55rem; opacity:.6; }
+/* Template selector styles */
+.template-field { position:relative; }
+.template-input-row { display:flex; gap:.5rem; align-items:stretch; }
+.template-input-row input { flex:1; }
+.clear-btn { background:#f87171; color:#fff; }
+[data-theme="dark"] .clear-btn { background:#dc2626; }
+.template-dropdown { position:absolute; top:100%; left:0; right:0; margin-top:.35rem; background:var(--color-card,#fff); border:1px solid var(--color-border,#d1d5db); border-radius:10px; max-height:340px; overflow:auto; z-index:80; display:flex; flex-direction:column; gap:.25rem; padding:.45rem .55rem; box-shadow:0 8px 24px -6px rgba(0,0,0,0.25); }
+[data-theme="dark"] .template-dropdown { background:#1f2735; border-color:#334155; }
+.template-item { padding:.45rem .5rem .55rem; border:1px solid transparent; border-radius:8px; cursor:pointer; display:flex; flex-direction:column; gap:.3rem; background:var(--color-input,#f8fafc); }
+.template-item:hover { background:#eef2f7; }
+[data-theme="dark"] .template-item { background:#273142; }
+[data-theme="dark"] .template-item:hover { background:#334155; }
+.ti-top { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
+.ti-title { font-size:.65rem; font-weight:600; }
+.ti-risk { font-size:.55rem; opacity:.75; letter-spacing:.05em; }
+.ti-meta { display:flex; gap:.4rem; flex-wrap:wrap; }
+.ti-sev { font-size:.5rem; font-weight:700; letter-spacing:.05em; padding:.2rem .4rem; border-radius:5px; background:#e2e8f0; }
+.ti-sev.critical { background:#dc2626; color:#fff; }
+.ti-sev.high { background:#f97316; color:#fff; }
+.ti-sev.medium { background:#fbbf24; }
+.ti-sev.low { background:#22c55e; color:#fff; }
+.ti-cvss { font-size:.5rem; padding:.2rem .35rem; background:#6366f1; color:#fff; border-radius:4px; letter-spacing:.05em; }
+.ti-tag { font-size:.5rem; padding:.2rem .35rem; background:#475569; color:#fff; border-radius:4px; }
+.ti-desc { margin:0; font-size:.55rem; line-height:1.25; opacity:.75; }
+.template-loading, .template-empty { padding:.6rem .5rem; font-size:.55rem; opacity:.8; }
+.applied-note { font-size:.55rem; margin-top:.25rem; opacity:.75; }
 </style>

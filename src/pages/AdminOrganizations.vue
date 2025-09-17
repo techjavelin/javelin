@@ -49,6 +49,7 @@
             <th>Members</th>
             <th>Age</th>
             <th>Activated At</th>
+            <th>QB Client</th>
             <th>Actions</th>
             <th>Created</th>
             <th>Updated</th>
@@ -65,10 +66,47 @@
               <span v-else-if="org.invitedAdminEmail && org.admins.includes(org.invitedAdminEmail)" class="activated-email">{{ org.invitedAdminEmail }}</span>
               <span v-else>—</span>
             </td>
-            <td><span class="badge" v-for="a in org.admins" :key="a">{{ a }}</span></td>
-            <td><span class="badge secondary" v-for="m in org.members || []" :key="m">{{ m }}</span></td>
+            <td>
+              <span
+                class="badge"
+                v-for="a in org.admins"
+                :key="a"
+                :title="emailFor(a) !== a ? a : undefined"
+              >{{ emailFor(a) }}</span>
+            </td>
+            <td>
+              <span
+                class="badge secondary"
+                v-for="m in org.members || []"
+                :key="m"
+                :title="emailFor(m) !== m ? m : undefined"
+              >{{ emailFor(m) }}</span>
+            </td>
             <td>{{ formatAge(org.createdAt) }}</td>
             <td>{{ org.activatedAt ? formatDateTime(org.activatedAt) : '—' }}</td>
+            <td class="qb-cell">
+              <template v-if="(org as any).quickbooksClientName">
+                <span class="qb-badge" :title="(org as any).quickbooksClientId">{{ (org as any).quickbooksClientName }}</span>
+                <button
+                  class="icon-btn danger qb-unlink-btn"
+                  :disabled="actionLoading"
+                  @click="clearQuickBooks(org)"
+                  title="Unlink QuickBooks client"
+                  aria-label="Unlink QuickBooks client"
+                >
+                  <font-awesome-icon :icon="['fas','xmark']" />
+                </button>
+              </template>
+              <template v-else>
+                <button
+                  class="mini qb-link-btn"
+                  :disabled="actionLoading"
+                  @click="openQuickBooksModal(org)"
+                  title="Link QuickBooks client"
+                  aria-label="Link QuickBooks client"
+                >Link</button>
+              </template>
+            </td>
             <td class="actions-cell">
               <div class="actions-row">
                 <template v-if="editingOrgId === org.id">
@@ -163,6 +201,13 @@
       </table>
       <p v-if="actionMessage" class="action-message">{{ actionMessage }}</p>
     </section>
+    <AdminOrganizationQuickBooksModal
+      v-if="showQuickBooksModal && quickBooksTargetOrg"
+      :open="showQuickBooksModal"
+      :org="quickBooksTargetOrg"
+      @close="showQuickBooksModal = false; quickBooksTargetOrg = null"
+      @updated="handleQuickBooksUpdated"
+    />
   </DashboardLayout>
 </template>
 
@@ -174,11 +219,14 @@ import { buildAdminApiPath } from '../utils/apiBase'
 import { buildAuthHeaders } from '../utils/authHeaders'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faBuilding, faList, faSync, faPencil, faTrash, faFloppyDisk, faXmark, faPaperPlane, faBolt, faCheck } from '@fortawesome/free-solid-svg-icons'
+import { faBuilding, faList, faSync, faPencil, faTrash, faFloppyDisk, faXmark, faPaperPlane, faBolt, faCheck, faLink } from '@fortawesome/free-solid-svg-icons'
+import { useUserDirectory } from '../composables/useUserDirectory'
+import AdminOrganizationQuickBooksModal from '../components/AdminOrganizationQuickBooksModal.vue'
 
-library.add(faBuilding, faList, faSync, faPencil, faTrash, faFloppyDisk, faXmark, faPaperPlane, faBolt, faCheck)
+library.add(faBuilding, faList, faSync, faPencil, faTrash, faFloppyDisk, faXmark, faPaperPlane, faBolt, faCheck, faLink)
 
 const { organizations, loading, error, creating, fetchOrganizations, createOrganization, resendInvite, inviteStatus, updateOrganization, deleteOrganization } = useOrganizations()
+const { load: loadUsers, lookup: emailFor } = useUserDirectory()
 const name = ref('')
 const adminEmail = ref('')
 const createdMessage = ref('')
@@ -187,9 +235,13 @@ const actionMessage = ref('')
 const editingOrgId = ref<string | null>(null)
 const editingName = ref('')
 const deleteConfirmId = ref<string | null>(null)
+// QuickBooks linking modal state
+const showQuickBooksModal = ref(false)
+const quickBooksTargetOrg = ref<any | null>(null)
 
 onMounted(() => {
   fetchOrganizations()
+  loadUsers().catch(()=>{})
 })
 
 async function handleCreate() {
@@ -259,6 +311,29 @@ async function saveEdit(org: any) {
   } finally {
     actionLoading.value = false
   }
+}
+
+function openQuickBooksModal(org: any) {
+  quickBooksTargetOrg.value = org
+  showQuickBooksModal.value = true
+}
+
+async function clearQuickBooks(org: any) {
+  if (!confirm('Unlink QuickBooks client from this organization?')) return
+  actionLoading.value = true
+  try {
+    await updateOrganization(org.id, { quickbooksClientId: null, quickbooksClientName: null })
+    actionMessage.value = 'QuickBooks client unlinked.'
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function handleQuickBooksUpdated(payload: { id: string; quickbooksClientId?: string; quickbooksClientName?: string }) {
+  // Refresh list to reflect changes (could be optimized by local patch which updateOrganization already does)
+  showQuickBooksModal.value = false
+  quickBooksTargetOrg.value = null
+  actionMessage.value = 'QuickBooks client linked.'
 }
 
 function cancelEdit() {
@@ -361,4 +436,11 @@ button.primary[disabled] { opacity:.6; cursor: not-allowed; }
 .loading-state, .empty-state { text-align:center; padding:1.5rem 0; color: var(--color-text-dim); }
 .loading-spinner { width:28px; height:28px; border:3px solid var(--color-border); border-top-color: var(--color-accent); border-radius:50%; margin:0 auto .75rem; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<style scoped>
+.qb-cell { white-space:nowrap; }
+.qb-badge { display:inline-block; background:#2563eb; color:#fff; padding:.15rem .5rem; border-radius:12px; font-size:.6rem; margin-right:.35rem; max-width:140px; overflow:hidden; text-overflow:ellipsis; vertical-align:middle; }
+.qb-link-btn { font-size:.6rem; padding:.25rem .45rem; }
+.qb-unlink-btn { width:22px; height:22px; font-size:.65rem; }
 </style>

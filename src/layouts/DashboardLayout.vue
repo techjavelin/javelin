@@ -138,16 +138,19 @@ function handleThemeToggle(nextTheme: string) {
   position: relative;
   display: flex;
   flex-direction: row;
-  min-height: 100vh;
+  height: 100vh; /* fixed viewport height to avoid body scroll */
   background: var(--color-bg-light);
   width: 100%;
-  overflow-x: hidden;
+  overflow: hidden; /* contain scroll to content area */
   padding-left: var(--generic-sidebar-width, 260px);
   transition: padding-left 0.25s ease;
   box-sizing: border-box;
 }
 /* When using a custom sidebar slot (Hub), remove inherited padding and rely on slot component width */
 .dashboard-layout.custom-sidebar { padding-left: 0; }
+/* Hub custom sidebar content offset (sidebar fixed at 240px or 62px collapsed) */
+.dashboard-layout.custom-sidebar > .dashboard-content { margin-left:240px; transition:margin-left .25s ease; }
+.dashboard-layout.custom-sidebar .hub-sidebar.collapsed + .dashboard-content { margin-left:62px; }
 
 /* Admin mode overrides (AdminSidebar is fixed @ 280px / 80px collapsed) */
 .dashboard-layout.admin-mode {
@@ -166,13 +169,14 @@ function handleThemeToggle(nextTheme: string) {
 
 /* Content */
 .dashboard-content {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  padding: 2rem 1.5rem 3rem 1.5rem;
+  padding: 2rem 1.5rem 1.75rem 1.5rem;
   background: var(--color-bg-light);
   min-width: 0; /* prevent overflow from flex children */
   box-sizing: border-box;
+  overflow: hidden; /* internal main handles scroll */
 }
 
 .header-content {
@@ -190,7 +194,10 @@ function handleThemeToggle(nextTheme: string) {
 .dashboard-main {
   width: 100%;
   overflow-x: hidden;
+  overflow-y: auto;
   display: block;
+  flex: 1 1 auto;
+  min-height:0;
 }
 
 /* Utility */

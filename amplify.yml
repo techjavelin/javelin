@@ -5,16 +5,15 @@ backend:
       commands:
         # Install dependencies (clean, reproducible)
         - npm ci --cache .npm --prefer-offline
-        # Early enum registration validation (fast fail)
-        - npm run validate:enums
-        # Type-check tests & source (tests use separate tsconfig for vitest types)
-        # - npm run test:typecheck
-        # Run unit tests in CI mode (will fail pipeline on non-zero exit)
-        # - CI=1 npm run test:ci
         # Deploy backend (Amplify Gen 2) only if all previous steps succeed
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
+    postBuild:
+      commands:
+      - echo "Backend build completed on `date`"
+      - echo "Starting post-build phase..."
+      - ls -aslrth
         # After successful infra deploy, run data migrations explicitly
-        - npm run migrate:ci
+      - npm run migrate:ci
 frontend:
   phases:
     build:
@@ -28,3 +27,19 @@ frontend:
     paths:
       - .npm/**/*
       - node_modules/**/*
+test:
+  phases:
+    preTest:
+      commands:
+        - echo "Starting test phase..."
+    test:
+      commands:
+        # Early enum registration validation (fast fail)
+        - npm run validate:enums
+        # Type-check tests & source (tests use separate tsconfig for vitest types)
+        # - npm run test:typecheck
+        # Run unit tests in CI mode (will fail pipeline on non-zero exit)
+        # - CI=1 npm run test:ci
+    postTest:
+      commands:
+        - echo "Test phase completed on `date`"

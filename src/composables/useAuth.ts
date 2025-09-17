@@ -219,6 +219,11 @@ export function useAuth() {
       needsNewPassword.value = true
       pendingSignIn.value = signInResult
     },
+    // Explicitly clear any pending new password challenge (used when reopening login modal to avoid stale state)
+    resetNewPasswordChallenge() {
+      needsNewPassword.value = false
+      pendingSignIn.value = null
+    },
     async completeNewPassword(newPassword: string) {
       if (!needsNewPassword.value || !pendingSignIn.value) throw new Error('No pending new password challenge')
       try {

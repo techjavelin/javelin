@@ -7,7 +7,7 @@ import { useToasts } from '@/composables/useToasts'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { calculate, nextVector } from '@/services/cvss'
 import { useVulnerabilityTemplates } from '@/composables/useVulnerabilityTemplates'
-import { likelihoodFromVector, impactFromCvssBase, severityFrom } from '@/services/risk'
+import { likelihoodFromVector, impactFromCvssBase, severityFrom, deriveSeverityData } from '@/services/risk'
 
 interface Props {
   engagementId: string
@@ -42,17 +42,18 @@ const local = ref<any>({
 const mode = computed(() => props.finding ? 'edit' : 'create')
 const canPublish = computed(() => has('ENG.UPDATE_FINDING',{ engagementId: props.engagementId }) && (local.value.publicationStatus === 'DRAFT'))
 
-// Derived severity handling (likelihood + impactLevel; fallback to CVSS heuristics)
-const derivedLikelihood = computed(()=> local.value.likelihood || (local.value.cvssVector ? likelihoodFromVector(local.value.cvssVector) : ''))
-const derivedImpactLevel = computed(()=> local.value.impactLevel || (local.value.cvssVector ? impactFromCvssBase(calculate(local.value.cvssVector)?.score) : ''))
-const autoSeverity = computed(()=> {
-  const imp = derivedImpactLevel.value; const lik = derivedLikelihood.value
-  if (!imp || !lik) return ''
-  return severityFrom(imp as any, lik as any)
-})
-watch([derivedImpactLevel, derivedLikelihood], () => {
-  if (autoSeverity.value) local.value.severity = autoSeverity.value
-})
+// Centralized risk derivation using deriveSeverityData helper
+const riskResult = ref<{ likelihood?: string; impactLevel?: string; severity?: string }>({})
+async function recomputeRisk() {
+  const res = await deriveSeverityData({
+    likelihood: local.value.likelihood || undefined,
+    impactLevel: local.value.impactLevel || undefined,
+    cvssVector: local.value.cvssVector || undefined
+  })
+  riskResult.value = res
+  if (res.severity) local.value.severity = res.severity
+}
+watch(()=>[local.value.likelihood, local.value.impactLevel, local.value.cvssVector], ()=> { recomputeRisk() }, { immediate:true })
 
 function recomputeCvss() {
   if (!local.value.cvssVector) { local.value.cvssScore = undefined; return }
@@ -156,6 +157,14 @@ onMounted(()=>{
   if (mode.value === 'create' && !templates.value.length) {
     listTemplates()
   }
+  if (mode.value === 'edit' && !templates.value.length) {
+    listTemplates()
+  }
+})
+
+const provenanceTemplate = computed(()=> {
+  if (mode.value !== 'edit' || !props.finding?.templateId) return null
+  return templates.value.find(t=> t.id === (props.finding as any).templateId) || null
 })
 
 // CVSS builder state & helpers
@@ -241,6 +250,10 @@ function close() { emit('update:modelValue', false) }
       </header>
       <div class="modal-body">
         <div class="form-grid">
+          <div v-if="provenanceTemplate" class="field full provenance-badge">
+            <span>Template Source</span>
+            <div class="prov-pill">From template: <strong>{{ provenanceTemplate.title }}</strong></div>
+          </div>
           <div v-if="mode==='create'" class="field template-field full">
             <span>Use Template</span>
             <div class="template-input-row">
@@ -316,7 +329,7 @@ function close() { emit('update:modelValue', false) }
           </label>
           <div class="field severity-main">
             <span>Derived Severity</span>
-            <div class="sev-pill" :class="(autoSeverity||'').toLowerCase()">{{ autoSeverity || '—' }}</div>
+            <div class="sev-pill" :class="(riskResult.severity||'').toLowerCase()">{{ riskResult.severity || '—' }}</div>
           </div>
           <label class="field">
             <span>Status</span>
@@ -497,4 +510,6 @@ textarea { min-height:60px; }
 .ti-desc { margin:0; font-size:.55rem; line-height:1.25; opacity:.75; }
 .template-loading, .template-empty { padding:.6rem .5rem; font-size:.55rem; opacity:.8; }
 .applied-note { font-size:.55rem; margin-top:.25rem; opacity:.75; }
+.provenance-badge .prov-pill { background:#6366f1; color:#fff; display:inline-block; padding:.4rem .65rem; border-radius:999px; font-size:.55rem; letter-spacing:.05em; }
+[data-theme="dark"] .provenance-badge .prov-pill { background:#4f46e5; }
 </style>

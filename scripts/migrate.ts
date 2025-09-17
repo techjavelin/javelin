@@ -19,7 +19,10 @@
  * Future extension idea: add --since <id> to only consider > id range or support dry-run diff mode.
  */
 import { runMigrations } from '../amplify/data/migrations/runner';
-import { getAmplifyOutputs, isAmplifyOutputsStub } from '../amplify/outputs';
+import { Amplify } from 'aws-amplify';
+import { readFileSync, existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 
 interface CliArgs { silent?: boolean; debug?: boolean; json?: boolean }
 
@@ -36,15 +39,22 @@ function parseArgs(): CliArgs {
 
 async function main(){
   const flags = parseArgs();
-  if (isAmplifyOutputsStub()) {
-    console.error('[migrate] amplify_outputs.json not found – ensure pipeline-deploy ran before migrations.');
+  // Load amplify_outputs.json directly (mirrors seed script approach; keep it simple)
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const outputsPath = resolve(__dirname, '../..', 'amplify_outputs.json');
+  if (!existsSync(outputsPath)) {
+    console.error('[migrate] amplify_outputs.json not found at', outputsPath, '\nEnsure pipeline-deploy ran before migrations.');
     process.exit(1);
   }
-  // Validate outputs structure early
-  try { getAmplifyOutputs(); } catch (e:any) {
-    console.error('[migrate] Failed to load amplify outputs:', e?.message || e);
+  let outputs: any;
+  try {
+    outputs = JSON.parse(readFileSync(outputsPath, 'utf-8'));
+  } catch (e:any) {
+    console.error('[migrate] Failed parsing amplify_outputs.json:', e?.message || e);
     process.exit(1);
   }
+  Amplify.configure(outputs);
 
   const level = flags.debug ? 'debug' : (flags.silent ? 'silent' : 'info');
   const lines: string[] = [];

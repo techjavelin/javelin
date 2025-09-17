@@ -5,6 +5,7 @@ import { defineBackend } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations, clientLogIngest } from './api/admin/resource';
+import { vulnTemplates } from './api/vulnTemplates/resource';
 import { updateUserProfileSecure, deleteUserProfileSecure } from './api/profile/resource';
 import { health } from './api/health/resource';
 import { backupCodes } from './functions/mfa/backupCodes';
@@ -13,7 +14,7 @@ import { storage } from './storage/resource';
 import { OrganizationAPI } from './api/resource';
 import { Policy, PolicyStatement, PolicyDocument, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
-import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType } from 'aws-cdk-lib/aws-apigateway';
+import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType, ApiKey, UsagePlan } from 'aws-cdk-lib/aws-apigateway';
 import type { MethodOptions } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 
@@ -35,6 +36,7 @@ const backend = defineBackend({
   deleteUserProfileSecure,
   health,
   backupCodes,
+  vulnTemplates,
   createOrganization: OrganizationAPI.create,
   // deleteOrganization: OrganizationAPI.delete,
   // getOrganization: OrganizationAPI.get,
@@ -104,6 +106,15 @@ const sigintRest = new RestApi(api, 'SigintRestApi', {
   },
 });
 
+// Dedicated API key + usage plan for vulnerability templates endpoints (machine-to-machine usage)
+const vulnTemplatesApiKey = new ApiKey(api, 'VulnTemplatesApiKey', {
+  description: 'API key for Vulnerability Template management endpoints',
+  apiKeyName: 'vuln-templates-key'
+});
+const vulnTemplatesUsagePlan = new UsagePlan(api, 'VulnTemplatesUsagePlan', { name: 'VulnTemplatesUsagePlan' });
+vulnTemplatesUsagePlan.addApiStage({ stage: sigintRest.deploymentStage });
+vulnTemplatesUsagePlan.addApiKey(vulnTemplatesApiKey);
+
 // Authorizer
 const apiAuth = new CognitoUserPoolsAuthorizer(api, 'apiAuth', {
   cognitoUserPools: [authResources.userPool]
@@ -154,6 +165,15 @@ const redeemPath = backupCodesPath.addResource('redeem');
 redeemPath.addMethod('POST', new LambdaIntegration(backend.backupCodes.resources.lambda), apiConfig);
 const regeneratePath = backupCodesPath.addResource('regenerate');
 regeneratePath.addMethod('POST', new LambdaIntegration(backend.backupCodes.resources.lambda), apiConfig);
+
+// Vulnerability Templates (API key auth only). Routes: GET/POST /vuln-templates, GET/PUT/DELETE /vuln-templates/{id}
+const vulnTemplatesPath = sigintRest.root.addResource('vuln-templates');
+vulnTemplatesPath.addMethod('GET', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
+vulnTemplatesPath.addMethod('POST', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
+const vulnTemplateItem = vulnTemplatesPath.addResource('{id}');
+vulnTemplateItem.addMethod('GET', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
+vulnTemplateItem.addMethod('PUT', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
+vulnTemplateItem.addMethod('DELETE', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
 
 // Centralized log group env var injection (optional)
 const centralLogGroupName = process.env.CENTRAL_LOG_GROUP || 'com/techjavelin/javelin';

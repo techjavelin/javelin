@@ -43,6 +43,17 @@ components:
             id: { type: integer }
             name: { type: string }
             error: { type: string }
+    UserApiKey:
+      type: object
+      description: User-owned API key metadata. Value only returned at creation.
+      properties:
+        id: { type: string }
+        name: { type: string }
+        createdDate: { type: string, format: date-time }
+        value:
+          type: string
+          description: Present only in create response.
+      required: [id]
 paths:
   /health:
     get:
@@ -118,3 +129,47 @@ paths:
       responses:
         '200': { description: Summaries }
         '403': { description: Forbidden }
+  /user-api-keys:
+    get:
+      summary: List user API keys (no secret values)
+      security: [ { CognitoAuth: [] } ]
+      responses:
+        '200':
+          description: List of keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/UserApiKey' }
+        '401': { description: Unauthorized }
+    post:
+      summary: Create a new user API key
+      security: [ { CognitoAuth: [] } ]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+      responses:
+        '201':
+          description: Created key (includes value once)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserApiKey' }
+        '401': { description: Unauthorized }
+  /user-api-keys/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string }
+    delete:
+      summary: Delete a user API key
+      security: [ { CognitoAuth: [] } ]
+      responses:
+        '200': { description: Deleted }
+        '401': { description: Unauthorized }
+        '404': { description: Not found }

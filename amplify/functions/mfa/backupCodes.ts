@@ -1,6 +1,6 @@
 // Amplify Gen2 function for MFA backup code redemption & regeneration (combined handler)
 // Endpoint style: export handlers for POST /redeem and POST /regenerate (router wiring assumed by infra)
-import { Schema } from "../../data/resource";
+import type { Schema } from "../../data/resource";
 import { defineFunction } from '@aws-amplify/backend'
 import { generateClient } from 'aws-amplify/data'
 import { randomBytes, createHash } from 'crypto'

@@ -75,12 +75,14 @@
             <div v-else-if="artifactsLoading" class="loading small">Loading documents…</div>
             <template v-else>
               <ul v-if="artifacts.length" class="artifacts">
-                <li v-for="a in artifacts" :key="a.id">
+                <li v-for="a in artifacts.slice(0,5)" :key="a.id">
                   <span class="aname" :title="a.name || a.id">{{ a.name || a.id }}</span>
-                  <span class="atype">{{ humanSize(a.size) }}</span>
+                  <span class="atype">{{ humanFileSize(a.size) }}</span>
+                  <button class="mini-btn" @click="downloadArtifact(a)" :disabled="downloadingId===a.id">{{ downloadingId===a.id ? '...' : 'Download' }}</button>
                 </li>
               </ul>
               <p v-else class="placeholder">No documents uploaded.</p>
+              <div v-if="artifacts.length > 5" class="more-line"><button class="mini-btn" @click="currentTab='artifacts'">View all ({{ artifacts.length }})</button></div>
             </template>
           </section>
         </div>
@@ -107,7 +109,19 @@
         <div v-else-if="currentTab==='artifacts'" class="panel-grid">
           <section class="panel wide">
             <h3>Documents</h3>
-            <p class="placeholder">Documents placeholder.</p>
+            <div class="actions-line" v-if="canManage"><button class="mini-btn" @click="showArtifactModal=true">Upload</button></div>
+            <div v-if="artifactsError" class="error-box small"><p class="err-msg">{{ artifactsError }}</p></div>
+            <div v-else-if="artifactsLoading" class="loading small">Loading documents…</div>
+            <template v-else>
+              <ul v-if="artifacts.length" class="artifacts big">
+                <li v-for="a in artifacts" :key="a.id">
+                  <span class="aname" :title="a.name || a.id">{{ a.name || a.id }}</span>
+                  <span class="atype">{{ humanFileSize(a.size) }}</span>
+                  <button class="mini-btn" @click="downloadArtifact(a)" :disabled="downloadingId===a.id">{{ downloadingId===a.id ? '...' : 'Download' }}</button>
+                </li>
+              </ul>
+              <p v-else class="placeholder">No documents uploaded.</p>
+            </template>
           </section>
         </div>
         <div v-else-if="currentTab==='activity'" class="panel-grid">
@@ -149,10 +163,14 @@ import { usePublishedFindings } from '@/composables/usePublishedFindings'
 import { useHubEngagements } from '@/composables/useHubEngagements'
 import { useCurrentOrg } from '@/composables/useCurrentOrg'
 import { useHubArtifacts } from '@/composables/useHubArtifacts'
+import { getUrl } from 'aws-amplify/storage'
+import { humanFileSize, triggerBrowserDownload } from '@/utils/file'
+import { useToasts } from '@/composables/useToasts'
 import { useEngagementParticipants } from '@/composables/useEngagementParticipants'
 // Temporary markdown renderer - could replace with a shared util later
 import { marked } from 'marked'
 import { useAuthorization } from '@/composables/useAuthorization'
+import { useHubAuth } from '@/composables/useHubAuth'
 import ManageParticipantsModal from '@/components/hub/ManageParticipantsModal.vue'
 import LinkArtifactModal from '@/components/hub/LinkArtifactModal.vue'
 
@@ -229,17 +247,30 @@ function formatDateTime(value?: string){ if(!value) return '—'; const d=new Da
 function renderMd(md?: string){ if(!md) return ''; return marked.parse(md) }
 // Authorization
 const { has } = useAuthorization()
-const canManage = computed(() => has('ENG.MANAGE', { engagementId: route.params.id as string }) || has('ORG.MANAGE', { organizationId: (engagement.value as any)?.organizationId || currentOrgId.value || '' }))
+const { has: hubHas } = useHubAuth()
+// Can upload artifacts if classic ENG/ORG manage OR hub capability explicitly granted
+const canManage = computed(() =>
+  has('ENG.MANAGE', { engagementId: route.params.id as string }) ||
+  has('ORG.MANAGE', { organizationId: (engagement.value as any)?.organizationId || currentOrgId.value || '' }) ||
+  hubHas('HUB.UPLOAD_ARTIFACT')
+)
 // Modal state
 const showParticipantsModal = ref(false)
 const showArtifactModal = ref(false)
+const downloadingId = ref<string | null>(null)
 function onParticipantsChanged(){ loadParticipants() }
 function onArtifactCreated(){ loadArtifacts() }
-function humanSize(bytes?: number | null){
-  if (!bytes && bytes!==0) return '-'
-  const sizes = ['B','KB','MB','GB']
-  let v = bytes; let i=0; while (v>=1024 && i < sizes.length-1){ v/=1024; i++ }
-  return `${v.toFixed(v<10 && i>0 ? 1:0)} ${sizes[i]}`
+const { add: addToast } = useToasts()
+async function downloadArtifact(a: any){
+  if (!a.storageKey) return
+  try {
+    downloadingId.value = a.id
+    const { url } = await getUrl({ key: a.storageKey })
+    triggerBrowserDownload(url.toString(), a.name || 'download')
+    addToast({ message: `Downloading ${a.name || 'file'}…`, type: 'info', duration: 3000 })
+  } catch (e:any){
+    addToast({ message: `Download failed${e?.message ? ': '+e.message: ''}`, type: 'error' })
+  } finally { downloadingId.value = null }
 }
 </script>
 

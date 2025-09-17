@@ -13,6 +13,9 @@ import { useFindings } from '@/composables/useFindings'
 import { useToasts } from '@/composables/useToasts'
 import FindingEditorModal from '@/components/FindingEditorModal.vue'
 import EditEngagementModal from '@/components/EditEngagementModal.vue'
+import LinkArtifactModal from '@/components/hub/LinkArtifactModal.vue'
+import { useArtifacts } from '@/composables/useArtifacts'
+import { humanFileSize, triggerBrowserDownload } from '@/utils/file'
 
 const route = useRoute()
 const engagementId = ref<string>('')
@@ -23,6 +26,35 @@ const { has, primeContext } = useAuthorization()
 const { add: addToast } = useToasts()
 const { get, updateDetails, loading: egLoading, error: egError } = useEngagements()
 const engagement = ref<any | null>(null)
+// Artifacts state
+const { artifacts, list: listArtifacts, remove: removeArtifact, downloadUrl } = useArtifacts()
+const artifactsLoading = ref(false)
+const artifactError = ref<string | null>(null)
+const showArtifactModal = ref(false)
+const downloadingId = ref<string | null>(null)
+async function loadArtifacts(){
+  if (!engagement.value) return
+  artifactsLoading.value = true; artifactError.value=null
+  try {
+    await listArtifacts({ organizationId: engagement.value.organizationId, engagementId: engagement.value.id })
+  } catch (e:any){ artifactError.value = e.message || 'Failed to load artifacts' }
+  finally { artifactsLoading.value=false }
+}
+async function onArtifactUploaded(){ showArtifactModal.value=false; await loadArtifacts(); addToast({ message: 'Document uploaded', type: 'success' }) }
+async function downloadArtifact(a:any){
+  try {
+    downloadingId.value = a.id
+    const url = await downloadUrl(a)
+    triggerBrowserDownload(url, a.name || 'download')
+    addToast({ message: `Downloading ${a.name || 'file'}…`, type: 'info', duration: 3000 })
+  } catch (e:any){ addToast({ message: e.message || 'Download failed', type: 'error' }) }
+  finally { downloadingId.value=null }
+}
+async function deleteArtifact(a:any){
+  if (!confirm('Delete this document?')) return
+  try { await removeArtifact(a); addToast({ message: 'Document deleted', type: 'success' }) }
+  catch(e:any){ addToast({ message: e.message || 'Delete failed', type: 'error' }) }
+}
 // Findings state
 const { findings, listByEngagement } = useFindings()
 const showFindingModal = ref(false)
@@ -96,6 +128,7 @@ async function load() {
     await listByEngagement(data.id)
     findingsLoaded.value = true
   }
+  if (data) await loadArtifacts()
 }
 
 onMounted(() => {
@@ -184,8 +217,35 @@ function tabClass(t: string) { return ['tab-btn', activeTab.value === t ? 'activ
           <EditEngagementModal v-if="engagement" v-model="showEditEngagement" :engagement="engagement" @saved="onEngagementSaved" />
         </section>
         <section v-else-if="activeTab==='artifacts'" class="tab-panel">
-          <h2 class="section-title">Artifacts</h2>
-          <p class="placeholder">Artifacts management coming soon.</p>
+          <div class="panel-head">
+            <h2 class="section-title">Artifacts</h2>
+            <div class="actions" v-if="has('ENG.MANAGE',{ engagementId: engagement.id })"><button class="btn primary" @click="showArtifactModal=true">Upload</button></div>
+          </div>
+          <div v-if="artifactError" class="placeholder error">{{ artifactError }}</div>
+          <div v-else-if="artifactsLoading" class="placeholder">Loading documents…</div>
+          <table v-else-if="artifacts.length" class="artifacts-table">
+            <thead><tr><th>Name</th><th>Description</th><th>Size</th><th>Type</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="a in artifacts" :key="a.id">
+                <td>{{ a.name }}</td>
+                <td>{{ a.description || '-' }}</td>
+                <td>{{ humanFileSize(a.size) }}</td>
+                <td>{{ a.contentType || '-' }}</td>
+                <td class="row-actions">
+                  <button class="link-btn" @click="downloadArtifact(a)" :disabled="downloadingId===a.id">{{ downloadingId===a.id ? '...' : 'Download' }}</button>
+                  <button class="link-btn danger" v-if="has('ENG.MANAGE',{ engagementId: engagement.id })" @click="deleteArtifact(a)">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p v-else class="placeholder">No artifacts uploaded.</p>
+          <LinkArtifactModal
+            v-if="engagement"
+            :open="showArtifactModal"
+            :organization-id="engagement.organizationId"
+            :engagement-id="engagement.id"
+            @close="showArtifactModal=false"
+            @uploaded="onArtifactUploaded" />
         </section>
         <section v-else-if="activeTab==='participants'" class="tab-panel">
           <h2 class="section-title">Participants</h2>

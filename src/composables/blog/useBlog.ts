@@ -54,15 +54,16 @@ export function useBlog() {
   const fetchPostById = async (id: string) => {
     loading.value = true; error.value = null;
     try {
-  // Public read: get post by ID
-  const result = await withErrorToast('Load Post', async () => client.models.BlogPost.get({ id }, (isAuthenticated.value ? withAuth() : withPublic())));
-    // Prevent exposing unpublished content to anonymous sessions beyond model-level rules (defense in depth)
-    if(!isAuthenticated.value && data && data.status !== 'PUBLISHED') {
-      currentPost.value = null;
-      error.value = 'Blog post not found.';
-      return null;
-    }
-      const data = (result as any).data || null;
+      // Public read: get post by ID. Isolate auth option assignment to reduce deep conditional instantiation noise.
+      const authOpts = isAuthenticated.value ? withAuth() : withPublic();
+      const result: any = await withErrorToast('Load Post', async () => client.models.BlogPost.get({ id }, authOpts as any));
+      const data = result?.data || null;
+      // Defense in depth: ensure unpublished posts aren't returned to anonymous user
+      if(!isAuthenticated.value && data && data.status !== 'PUBLISHED') {
+        currentPost.value = null;
+        error.value = 'Blog post not found.';
+        return null;
+      }
       currentPost.value = data;
       return data;
     } catch (err: any) {

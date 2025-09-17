@@ -27,7 +27,7 @@
               <td class="name">{{ a.name }}</td>
               <td class="desc">{{ a.description || '-' }}</td>
               <td>{{ a.contentType || '-' }}</td>
-              <td>{{ humanSize(a.size) }}</td>
+              <td>{{ humanFileSize(a.size) }}</td>
               <td>{{ formatDate(a.updatedAt || a.createdAt) }}</td>
               <td class="actions"><button class="dl" @click="download(a)" :disabled="downloadingId===a.id">{{ downloadingId===a.id ? '...' : 'Download' }}</button></td>
             </tr>
@@ -47,6 +47,8 @@ import { useHubArtifacts } from '@/composables/useHubArtifacts'
 import { useCurrentOrg } from '@/composables/useCurrentOrg'
 import { getUrl } from 'aws-amplify/storage'
 import { useAuthorization } from '@/composables/useAuthorization'
+import { humanFileSize, triggerBrowserDownload } from '@/utils/file'
+import { useToasts } from '@/composables/useToasts'
 
 const { artifacts, loading, error, listByOrg } = useHubArtifacts()
 const { currentOrgId, organizations, orgsLoading, setCurrentOrg } = useCurrentOrg()
@@ -67,24 +69,17 @@ watch(currentOrgId, (id)=>{ if (id && selectedOrgId.value!==id) selectedOrgId.va
 
 function reload(){ listByOrg(selectedOrgId.value || undefined) }
 function formatDate(d?: string | null){ if (!d) return '-'; return new Date(d).toLocaleDateString() }
-function humanSize(bytes?: number | null){
-  if (!bytes && bytes!==0) return '-'
-  const sizes = ['B','KB','MB','GB']
-  let v = bytes; let i=0; while (v>=1024 && i < sizes.length-1){ v/=1024; i++ }
-  return `${v.toFixed(v<10 && i>0 ? 1:0)} ${sizes[i]}`
-}
+const { add: addToast } = useToasts()
 async function download(a: any){
   if (!a.storageKey) return
   try {
     downloadingId.value = a.id
     const { url } = await getUrl({ key: a.storageKey })
-    const link = document.createElement('a')
-    link.href = url.toString()
-    link.download = a.name || 'download'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  } catch {/* silently ignore or add toast later */}
+    triggerBrowserDownload(url.toString(), a.name || 'download')
+    addToast({ message: `Downloading ${a.name || 'file'}…`, type: 'info', duration: 3000 })
+  } catch (e:any){
+    addToast({ message: `Download failed${e?.message ? ': '+e.message: ''}`, type: 'error' })
+  }
   finally { downloadingId.value = null }
 }
 

@@ -33,6 +33,14 @@ export function useArtifacts() {
     } catch (e:any){ error.value = e.message || 'Failed to load artifacts' } finally { loading.value=false }
   }
 
+  // Backwards-compatible helper used in older tests: list artifacts by engagement id only
+  async function listByEngagement(engagementId: string, organizationId?: string) {
+    // Attempt to infer org id from first existing artifact if not provided
+    const orgId = organizationId || artifacts.value[0]?.organizationId
+    if (!orgId) throw new Error('organizationId required for listByEngagement (inferred none)')
+    return list({ organizationId: orgId, engagementId })
+  }
+
   async function upload(params: { file: File; organizationId: string; engagementId?: string; applicationId?: string; name?: string; description?: string }) {
     const { file, organizationId, engagementId, applicationId } = params
     if (engagementId && !has('ENG.MANAGE', { engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
@@ -60,6 +68,29 @@ export function useArtifacts() {
     } catch (e:any){ error.value = e.message || 'Upload failed'; throw e } finally { loading.value=false }
   }
 
+  // Legacy create signature expected by integration tests (create metadata-only without file upload)
+  async function create(input: { engagementId: string; organizationId: string; name: string }) {
+    if (!has('ENG.MANAGE', { engagementId: input.engagementId })) throw new Error('ENG.MANAGE required')
+    const resp = await client.models.ArtifactLink.create(withAuth({
+      organizationId: input.organizationId,
+      engagementId: input.engagementId,
+      name: input.name,
+      storageKey: `placeholder/${Date.now()}-${Math.random().toString(16).slice(2)}`
+    } as any))
+    if (resp.data) artifacts.value = [resp.data as any, ...artifacts.value]
+    return resp.data || null
+  }
+
+  async function update(id: string, engagementId: string, patch: { name?: string; description?: string }) {
+    if (!has('ENG.MANAGE', { engagementId })) throw new Error('ENG.MANAGE required')
+    const resp = await client.models.ArtifactLink.update(withAuth({ id, ...patch } as any))
+    if (resp.data) {
+      const idx = artifacts.value.findIndex(a => a.id === id)
+      if (idx >= 0) artifacts.value[idx] = resp.data as any
+    }
+    return resp.data || null
+  }
+
   async function remove(artifact: { id:string; storageKey?: string }) {
     loading.value=true; error.value=null
     try {
@@ -75,5 +106,5 @@ export function useArtifacts() {
     return url.toString()
   }
 
-  return { artifacts, loading, error, list, upload, remove, downloadUrl }
+  return { artifacts, loading, error, list, listByEngagement, upload, create, update, remove, downloadUrl }
 }

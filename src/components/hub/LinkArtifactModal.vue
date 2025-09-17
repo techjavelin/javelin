@@ -2,37 +2,25 @@
   <div v-if="open" class="modal-backdrop" @keydown.esc="close">
     <div class="modal" role="dialog" aria-modal="true">
       <header class="head">
-        <h3>Link Artifact</h3>
+        <h3>Upload Artifact</h3>
         <button class="close" @click="close">×</button>
       </header>
       <section class="body">
         <div class="field">
-          <label>Provider</label>
-          <select v-model="provider">
-            <option v-for="p in providers" :key="p" :value="p">{{ p }}</option>
-          </select>
+          <label>File</label>
+          <input type="file" @change="onFile" />
+          <p v-if="fileName" class="file-meta">{{ fileName }}</p>
         </div>
         <div class="field">
-          <label>Document Type</label>
-          <select v-model="documentType">
-            <option value="">(optional)</option>
-            <option v-for="d in docTypes" :key="d" :value="d">{{ d }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Name</label>
-          <input v-model="name" />
-        </div>
-        <div class="field">
-          <label>External ID</label>
-          <input v-model="externalId" />
+          <label>Name (optional override)</label>
+          <input v-model="name" :placeholder="fileName || 'File name'" />
         </div>
         <div class="field">
           <label>Description</label>
           <textarea v-model="description" rows="3" />
         </div>
         <div class="actions">
-          <button @click="submit" :disabled="submitting || !name || !externalId">Create</button>
+          <button @click="submit" :disabled="submitting || !file">{{ submitting ? 'Uploading…' : 'Upload' }}</button>
         </div>
         <p v-if="error" class="error">{{ error }}</p>
       </section>
@@ -41,31 +29,36 @@
 </template>
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useHubArtifacts } from '@/composables/useHubArtifacts'
+import { useArtifacts } from '@/composables/useArtifacts'
 
-interface Props { open: boolean; organizationId: string; engagementId?: string }
+interface Props { open: boolean; organizationId: string; engagementId?: string; applicationId?: string }
 const props = defineProps<Props>()
-const emit = defineEmits(['close','created'])
+const emit = defineEmits(['close','uploaded'])
 
-const { create, loading, error } = useHubArtifacts()
-const providers = ['PANDADOC','QUICKBOOKS','OTHER']
-const docTypes = ['NDA','SOW','RULES_OF_ENGAGEMENT','ESTIMATE','OTHER']
-const provider = ref(providers[0])
-const documentType = ref('')
+const { upload, error } = useArtifacts()
+const file = ref<File | null>(null)
+const fileName = ref('')
 const name = ref('')
-const externalId = ref('')
 const description = ref('')
 const submitting = ref(false)
 
-watch(() => props.open, (o) => { if (o) reset() })
+watch(()=>props.open, (o)=> { if (o) reset() })
 
-function reset(){ provider.value=providers[0]; documentType.value=''; name.value=''; externalId.value=''; description.value='' }
+function reset(){ file.value=null; fileName.value=''; name.value=''; description.value='' }
+function onFile(e: Event){
+  const input = e.target as HTMLInputElement
+  if (input.files && input.files.length){
+    file.value = input.files[0]
+    fileName.value = input.files[0].name
+  }
+}
 
 async function submit(){
+  if (!file.value) return
   submitting.value=true
   try {
-    await create({ provider: provider.value as any, name: name.value, externalId: externalId.value, description: description.value||undefined, organizationId: props.organizationId, engagementId: props.engagementId, documentType: documentType.value || undefined } as any)
-    emit('created')
+    await upload({ file: file.value, organizationId: props.organizationId, engagementId: props.engagementId, applicationId: props.applicationId, name: name.value || undefined, description: description.value || undefined })
+    emit('uploaded')
     close()
   } finally { submitting.value=false }
 }

@@ -28,7 +28,7 @@ import { Engagement, EngagementPhase, EngagementStatus } from "./models/Engageme
 import { ApplicationEngagement } from "./models/ApplicationEngagement.model";
 import { VulnerabilityTemplate, VulnerabilityCategory, Severity } from "./models/VulnerabilityTemplate.model";
 import { VulnerabilityFinding, FindingStatus, PublicationStatus } from "./models/VulnerabilityFinding.model";
-import { ArtifactLink, ArtifactProvider, DocumentType, ArtifactStatus } from "./models/ArtifactLink.model";
+import { ArtifactLink } from "./models/ArtifactLink.model";
 import { OrganizationMembership, OrgRole } from "./models/OrganizationMembership.model";
 import { ApplicationRoleAssignment, ApplicationRole } from "./models/ApplicationRoleAssignment.model";
 import { EngagementRoleAssignment, EngagementUserRole } from "./models/EngagementRoleAssignment.model";
@@ -76,9 +76,6 @@ const schema = a.schema({
   FindingStatus,
   PublicationStatus,
   ArtifactLink,
-  ArtifactProvider,
-  DocumentType,
-  ArtifactStatus,
   OrganizationMembership,
   OrgRole,
   ApplicationRoleAssignment,

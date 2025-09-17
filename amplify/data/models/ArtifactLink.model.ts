@@ -1,43 +1,23 @@
 import { a } from '@aws-amplify/backend';
 
-// Generic integration artifact linking model (Pandadoc, QuickBooks, etc.)
-export const ArtifactProvider = a.enum([
-  'PANDADOC',
-  'QUICKBOOKS',
-  'OTHER'
-]);
-
-export const DocumentType = a.enum([
-  'NDA',
-  'SOW',
-  'RULES_OF_ENGAGEMENT',
-  'ESTIMATE',
-  'OTHER'
-]);
-
-export const ArtifactStatus = a.enum([
-  'DRAFT','SENT','COMPLETED','VOIDED','ERROR'
-]);
-
+// Simplified Artifact model: represents an uploaded internal file only.
+// All previous provider / external document concepts removed (pre-production refactor).
 export const ArtifactLink = a.model({
-  engagementId: a.id(), // optional if artifact relates to platform but not a single engagement
-  organizationId: a.id(),
-  provider: a.ref('ArtifactProvider').required(),
-  externalId: a.string().required(),
-  name: a.string().required(),
+  organizationId: a.id().required(),
+  engagementId: a.id(),
+  applicationId: a.id(),
+  name: a.string().required(), // display name (default: original filename)
   description: a.string(),
-  documentType: a.ref('DocumentType'),
-  status: a.ref('ArtifactStatus'),
-  // Flexible metadata for provider-specific fields (signer emails, amounts, etc.)
-  metadata: a.json(),
-  lastSyncAt: a.datetime(),
-  errorMessage: a.string(),
+  storageKey: a.string().required(), // S3 object key
+  contentType: a.string(),
+  size: a.integer(), // bytes
+  sha256: a.string(), // optional file hash (hex)
   createdBy: a.string(),
   createdAt: a.datetime(),
   updatedAt: a.datetime(),
 })
   .authorization(allow => [
     allow.group('admin'),
-    allow.group('pentester').to(['create','read','update']),
+    allow.group('pentester').to(['create','read','update','delete']),
     allow.authenticated().to(['read']),
   ]);

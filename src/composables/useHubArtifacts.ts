@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
 import { withAuth } from '@/amplifyClient'
 import type { Schema } from '../../amplify/data/resource'
+import { remove as removeObject } from 'aws-amplify/storage'
 
 export function useHubArtifacts(){
   const client = generateClient<Schema>()
@@ -26,18 +27,12 @@ export function useHubArtifacts(){
     } catch (e:any){ error.value = e.message || 'Failed to load artifacts' } finally { loading.value=false }
   }
 
-  async function create(input: Omit<Schema['ArtifactLink']['type'],'id'|'createdAt'|'updatedAt'|'lastSyncAt'> & { organizationId:string; engagementId?:string }){
-    loading.value=true; error.value=null
-    try {
-      const resp = await client.models.ArtifactLink.create(withAuth({ ...input }))
-      if (resp.data) artifacts.value = [resp.data as any, ...artifacts.value]
-      return resp.data || null
-    } catch (e:any){ error.value = e.message || 'Failed to create artifact'; throw e } finally { loading.value=false }
-  }
-
   async function remove(id: string){
     loading.value=true; error.value=null
     try {
+      // Fetch first to get storageKey
+      const current = artifacts.value.find(a => (a as any).id === id) as any
+  if (current?.storageKey) { try { await removeObject({ key: current.storageKey }) } catch {/* ignore */} }
       await client.models.ArtifactLink.delete({ id } as any)
       artifacts.value = artifacts.value.filter(a => (a as any).id !== id)
     } catch (e:any){ error.value = e.message || 'Failed to delete artifact'; throw e } finally { loading.value=false }
@@ -45,6 +40,6 @@ export function useHubArtifacts(){
 
   function reset(){ artifacts.value = [] }
 
-  return { artifacts, loading, error, listByOrg, listByEngagement, create, remove, reset }
+  return { artifacts, loading, error, listByOrg, listByEngagement, remove, reset }
 }
 export type UseHubArtifactsReturn = ReturnType<typeof useHubArtifacts>

@@ -12,14 +12,6 @@
         </div>
       </div>
       <div class="filters">
-        <select v-model="providerFilter">
-          <option value="">All Providers</option>
-          <option v-for="p in PROVIDERS" :key="p" :value="p">{{ p }}</option>
-        </select>
-        <select v-model="docTypeFilter">
-          <option value="">All Doc Types</option>
-          <option v-for="d in DOC_TYPES" :key="d" :value="d">{{ d }}</option>
-        </select>
         <input v-model="q" placeholder="Search name" />
       </div>
   <div v-if="loading" class="loading">Loading documents…</div>
@@ -27,17 +19,18 @@
       <div v-else>
         <table v-if="filtered.length" class="art-table">
           <thead>
-            <tr><th>Name</th><th>Provider</th><th>Type</th><th>Status</th><th>Updated</th></tr>
+            <tr><th>Name</th><th>Description</th><th>Type</th><th>Size</th><th>Updated</th><th></th></tr>
           </thead>
-            <tbody>
-              <tr v-for="a in filtered" :key="a.id">
-                <td class="name">{{ a.name }}</td>
-                <td>{{ a.provider }}</td>
-                <td>{{ a.documentType || '-' }}</td>
-                <td><span class="badge st" :class="(a.status||'').toLowerCase()">{{ a.status || '-' }}</span></td>
-                <td>{{ formatDate(a.updatedAt || a.createdAt) }}</td>
-              </tr>
-            </tbody>
+          <tbody>
+            <tr v-for="a in filtered" :key="a.id">
+              <td class="name">{{ a.name }}</td>
+              <td class="desc">{{ a.description || '-' }}</td>
+              <td>{{ a.contentType || '-' }}</td>
+              <td>{{ humanSize(a.size) }}</td>
+              <td>{{ formatDate(a.updatedAt || a.createdAt) }}</td>
+              <td class="actions"><button class="dl" @click="download(a)" :disabled="downloadingId===a.id">{{ downloadingId===a.id ? '...' : 'Download' }}</button></td>
+            </tr>
+          </tbody>
         </table>
   <p v-else class="empty">No documents match filters.</p>
       </div>
@@ -56,15 +49,9 @@ const { artifacts, loading, error, listByOrg } = useHubArtifacts()
 const { currentOrgId, organizations, orgsLoading, setCurrentOrg } = useCurrentOrg()
 const selectedOrgId = ref<string | null>(currentOrgId.value)
 
-const providerFilter = ref('')
-const docTypeFilter = ref('')
 const q = ref('')
-const PROVIDERS = ['PANDADOC','QUICKBOOKS','OTHER']
-const DOC_TYPES = ['NDA','SOW','RULES_OF_ENGAGEMENT','ESTIMATE','OTHER']
-
+const downloadingId = ref<string | null>(null)
 const filtered = computed(()=> artifacts.value.filter(a => {
-  if (providerFilter.value && a.provider !== providerFilter.value) return false
-  if (docTypeFilter.value && a.documentType !== docTypeFilter.value) return false
   if (q.value){ const n = q.value.toLowerCase(); if (!a.name.toLowerCase().includes(n)) return false }
   return true
 }))
@@ -74,6 +61,19 @@ watch(currentOrgId, (id)=>{ if (id && selectedOrgId.value!==id) selectedOrgId.va
 
 function reload(){ listByOrg(selectedOrgId.value || undefined) }
 function formatDate(d?: string | null){ if (!d) return '-'; return new Date(d).toLocaleDateString() }
+function humanSize(bytes?: number | null){
+  if (!bytes && bytes!==0) return '-'
+  const sizes = ['B','KB','MB','GB']
+  let v = bytes; let i=0; while (v>=1024 && i < sizes.length-1){ v/=1024; i++ }
+  return `${v.toFixed(v<10 && i>0 ? 1:0)} ${sizes[i]}`
+}
+async function download(a: any){
+  if (!a.storageKey) return
+  try {
+    downloadingId.value = a.id
+    // TODO: Implement signed URL retrieval & trigger browser download (deferred until upload modal in place)
+  } finally { downloadingId.value = null }
+}
 
 onMounted(()=> reload())
 </script>

@@ -70,17 +70,17 @@
           </section>
           <section class="panel">
             <h3>Documents</h3>
-            <div v-if="canManage" class="actions-line"><button class="mini-btn" @click="showArtifactModal=true">Link</button></div>
+            <div v-if="canManage" class="actions-line"><button class="mini-btn" @click="showArtifactModal=true">Upload</button></div>
             <div v-if="artifactsError" class="error-box small"><p class="err-msg">{{ artifactsError }}</p></div>
             <div v-else-if="artifactsLoading" class="loading small">Loading documents…</div>
             <template v-else>
               <ul v-if="artifacts.length" class="artifacts">
                 <li v-for="a in artifacts" :key="a.id">
                   <span class="aname" :title="a.name || a.id">{{ a.name || a.id }}</span>
-                  <span class="atype">{{ a.provider || 'GENERIC' }}</span>
+                  <span class="atype">{{ humanSize(a.size) }}</span>
                 </li>
               </ul>
-              <p v-else class="placeholder">No documents linked.</p>
+              <p v-else class="placeholder">No documents uploaded.</p>
             </template>
           </section>
         </div>
@@ -137,7 +137,7 @@
     :engagement-id="engagement.id"
     :organization-id="(engagement as any).organizationId || currentOrgId || ''"
     @close="showArtifactModal=false"
-    @created="onArtifactCreated" />
+    @uploaded="onArtifactCreated" />
 </template>
 
 <script setup lang="ts">
@@ -235,6 +235,12 @@ const showParticipantsModal = ref(false)
 const showArtifactModal = ref(false)
 function onParticipantsChanged(){ loadParticipants() }
 function onArtifactCreated(){ loadArtifacts() }
+function humanSize(bytes?: number | null){
+  if (!bytes && bytes!==0) return '-'
+  const sizes = ['B','KB','MB','GB']
+  let v = bytes; let i=0; while (v>=1024 && i < sizes.length-1){ v/=1024; i++ }
+  return `${v.toFixed(v<10 && i>0 ? 1:0)} ${sizes[i]}`
+}
 </script>
 
 <style scoped>

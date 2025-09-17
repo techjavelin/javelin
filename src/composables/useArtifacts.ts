@@ -2,9 +2,17 @@ import { ref } from 'vue'
 import { generateClient } from 'aws-amplify/data'
 import { withAuth } from '../amplifyClient'
 import type { Schema } from '@/../amplify/data/resource'
+import { uploadData, remove as removeObject, getUrl } from 'aws-amplify/storage'
 import { useAuthorization } from './useAuthorization'
 
 const client = generateClient<Schema>()
+
+// Hash helper (sha-256 hex)
+async function sha256Hex(file: File): Promise<string> {
+  const buf = await file.arrayBuffer()
+  const digest = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('')
+}
 
 export function useArtifacts() {
   const artifacts = ref<Schema['ArtifactLink']['type'][]>([])
@@ -12,59 +20,60 @@ export function useArtifacts() {
   const error = ref<string | null>(null)
   const { has } = useAuthorization()
 
-  async function listByEngagement(engagementId: string, params: { status?: string; limit?: number; nextToken?: string } = {}) {
-    loading.value = true; error.value = null
+  function scopeKey(parts: (string|undefined|null)[]) { return parts.filter(Boolean).join('/') }
+
+  async function list(params: { organizationId: string; engagementId?: string; applicationId?: string } ) {
+    loading.value=true; error.value=null
     try {
-      const filter: any = { engagementId: { eq: engagementId } }
-      if (params.status) filter.status = { eq: params.status }
-  const resp = await client.models.ArtifactLink.list(withAuth({ filter, limit: params.limit, nextToken: params.nextToken }))
+      const filter: any = { organizationId: { eq: params.organizationId } }
+      if (params.engagementId) filter.engagementId = { eq: params.engagementId }
+      if (params.applicationId) filter.applicationId = { eq: params.applicationId }
+      const resp = await client.models.ArtifactLink.list(withAuth({ filter }))
       artifacts.value = resp.data || []
-      return { nextToken: resp.nextToken }
-    } catch (e: any) {
-      error.value = e.message || 'Failed to load artifacts'
-      return { nextToken: undefined }
-    } finally { loading.value = false }
+    } catch (e:any){ error.value = e.message || 'Failed to load artifacts' } finally { loading.value=false }
   }
 
-  async function create(input: Omit<Schema['ArtifactLink']['type'],'id'|'createdAt'|'updatedAt'> & { engagementId: string; organizationId: string; provider: any; externalId: string; name: string }) {
-    if (!has('ENG.MANAGE', { engagementId: input.engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
-    loading.value = true; error.value = null
+  async function upload(params: { file: File; organizationId: string; engagementId?: string; applicationId?: string; name?: string; description?: string }) {
+    const { file, organizationId, engagementId, applicationId } = params
+    if (engagementId && !has('ENG.MANAGE', { engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
+    loading.value=true; error.value=null
     try {
-      const resp = await client.models.ArtifactLink.create({ ...input })
+      const hash = await sha256Hex(file)
+      // Temporary id folder via timestamp+rand (record id not known yet)
+      const tempId = crypto.randomUUID()
+      const base = engagementId ? `eng/${engagementId}` : applicationId ? `app/${applicationId}` : 'org'
+      const key = scopeKey(['artifacts','org', organizationId, base, tempId, file.name])
+  await uploadData({ key, data: file, options: { contentType: file.type } }).result
+      const resp = await client.models.ArtifactLink.create(withAuth({
+        organizationId,
+        engagementId,
+        applicationId,
+        name: params.name || file.name,
+        description: params.description,
+        storageKey: key,
+        contentType: file.type,
+        size: file.size,
+        sha256: hash
+      } as any))
+      if (resp.data) artifacts.value = [resp.data as any, ...artifacts.value]
       return resp.data || null
-    } catch (e: any) {
-      error.value = e.message || 'Failed to create artifact'
-      throw e
-    } finally { loading.value = false }
+    } catch (e:any){ error.value = e.message || 'Upload failed'; throw e } finally { loading.value=false }
   }
 
-  async function update(id: string, engagementId: string, patch: Partial<Schema['ArtifactLink']['type']>) {
-    if (!has('ENG.MANAGE', { engagementId })) throw new Error('Forbidden: ENG.MANAGE required')
-    loading.value = true; error.value = null
+  async function remove(artifact: { id:string; storageKey?: string }) {
+    loading.value=true; error.value=null
     try {
-      const resp = await client.models.ArtifactLink.update({ id, ...patch })
-      return resp.data || null
-    } catch (e: any) {
-      error.value = e.message || 'Failed to update artifact'
-      throw e
-    } finally { loading.value = false }
+  if (artifact.storageKey) { try { await removeObject({ key: artifact.storageKey }) } catch {/* ignore */} }
+      await client.models.ArtifactLink.delete({ id: artifact.id } as any)
+      artifacts.value = artifacts.value.filter(a => a.id !== artifact.id)
+    } catch (e:any){ error.value = e.message || 'Delete failed'; throw e } finally { loading.value=false }
   }
 
-  // Backward-compatible generic list alias expected by dashboard pages
-  async function list(params: { engagementId?: string; provider?: string; limit?: number; nextToken?: string } = {}) {
-    if (params.engagementId) return listByEngagement(params.engagementId, params)
-    loading.value = true; error.value = null
-    try {
-      const filter: any = {}
-      if (params.provider) filter.provider = { eq: params.provider }
-  const resp = await client.models.ArtifactLink.list(withAuth({ filter: Object.keys(filter).length ? filter : undefined, limit: params.limit, nextToken: params.nextToken }))
-      artifacts.value = resp.data || []
-      return { nextToken: resp.nextToken }
-    } catch (e: any) {
-      error.value = e.message || 'Failed to load artifacts'
-      return { nextToken: undefined }
-    } finally { loading.value = false }
+  async function downloadUrl(artifact: { storageKey?: string }) {
+    if (!artifact.storageKey) throw new Error('Missing storageKey')
+    const { url } = await getUrl({ key: artifact.storageKey, options: { expiresIn: 300 } as any })
+    return url.toString()
   }
 
-  return { artifacts, loading, error, listByEngagement, list, create, update }
+  return { artifacts, loading, error, list, upload, remove, downloadUrl }
 }

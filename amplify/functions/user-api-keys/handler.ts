@@ -1,10 +1,21 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
 import { withLogging } from '../util/logging';
-import { APIGatewayClient, CreateApiKeyCommand, GetApiKeysCommand, DeleteApiKeyCommand, UpdateApiKeyCommand, CreateUsagePlanKeyCommand, type ApiKey } from '@aws-sdk/client-api-gateway';
+import { APIGatewayClient, CreateApiKeyCommand, GetApiKeysCommand, DeleteApiKeyCommand, UpdateApiKeyCommand, CreateUsagePlanKeyCommand, GetUsagePlansCommand, type ApiKey } from '@aws-sdk/client-api-gateway';
 
 const client = new APIGatewayClient({});
-const REST_API_ID = process.env.REST_API_ID; // derive from deployed Rest API (could be output injected)
-const USAGE_PLAN_ID = process.env.USER_API_KEY_USAGE_PLAN_ID; // dedicated usage plan id
+// We avoid hard dependency on API / usage plan IDs to reduce inter-stack coupling.
+// Usage plan id is resolved by name on first invocation if not injected via env.
+const USAGE_PLAN_NAME = 'UserApiKeysUsagePlan';
+let resolvedUsagePlanId: string | null = process.env.USER_API_KEY_USAGE_PLAN_ID || null;
+
+async function ensureUsagePlanId(): Promise<string> {
+  if(resolvedUsagePlanId) return resolvedUsagePlanId;
+  const plans = await client.send(new GetUsagePlansCommand({ limit: 50 }));
+  const match = (plans.items||[]).find(p => p.name === USAGE_PLAN_NAME);
+  if(!match || !match.id) throw new Error('Usage plan not found: ' + USAGE_PLAN_NAME);
+  resolvedUsagePlanId = match.id;
+  return resolvedUsagePlanId;
+}
 
 function baseHeaders(){
   return {
@@ -22,7 +33,8 @@ function keyNameForUser(userSub: string){ return `user-${userSub}`; }
 
 export const handler: APIGatewayProxyHandler = withLogging('user-api-keys', async (event, log) => {
   if(event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: baseHeaders(), body: '' };
-  if(!REST_API_ID || !USAGE_PLAN_ID) return serverError(new Error('Missing REST_API_ID or USAGE_PLAN_ID env'));
+  // Ensure usage plan id (runtime discovery fallback)
+  try { await ensureUsagePlanId(); } catch(e:any){ return serverError(e); }
 
   const claims = (event.requestContext.authorizer as any)?.claims || {};
   const sub = claims.sub;
@@ -47,8 +59,8 @@ export const handler: APIGatewayProxyHandler = withLogging('user-api-keys', asyn
         tags: { 'owner-sub': sub, 'purpose': 'user-generated' }
       }));
       if(createRes.id && createRes.value) {
-        // Attach to usage plan
-        await client.send(new CreateUsagePlanKeyCommand({ keyId: createRes.id, keyType: 'API_KEY', usagePlanId: USAGE_PLAN_ID }));
+        const usagePlanId = await ensureUsagePlanId();
+        await client.send(new CreateUsagePlanKeyCommand({ keyId: createRes.id, keyType: 'API_KEY', usagePlanId }));
       }
       return { statusCode: 201, headers: baseHeaders(), body: JSON.stringify({ id: createRes.id, value: createRes.value, name: createRes.name, createdDate: createRes.createdDate }) };
     }

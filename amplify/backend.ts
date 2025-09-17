@@ -277,8 +277,8 @@ backend.addOutput({
 });
 
 // Provide env vars to userApiKeys lambda for REST API Id and usage plan id.
-(backend.userApiKeys.resources.lambda as any).addEnvironment('REST_API_ID', sigintRest.restApiId);
-(backend.userApiKeys.resources.lambda as any).addEnvironment('USER_API_KEY_USAGE_PLAN_ID', userApiKeysUsagePlan.usagePlanId);
+// Avoid passing REST API / Usage Plan identifiers directly to prevent cross-stack circular dependencies.
+// The userApiKeys function will discover the usage plan ID at runtime by name if not provided.
 
 // IAM permissions for managing API keys (scoped to current account). We restrict to actions needed.
 backend.userApiKeys.resources.lambda.addToRolePolicy(new PolicyStatement({

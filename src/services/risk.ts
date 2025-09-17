@@ -87,3 +87,16 @@ export function computeSeverityWithFallback(opts: { impactLevel?: ImpactLevel; l
   if (!impactLevel || !likelihood) return undefined;
   return severityFrom(impactLevel, likelihood);
 }
+
+// Unified derivation convenience: prefer provided likelihood & impactLevel; else attempt CVSS-based inference.
+export async function deriveSeverityData(params: { likelihood?: LikelihoodLevel; impactLevel?: ImpactLevel; cvssVector?: string }) : Promise<{ likelihood?: LikelihoodLevel; impactLevel?: ImpactLevel; severity?: Severity }> {
+  let { likelihood, impactLevel, cvssVector } = params;
+  if ((!likelihood || !impactLevel) && cvssVector) {
+    const inferred = await deriveRiskFromCvss(cvssVector);
+    likelihood = likelihood || inferred.likelihood;
+    impactLevel = impactLevel || inferred.impactLevel;
+  }
+  let severity: Severity | undefined;
+  if (likelihood && impactLevel) severity = severityFrom(impactLevel, likelihood);
+  return { likelihood, impactLevel, severity };
+}

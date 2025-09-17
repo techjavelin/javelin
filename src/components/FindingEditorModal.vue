@@ -100,10 +100,16 @@ const busy = ref(false)
 // --- Template selection & auto-fill ---
 const { templates, list: listTemplates, loading: loadingTemplates } = useVulnerabilityTemplates()
 const templateQuery = ref('')
+const debouncedQuery = ref('')
+let tqTimer: any
+watch(templateQuery,(v)=>{
+  clearTimeout(tqTimer)
+  tqTimer = setTimeout(()=> debouncedQuery.value = v, 200)
+})
 const showTemplateDropdown = ref(false)
 const selectedTemplateId = ref<string>('')
 const filteredTemplates = computed(()=>{
-  const q = templateQuery.value.trim().toLowerCase()
+  const q = debouncedQuery.value.trim().toLowerCase()
   if (!q) return templates.value.slice(0, 12)
   return templates.value.filter(t => {
     const title = (t.title||'').toLowerCase()
@@ -112,6 +118,16 @@ const filteredTemplates = computed(()=>{
     return title.includes(q) || desc.includes(q) || tags.some(tag => tag.includes(q))
   }).slice(0, 15)
 })
+const activeTemplateIndex = ref(-1)
+watch(filteredTemplates,()=>{ activeTemplateIndex.value = filteredTemplates.value.length ? 0 : -1 })
+
+function onTemplateKey(e: KeyboardEvent){
+  if (!showTemplateDropdown.value) return
+  if (e.key==='ArrowDown') { e.preventDefault(); if (filteredTemplates.value.length) activeTemplateIndex.value = (activeTemplateIndex.value+1) % filteredTemplates.value.length }
+  else if (e.key==='ArrowUp') { e.preventDefault(); if (filteredTemplates.value.length) activeTemplateIndex.value = (activeTemplateIndex.value-1+filteredTemplates.value.length) % filteredTemplates.value.length }
+  else if (e.key==='Enter') { if (activeTemplateIndex.value>=0) { applyTemplate(filteredTemplates.value[activeTemplateIndex.value]) } }
+  else if (e.key==='Escape') { showTemplateDropdown.value = false }
+}
 
 function applyTemplate(t: any) {
   if (!t) return
@@ -186,6 +202,7 @@ async function save(publish = false) {
   severity: local.value.severity,
   impactLevel: local.value.impactLevel || undefined,
   likelihood: local.value.likelihood || undefined,
+      templateId: mode.value==='create' && selectedTemplateId.value ? selectedTemplateId.value : undefined,
       status: local.value.status,
       publicationStatus: publish ? 'PUBLISHED' : local.value.publicationStatus,
       description: local.value.description || undefined,
@@ -232,6 +249,7 @@ function close() { emit('update:modelValue', false) }
                 placeholder="Search vulnerability templates..."
                 @focus="showTemplateDropdown = true"
                 @input="showTemplateDropdown = true"
+                @keydown="onTemplateKey"
               />
               <button
                 v-if="selectedTemplateId"
@@ -248,9 +266,11 @@ function close() { emit('update:modelValue', false) }
               <div v-if="loadingTemplates" class="template-loading">Loading templates...</div>
               <div v-else>
                 <div
-                  v-for="t in filteredTemplates"
+                  v-for="(t,idx) in filteredTemplates"
                   :key="t.id"
                   class="template-item"
+                  :data-active="idx===activeTemplateIndex"
+                  @mouseenter="activeTemplateIndex = idx"
                   @click="applyTemplate(t)"
                 >
                   <div class="ti-top">
@@ -459,8 +479,10 @@ textarea { min-height:60px; }
 [data-theme="dark"] .template-dropdown { background:#1f2735; border-color:#334155; }
 .template-item { padding:.45rem .5rem .55rem; border:1px solid transparent; border-radius:8px; cursor:pointer; display:flex; flex-direction:column; gap:.3rem; background:var(--color-input,#f8fafc); }
 .template-item:hover { background:#eef2f7; }
+[data-active="true"].template-item { outline:2px solid #6366f1; background:#eef2ff; }
 [data-theme="dark"] .template-item { background:#273142; }
 [data-theme="dark"] .template-item:hover { background:#334155; }
+[data-theme="dark"] [data-active="true"].template-item { background:#374151; outline:2px solid #6366f1; }
 .ti-top { display:flex; align-items:center; justify-content:space-between; gap:.5rem; }
 .ti-title { font-size:.65rem; font-weight:600; }
 .ti-risk { font-size:.55rem; opacity:.75; letter-spacing:.05em; }

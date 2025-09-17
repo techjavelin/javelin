@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { getClient, withUserAuth } from '@/amplifyClient'
 import { getCurrentUser, fetchUserAttributes, type AuthUser, updatePassword, confirmSignIn, setUpTOTP, verifyTOTPSetup, updateMFAPreference, fetchMFAPreference } from 'aws-amplify/auth'
+import { signOut } from 'aws-amplify/auth'
 // Using native fetch for custom function endpoints (assuming same domain / proxy)
 const apiBase = (import.meta as any).env?.VITE_API_BASE || ''
 
@@ -192,6 +193,13 @@ export function useAuth() {
     loadCurrentUser,
     clearUser,
     checkAdminAccess,
+    // Logout / sign out user from Cognito and clear local state
+    async logout(){
+      try {
+        await signOut();
+      } catch {/* swallow signOut errors */}
+      clearUser();
+    },
     // Password management
     async changePassword(oldPassword: string, newPassword: string) {
       if (!currentUser.value) throw new Error('Not authenticated')

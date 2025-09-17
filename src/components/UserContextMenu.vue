@@ -54,7 +54,7 @@ function focusLast(){ focusIndex(itemRefs.value.length-1) }
 function focusNext(){ const idx=currentIndex(); focusIndex((idx+1)%itemRefs.value.length) }
 function focusPrev(){ const idx=currentIndex(); focusIndex((idx-1+itemRefs.value.length)%itemRefs.value.length) }
 function currentIndex(){ return itemRefs.value.findIndex(el=>document.activeElement===el) }
-function focusIndex(i){ const el=itemRefs.value[i]; if(el) el.focus() }
+function focusIndex(i: number){ const el=itemRefs.value[i]; if(el) el.focus() }
 
 onMounted(()=>{ if(props.visible) nextTick(()=>focusFirst()) })
 </script>

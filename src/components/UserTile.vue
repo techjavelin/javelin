@@ -34,7 +34,7 @@ const { isAdmin, isPentester } = useRoles()
 
 const userName = computed(() => rawName?.value || 'User')
 const userEmail = computed(() => rawEmail?.value || '')
-const initials = computed(() => userName.value.split(/\s+/).map(p=>p[0]||'').join('').slice(0,2).toUpperCase())
+const initials = computed(() => userName.value.split(/\s+/).map((p: string)=>p[0]||'').join('').slice(0,2).toUpperCase())
 
 const roleTags = computed(() => {
   const tags: string[] = []

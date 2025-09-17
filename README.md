@@ -166,6 +166,30 @@ Frontend fixes applied:
 
 If you still see a true CORS issue (missing `Access-Control-Allow-Origin`), ensure the API Gateway resource method exists and the `defaultCorsPreflightOptions` hasn't been overridden.
 
+### Data Migrations (CI-Orchestrated)
+
+Data migrations are now executed explicitly at the end of the backend build phase instead of implicitly during CDK/Amplify synth.
+
+Workflow:
+1. Define or modify migration definitions under `amplify/data/migrations/` (increment the numeric `id`).
+2. Commit & push. The pipeline runs `ampx pipeline-deploy` to deploy infra.
+3. After a successful deploy, `npm run migrate:ci` (see `scripts/migrate.ts`) applies any pending migrations.
+
+Script (`scripts/migrate.ts`) highlights:
+* Loads `amplify_outputs.json` (fails if missing to ensure infra exists)
+* Invokes shared `runMigrations` runner (same logic used by admin run-migrations Lambda)
+* Exits non-zero if any migration fails (blocking subsequent stages)
+* Flags: `--debug` (verbose), `--silent` (only final status), `--json` (machine-readable summary)
+
+Rationale: Avoids unexpected data mutations during development synth, improves auditability, and mirrors common "deploy infra then migrate" practice.
+
+Local manual run (after sandbox deploy):
+```
+npm run migrate:ci -- --debug
+```
+
+The Admin UI Migrations screen remains for manual or emergency re-runs; routine application relies on CI.
+
 ### Organization Management (UI)
 The Admin Organizations page now supports:
 - Rename (inline edit) of an organization name.

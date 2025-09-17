@@ -1,7 +1,7 @@
 import { defineBackend } from '@aws-amplify/backend';
-// Data migrations framework
-import { runMigrations } from './data/migrations/runner';
-import { latestMigrationId } from './data/migrations';
+// NOTE: Automatic invocation of data migrations during synth has been removed.
+// Migrations now run explicitly as the final CI step via `npm run migrate:ci`.
+// (See scripts/migrate.ts and amplify.yml for orchestration.)
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations, clientLogIngest } from './api/admin/resource';
@@ -43,11 +43,7 @@ const backend = defineBackend({
   // updateOrganization: OrganizationAPI.update
 });
 
-// Apply pending data migrations (during synth we allow skipping if config not ready)
-runMigrations({ skipOnConfigError: true }).catch(e => {
-  // eslint-disable-next-line no-console
-  console.error('[migrations] Error applying migrations', e);
-});
+// (Intentionally left blank: data migrations are no longer auto-applied at synth time.)
 
 // Create a policy for Cognito user management
 // Cast auth resources to any to access underlying CDK constructs (userPool, groups)
@@ -236,7 +232,8 @@ backend.addOutput({
       region: Stack.of(api).region
     },
     MIGRATIONS: {
-      latest: latestMigrationId,
+      // Latest migration id omitted from synth-time output now that migrations
+      // are executed explicitly in CI (script derives latest from code directly).
       stateTableName: migrationStateTable.tableName
     }
   }

@@ -29,6 +29,12 @@ const routes = [
     meta: { hideTopNav: false }
   },
   {
+    path: '/user/settings',
+    component: () => import('./pages/UserSettings.vue'),
+    name: 'user-settings',
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/subscribe',
     component: () => import('./pages/NewsletterSubscribe.vue'),
     name: 'newsletter-subscribe'

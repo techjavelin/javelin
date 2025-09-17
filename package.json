@@ -29,6 +29,7 @@
 		"@aws-amplify/ui-vue": "^4.3.3",
 		"@aws-crypto/sha256-js": "^5.2.0",
 		"@aws-sdk/client-dynamodb": "^3.631.0",
+		"@aws-sdk/client-api-gateway": "^3.631.0",
 		"@aws-sdk/credential-providers": "^3.620.0",
 		"@aws-sdk/util-dynamodb": "^3.631.0",
 		"@fortawesome/fontawesome-svg-core": "^7.0.0",

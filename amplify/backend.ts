@@ -6,6 +6,7 @@ import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, inviteAdminUser, activateOrganizationAdmin, runMigrations as runMigrationsFn, listMigrations, clientLogIngest } from './api/admin/resource';
 import { vulnTemplates } from './api/vulnTemplates/resource';
+import { userApiKeys } from './api/userApiKeys/resource';
 import { updateUserProfileSecure, deleteUserProfileSecure } from './api/profile/resource';
 import { health } from './api/health/resource';
 import { backupCodes } from './functions/mfa/backupCodes';
@@ -37,6 +38,7 @@ const backend = defineBackend({
   health,
   backupCodes,
   vulnTemplates,
+  userApiKeys,
   createOrganization: OrganizationAPI.create,
   // deleteOrganization: OrganizationAPI.delete,
   // getOrganization: OrganizationAPI.get,
@@ -115,6 +117,11 @@ const vulnTemplatesUsagePlan = new UsagePlan(api, 'VulnTemplatesUsagePlan', { na
 vulnTemplatesUsagePlan.addApiStage({ stage: sigintRest.deploymentStage });
 vulnTemplatesUsagePlan.addApiKey(vulnTemplatesApiKey);
 
+// Usage plan for user-generated API keys (each key attached post-creation).
+// We don't pre-create keys here; the Lambda manages key lifecycle.
+const userApiKeysUsagePlan = new UsagePlan(api, 'UserApiKeysUsagePlan', { name: 'UserApiKeysUsagePlan' });
+userApiKeysUsagePlan.addApiStage({ stage: sigintRest.deploymentStage });
+
 // Authorizer
 const apiAuth = new CognitoUserPoolsAuthorizer(api, 'apiAuth', {
   cognitoUserPools: [authResources.userPool]
@@ -175,6 +182,14 @@ vulnTemplateItem.addMethod('GET', new LambdaIntegration(backend.vulnTemplates.re
 vulnTemplateItem.addMethod('PUT', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
 vulnTemplateItem.addMethod('DELETE', new LambdaIntegration(backend.vulnTemplates.resources.lambda), { apiKeyRequired: true, authorizationType: AuthorizationType.NONE });
 
+// User API Keys management (Cognito-authenticated user manages their own keys).
+// Routes: GET/POST /user-api-keys, DELETE /user-api-keys/{id}
+const userApiKeysPath = sigintRest.root.addResource('user-api-keys');
+userApiKeysPath.addMethod('GET', new LambdaIntegration(backend.userApiKeys.resources.lambda), apiConfig);
+userApiKeysPath.addMethod('POST', new LambdaIntegration(backend.userApiKeys.resources.lambda), apiConfig);
+const userApiKeyItem = userApiKeysPath.addResource('{id}');
+userApiKeyItem.addMethod('DELETE', new LambdaIntegration(backend.userApiKeys.resources.lambda), apiConfig);
+
 // Centralized log group env var injection (optional)
 const centralLogGroupName = process.env.CENTRAL_LOG_GROUP || 'com/techjavelin/javelin';
 // Attach to all custom lambdas we defined (extend list as needed)
@@ -191,7 +206,9 @@ const centralLogGroupName = process.env.CENTRAL_LOG_GROUP || 'com/techjavelin/ja
   backend.listUsers.resources.lambda,
   backend.updateUserProfileSecure.resources.lambda,
   backend.deleteUserProfileSecure.resources.lambda,
-  backend.health.resources.lambda
+  backend.health.resources.lambda,
+  backend.userApiKeys.resources.lambda,
+  backend.vulnTemplates.resources.lambda
 ].forEach(fn => {
   // Some generated resource.lambda types are surfaced as IFunction which doesn't expose addEnvironment in typing.
   // Cast to any to attach env var (runtime supports it on actual Function object).
@@ -258,4 +275,19 @@ backend.addOutput({
     }
   }
 });
+
+// Provide env vars to userApiKeys lambda for REST API Id and usage plan id.
+(backend.userApiKeys.resources.lambda as any).addEnvironment('REST_API_ID', sigintRest.restApiId);
+(backend.userApiKeys.resources.lambda as any).addEnvironment('USER_API_KEY_USAGE_PLAN_ID', userApiKeysUsagePlan.usagePlanId);
+
+// IAM permissions for managing API keys (scoped to current account). We restrict to actions needed.
+backend.userApiKeys.resources.lambda.addToRolePolicy(new PolicyStatement({
+  actions: [
+    'apigateway:GET',
+    'apigateway:POST',
+    'apigateway:PATCH',
+    'apigateway:DELETE'
+  ],
+  resources: ['*'] // API Gateway execution/control plane ARNs are complex; tighten later if needed
+}));
 

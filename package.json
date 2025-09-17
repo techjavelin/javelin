@@ -22,7 +22,8 @@
 		"test:watch": "vitest",
 		"test:typecheck": "tsc -p tsconfig.test.json --noEmit",
 		"health:api": "tsx scripts/check-api-health.ts",
-		"migrate:ci": "tsx scripts/migrate.ts"
+		"migrate:ci": "tsx scripts/migrate.ts",
+		"favicons": "tsx scripts/gen-favicons.ts"
 	},
 	"dependencies": {
 		"@aws-amplify/ui-vue": "^4.3.3",
@@ -62,6 +63,8 @@
 		"globby": "^14.0.2",
 		"jsdom": "^27.0.0",
 		"npm-run-all2": "^7.0.1",
+		"png-to-ico": "^2.1.8",
+		"sharp": "^0.33.5",
 		"tsx": "^4.19.2",
 		"typescript": "^5.7.2",
 		"vite": "^6.0.1",

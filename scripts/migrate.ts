@@ -54,7 +54,7 @@ async function main(){
   const __dirname = dirname(__filename);
   const outputsPath = flags.outputsPath
     ? resolve(process.cwd(), flags.outputsPath)
-    : resolve(__dirname, '..', 'amplify_outputs.json');
+    : resolve(__dirname, 'amplify_outputs.json');
   if (flags.outputsPath) {
     console.log('[migrate] Using custom amplify outputs path:', outputsPath);
   }

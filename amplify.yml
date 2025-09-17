@@ -9,11 +9,11 @@ backend:
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
     postBuild:
       commands:
-      - echo "Backend build completed on `date`"
-      - echo "Starting post-build phase..."
-      - ls -aslrth
-        # After successful infra deploy, run data migrations explicitly
-      - npm run migrate:ci
+        - echo "Backend build completed on `date`"
+        - echo "Starting post-build phase..."
+        - ls -aslrth
+          # After successful infra deploy, run data migrations explicitly
+        - npm run migrate:ci
 frontend:
   phases:
     build:

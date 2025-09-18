@@ -41,7 +41,9 @@ Responses:
 ## Notes
 - Listing never returns `value`.
 - Each key is tagged internally with `owner-sub` for ownership checks.
-- Throttling / quotas can be applied via the API Gateway usage plan.
+- Current usage plan limits (subject to change): 25 req/sec (burst 10), 20k requests/month.
+- Per-user key cap: 5 keys (creation returns `KeyLimitExceeded` once reached).
+- Vulnerability Templates endpoints use a separate usage plan & API key.
 
 ## Example cURL
 ```

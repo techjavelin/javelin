@@ -29,8 +29,10 @@
   --pulse-feature-text: #334155;
 }
 [data-theme="dark"] {
-  --color-bg-light: #181e2a;
-  --color-bg-dark: #fff;
+  /* In dark mode, keep semantic meaning: bg-dark remains the dark surface color.
+     bg-light is allowed to shift to a slightly lighter dark tone for components that use it directly. */
+  --color-bg-light: #181e2a; /* primary page background in dark theme */
+  --color-bg-dark: #181e2a; /* was incorrectly set to white, causing white backgrounds */
   --color-card-light: #232b44;
   --color-card-dark: #f8f9fa;
   --color-text-light: #e0e0e0;

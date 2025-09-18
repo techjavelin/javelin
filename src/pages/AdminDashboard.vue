@@ -1074,30 +1074,7 @@ onMounted(async () => {
   color: #90caf9;
 }
 
-/* Theme variables for future pages */
-/* Theme variables for light mode */
-:root {
-  --color-bg-light: #fff;
-  --color-bg-dark: #121212;
-  --color-card-light: #f8f9fa;
-  --color-card-dark: #1e1e1e;
-  --color-text-light: #1a365d;
-  --color-text-dark: #e0e0e0;
-  --color-primary: #2566af;
-  --color-primary-dark: #90caf9;
-}
-
-/* Theme variables for dark mode */
-[data-theme="dark"] :root {
-  --color-bg-light: #121212;
-  --color-bg-dark: #fff;
-  --color-card-light: #1e1e1e;
-  --color-card-dark: #f8f9fa;
-  --color-text-light: #e0e0e0;
-  --color-text-dark: #1a365d;
-  --color-primary: #90caf9;
-  --color-primary-dark: #2566af;
-}
+/* Removed local theme variable overrides; rely on global theme.css for consistency. */
 .migration-section { margin-top:2rem; }
 .migration-status { font-size:.75rem; line-height:1.3; }
 .migration-status .pending-indicator { color:#c97a00; margin-left:.5rem; font-weight:600; }

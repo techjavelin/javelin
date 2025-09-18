@@ -33,3 +33,7 @@ coverage
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+
+# Prevent accidental committing of large generated API doc HTML bundles
+docs/api/*.bundle.html
+docs/api/redoc-static*.html

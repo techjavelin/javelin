@@ -8,8 +8,9 @@
 		"npm": ">=10.0.0"
 	},
 	"scripts": {
-		"dev": "vite",
-		"build": "run-p validate:enums type-check \"build-only {@}\" --",
+		"dev": "run-p copy:openapi:watch vite-dev",
+		"vite-dev": "vite",
+		"build": "run-p validate:enums type-check \"build-only {@}\" -- && npm run copy:openapi",
 		"preview": "vite preview",
 		"build-only": "vite build",
 		"type-check": "vue-tsc --build --force",
@@ -23,7 +24,13 @@
 		"test:typecheck": "tsc -p tsconfig.test.json --noEmit",
 		"health:api": "tsx scripts/check-api-health.ts",
 		"migrate:ci": "tsx scripts/migrate.ts",
-		"favicons": "tsx scripts/gen-favicons.ts"
+		"favicons": "tsx scripts/gen-favicons.ts",
+		"lint:openapi": "spectral lint docs/api/openapi.yaml",
+		"docs:api:bundle": "redocly bundle docs/api/openapi.yaml --output docs/api/openapi.bundle.yaml",
+		"lint:apidocs": "tsx scripts/check-api-docs-size.ts",
+		"lint:openapi:ops": "tsx scripts/check-operation-ids.ts",
+		"copy:openapi": "tsx scripts/copy-openapi-spec.ts",
+		"copy:openapi:watch": "chokidar 'docs/api/openapi.yaml' -c 'npm run copy:openapi'"
 	},
 	"dependencies": {
 		"@aws-amplify/ui-vue": "^4.3.3",
@@ -53,6 +60,7 @@
 		"@aws-sdk/client-cognito-identity-provider": "^3.631.0",
 		"@tsconfig/node24": "^24.0.1",
 		"@types/node": "^20.17.9",
+		"@types/js-yaml": "^4.0.9",
 		"@vitejs/plugin-vue": "^5.2.1",
 		"@vue/test-utils": "^2.4.6",
 		"@vue/tsconfig": "^0.7.0",
@@ -70,6 +78,9 @@
 		"typescript": "^5.7.2",
 		"vite": "^6.0.1",
 		"vitest": "^2.1.4",
-		"vue-tsc": "^2.1.10"
+		"vue-tsc": "^2.1.10",
+		"@stoplight/spectral-cli": "^6.11.0",
+		"@redocly/cli": "^1.26.0",
+		"chokidar-cli": "^3.0.0"
 	}
 }

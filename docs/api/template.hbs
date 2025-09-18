@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{title}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {{{redocHead}}}
+  <style>
+      :root { color-scheme: light dark; }
+      body { margin:0; padding:0; font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial; background:#ffffff; transition: background .25s,color .25s; }
+      body.dark { background:#0f1115; color:#e6e6e6; }
+      header { background:#0b1221; color:#fff; padding:10px 24px; display:flex; align-items:center; gap:18px; position:sticky; top:0; z-index:50; }
+      header h1 { font-size:18px; margin:0; font-weight:600; letter-spacing:.5px; }
+      header .meta { font-size:12px; opacity:.75; }
+      .badges { display:flex; gap:8px; margin-left:auto; }
+      .badge { background:#142034; border:1px solid #223147; padding:2px 8px; border-radius:12px; font-size:11px; line-height:16px; }
+      #redoc { height:calc(100vh - 60px); }
+      #redoc .menu-content { top:60px !important; height:calc(100vh - 60px) !important; }
+      /* Constrain content width */
+      #redoc .api-content { max-width: 1100px; margin-left: auto; margin-right: auto; }
+      /* Tables overflow handling */
+      #redoc table { display:block; overflow-x:auto; border-collapse:collapse; }
+      #redoc table td, #redoc table th { white-space:nowrap; }
+      /* Dark mode adjustments */
+      body.dark header { background:#121d30; }
+      body.dark .badge { background:#1d2c45; border-color:#2c415f; }
+      body.dark .footer { color:#999; }
+  .footer { text-align:center; font-size:11px; color:#666; padding:32px 0 48px; }
+  /* Hero section */
+  .hero { background:linear-gradient(135deg,#0b1221 0%, #152742 70%); color:#fff; padding:52px 28px 48px; }
+  .hero-inner { max-width:1100px; margin:0 auto; }
+  .hero h2 { margin:0 0 12px; font-size:32px; font-weight:600; letter-spacing:.5px; }
+  .hero p { max-width:760px; font-size:15px; line-height:1.5; margin:0 0 18px; }
+  .quick-links { list-style:none; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:12px; }
+  .quick-links a { text-decoration:none; background:#ffffff14; color:#fff; padding:6px 14px; border:1px solid #ffffff30; border-radius:18px; font-size:12px; letter-spacing:.4px; transition:background .2s,border-color .2s; }
+  .quick-links a:hover { background:#ffffff25; border-color:#fff; }
+  body.dark .hero { background:linear-gradient(135deg,#101b2d 0%, #1d3556 70%); }
+  body.dark .quick-links a { background:#ffffff10; }
+  /* Redoc typography refinements */
+  #redoc h1 { font-size:28px; font-weight:600; margin-top:48px; }
+  #redoc h2 { font-size:22px; font-weight:600; margin-top:40px; }
+  #redoc h3 { font-size:17px; font-weight:600; }
+  #redoc p { line-height:1.55; }
+  #redoc .response > div { border-radius:6px; }
+  #redoc [id^='tag/'] { scroll-margin-top:90px; }
+  .redoc-wrap { scroll-margin-top:70px; }
+      /* Hide giant decorative arc that Redoc injects (if present) */
+      svg[shape-rendering][viewBox="0 0 1440 1440"], .background-arc { display:none !important; }
+      .toggle-theme { cursor:pointer; background:#142034; border:1px solid #223147; color:#fff; font-size:11px; padding:4px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:4px; }
+      body.dark .toggle-theme { background:#1d2c45; border-color:#2c415f; }
+      @media (max-width: 900px){
+        #redoc { height:auto; }
+        #redoc .menu-content { position:static !important; height:auto !important; }
+      }
+    </style>
+    <script>
+      (function(){
+        const prefKey='javelin-docs-theme';
+        const prefersDark= window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const saved= localStorage.getItem(prefKey);
+        const mode = saved || (prefersDark ? 'dark' : 'light');
+        if(mode==='dark') document.documentElement.classList.add('dark');
+        document.addEventListener('DOMContentLoaded',()=>{
+          const btn = document.getElementById('theme-toggle');
+          function apply(next){
+            if(next==='dark') document.body.classList.add('dark'); else document.body.classList.remove('dark');
+            localStorage.setItem(prefKey,next);
+            btn.textContent = next==='dark' ? 'Light mode' : 'Dark mode';
+          }
+          apply(mode);
+          btn.addEventListener('click',()=>{
+            const next = document.body.classList.contains('dark') ? 'light':'dark';
+            apply(next);
+          });
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#redoc">Skip to content</a>
+    <header>
+      <img src="../javelin-logo.png" alt="Javelin" height="32" />
+      <div class="title-group">
+        <h1>{{title}}</h1>
+        <div class="meta">Generated {{generatedDate}}</div>
+      </div>
+      <button id="theme-toggle" class="toggle-theme" type="button">Dark mode</button>
+      <div class="badges">
+        <div class="badge">OpenAPI {{version}}</div>
+        <div class="badge">Reference</div>
+      </div>
+    </header>
+    <section class="hero">
+      <div class="hero-inner">
+        <h2>Developer API Reference</h2>
+        <p>The Javelin REST API lets you manage vulnerability templates, run platform migrations, and create API keys for automation. Use the menu to explore endpoints grouped by capability.</p>
+        <ul class="quick-links">
+          <li><a href="#tag/health" class="q">Health</a></li>
+          <li><a href="#tag/vuln-templates" class="q">Templates</a></li>
+          <li><a href="#tag/migrations" class="q">Migrations</a></li>
+          <li><a href="#tag/user-api-keys" class="q">User Keys</a></li>
+        </ul>
+      </div>
+    </section>
+    <div id="redoc" class="redoc-wrap"></div>
+    <div class="footer">&copy; {{year}} Tech Javelin Ltd — Internal / Customer Use</div>
+    {{{redocHTML}}}
+    <style>
+      /* Accessibility & structural enhancements */
+      .skip-link { position:absolute; left:-999px; top:auto; width:1px; height:1px; overflow:hidden; }
+      .skip-link:focus { position:static; width:auto; height:auto; padding:8px 14px; background:#0b62d6; color:#fff; border-radius:6px; margin:8px; z-index:1000; }
+      body { --card-bg:#ffffff; --card-border:#d9e2ec; --card-shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px -6px rgba(0,0,0,.06); }
+      body.dark { --card-bg:#121a25; --card-border:#253041; --card-shadow:0 2px 10px -4px rgba(0,0,0,.6); }
+      /* Operation blocks */
+  #redoc section[id^="operation/"] { background:var(--card-bg); border:1px solid var(--card-border); border-radius:10px; padding:42px 34px 36px; margin:56px 0 48px; box-shadow:var(--card-shadow); position:relative; }
+  #redoc section[id^="operation/"] h1, #redoc section[id^="operation/"] h2 { margin-top:0 !important; }
+  #redoc section[id^="operation/"] > h1:first-child, #redoc section[id^="operation/"] > h2:first-child { padding-top:0; }
+      /* Method badge */
+  #redoc section[id^="operation/"] .http-verb { position:static; display:inline-block; background:#0b62d6; color:#fff; font-size:11px; font-weight:600; letter-spacing:.5px; padding:4px 12px; border-radius:16px; box-shadow:0 1px 2px rgba(0,0,0,.12); margin:-30px 0 18px; }
+  body.dark #redoc section[id^="operation/"] .http-verb { background:#1555b0; }
+      /* Tag headings spacing */
+  #redoc h1[id^="tag/"], #redoc h2[id^="tag/"] { border-bottom:1px solid var(--card-border); padding-bottom:10px; margin:70px 0 28px; }
+  #redoc h1[id^="tag/"] + section[id^="operation/"], #redoc h2[id^="tag/"] + section[id^="operation/"] { margin-top:8px; }
+  /* Ensure API content has breathable side padding */
+  #redoc .api-content { padding:0 32px 80px; }
+      /* Tables */
+      #redoc table { font-size:13px; line-height:1.4; }
+      #redoc table th { background:#f4f7fa; font-weight:600; }
+      body.dark #redoc table th { background:#1d2532; }
+      #redoc table td, #redoc table th { padding:6px 10px !important; border:1px solid var(--card-border) !important; }
+      /* Code blocks */
+      #redoc pre, #redoc code { font-family:SFMono-Regular,Consolas,Menlo,monospace; font-size:13px; }
+      #redoc pre { background:#0f1115 !important; color:#e6e6e6 !important; border:1px solid #1d2532 !important; border-radius:8px; padding:16px 18px !important; }
+      body.dark #redoc pre { background:#1a252f !important; }
+      /* Inline code */
+      #redoc p code, #redoc li code { background:#eef3f8; padding:2px 5px; border-radius:4px; font-size:12px; }
+      body.dark #redoc p code, body.dark #redoc li code { background:#1d2532; }
+      /* Response panel adjustments */
+      #redoc .response .tab-header { font-size:12px; }
+      #redoc .response .example { background:var(--card-bg); border:1px solid var(--card-border); border-radius:8px; }
+      /* Focus styles */
+      a:focus, button:focus { outline:2px solid #0b62d6; outline-offset:2px; }
+      body.dark a:focus, body.dark button:focus { outline:2px solid #65b2ff; }
+      /* Sidebar refinements */
+      #redoc .menu-content { font-size:13px; }
+      #redoc .menu-content .scrollbar-container li.active > a { font-weight:600; }
+      /* Limit line length within operation descriptions */
+      #redoc section[id^="operation/"] p { max-width:70ch; }
+      /* Headings inside operations */
+      #redoc section[id^="operation/"] h3 { margin-top:26px; font-size:16px; font-weight:600; }
+      /* Dark mode hero text shadow subtle */
+      body.dark .hero h2 { text-shadow:0 1px 2px rgba(0,0,0,.45); }
+      /* Quick links focus */
+      .quick-links a:focus { box-shadow:0 0 0 2px #fff, 0 0 0 4px #0b62d6; }
+      body.dark .quick-links a:focus { box-shadow:0 0 0 2px #0f1115, 0 0 0 4px #65b2ff; }
+    </style>
+  </body>
+</html>

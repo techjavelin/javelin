@@ -1,0 +1,18 @@
+apis:
+  javelin@v1:
+    root: docs/api/openapi.yaml
+
+lint:
+  extends:
+    - recommended
+  rules:
+    operation-operationId-unique: error
+    operation-tags: warn
+    no-unused-components: warn
+    # Allow initial incremental tightening
+    info-contact: off
+    info-license: off
+
+referenceDocs: {}
+bundling:
+  dereference: false

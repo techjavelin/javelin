@@ -15,7 +15,7 @@ import { storage } from './storage/resource';
 import { OrganizationAPI } from './api/resource';
 import { Policy, PolicyStatement, PolicyDocument, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
 import { Table, AttributeType, BillingMode } from 'aws-cdk-lib/aws-dynamodb';
-import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType, ApiKey, UsagePlan } from 'aws-cdk-lib/aws-apigateway';
+import { RestApi, Cors, LambdaIntegration, CognitoUserPoolsAuthorizer, AuthorizationType, ApiKey, UsagePlan, Period } from 'aws-cdk-lib/aws-apigateway';
 import type { MethodOptions } from 'aws-cdk-lib/aws-apigateway';
 import { Stack } from 'aws-cdk-lib';
 
@@ -113,13 +113,21 @@ const vulnTemplatesApiKey = new ApiKey(api, 'VulnTemplatesApiKey', {
   description: 'API key for Vulnerability Template management endpoints',
   apiKeyName: 'vuln-templates-key'
 });
-const vulnTemplatesUsagePlan = new UsagePlan(api, 'VulnTemplatesUsagePlan', { name: 'VulnTemplatesUsagePlan' });
+const vulnTemplatesUsagePlan = new UsagePlan(api, 'VulnTemplatesUsagePlan', {
+  name: 'VulnTemplatesUsagePlan',
+  throttle: { rateLimit: 50, burstLimit: 20 },
+  quota: { limit: 50000, period: Period.MONTH }
+});
 vulnTemplatesUsagePlan.addApiStage({ stage: sigintRest.deploymentStage });
 vulnTemplatesUsagePlan.addApiKey(vulnTemplatesApiKey);
 
 // Usage plan for user-generated API keys (each key attached post-creation).
 // We don't pre-create keys here; the Lambda manages key lifecycle.
-const userApiKeysUsagePlan = new UsagePlan(api, 'UserApiKeysUsagePlan', { name: 'UserApiKeysUsagePlan' });
+const userApiKeysUsagePlan = new UsagePlan(api, 'UserApiKeysUsagePlan', {
+  name: 'UserApiKeysUsagePlan',
+  throttle: { rateLimit: 25, burstLimit: 10 },
+  quota: { limit: 20000, period: Period.MONTH }
+});
 userApiKeysUsagePlan.addApiStage({ stage: sigintRest.deploymentStage });
 
 // Authorizer
@@ -281,13 +289,17 @@ backend.addOutput({
 // The userApiKeys function will discover the usage plan ID at runtime by name if not provided.
 
 // IAM permissions for managing API keys (scoped to current account). We restrict to actions needed.
+// Narrow IAM: grant only specific API Gateway control plane resources (usage plans & api keys)
 backend.userApiKeys.resources.lambda.addToRolePolicy(new PolicyStatement({
-  actions: [
-    'apigateway:GET',
-    'apigateway:POST',
-    'apigateway:PATCH',
-    'apigateway:DELETE'
-  ],
-  resources: ['*'] // API Gateway execution/control plane ARNs are complex; tighten later if needed
+  actions: [ 'apigateway:GET' ],
+  resources: ['arn:aws:apigateway:*::/usageplans', 'arn:aws:apigateway:*::/usageplans/*', 'arn:aws:apigateway:*::/apikeys', 'arn:aws:apigateway:*::/apikeys/*', 'arn:aws:apigateway:*::/usageplans/*/keys', 'arn:aws:apigateway:*::/usageplans/*/keys/*' ]
+}));
+backend.userApiKeys.resources.lambda.addToRolePolicy(new PolicyStatement({
+  actions: [ 'apigateway:POST' ],
+  resources: ['arn:aws:apigateway:*::/apikeys', 'arn:aws:apigateway:*::/usageplans/*/keys']
+}));
+backend.userApiKeys.resources.lambda.addToRolePolicy(new PolicyStatement({
+  actions: [ 'apigateway:DELETE' ],
+  resources: ['arn:aws:apigateway:*::/apikeys/*']
 }));
 

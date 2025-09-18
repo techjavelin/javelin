@@ -398,6 +398,42 @@ Why `ArtifactLink` vs distinct document models? To unify linkage across multiple
 
 ## Custom Secure User Profile Mutations
 
+### API Specification & Docs
+
+The REST surface is defined in `docs/api/openapi.yaml` (OpenAPI 3.0.3).
+
+Tooling:
+
+| Purpose            | Command                    | Output / Notes                              |
+|--------------------|----------------------------|---------------------------------------------|
+| Lint spec          | `npm run lint:openapi`     | Spectral validation (warnings allowed)      |
+| View API docs (app) | Navigate to `/api` in running dev server | Dynamic Redoc (theme-aware) |
+| Bundle spec (flat) | `npm run docs:api:bundle` | `docs/api/openapi.bundle.yaml`              |
+
+IMPORTANT: The live API documentation is rendered dynamically at the `/api` route. We deliberately keep `docs/api/index.html` as a tiny stub (no bundled Redoc JS). Do NOT commit large generated Redoc HTML bundles; they bloat the repo and quickly go stale. If you need a static HTML export for distribution, generate it locally and host it externally (or attach to a release) instead of committing.
+
+Guardrails:
+* Source of truth: `docs/api/openapi.yaml` (lint with `npm run lint:openapi`).
+* Stub file: `docs/api/index.html` (< ~5KB) – keep minimal.
+* Optional bundle: `npm run docs:api:bundle` produces `openapi.bundle.yaml` (flattened YAML). Avoid committing any huge HTML output.
+* (Planned) Size check script can fail CI if the stub grows beyond an allowed threshold.
+
+Conventions enforced:
+* Every operation includes `summary`, `description`, and at least one logical `tag`.
+* Shared error structure via `components.schemas.Error`.
+* User-managed API key endpoints use `CognitoAuth`; vuln template endpoints use `ApiKeyAuth`.
+
+Extending the spec:
+1. Add schemas under `components.schemas` first (prefer composition / references over duplication).
+2. Add path item with operations; include auth `security` blocks explicitly (empty array means public).
+3. Run `npm run lint:openapi` and address any new warnings (add descriptions / tags).
+4. (Optional) Bundle the spec with `npm run docs:api:bundle` if you need a flattened artifact.
+
+Future improvements (not yet implemented):
+* CI job to fail on Spectral errors (treat warnings as non-blocking initially).
+* Bundle step producing a flattened spec variant for distribution.
+* Redocly migration (replace deprecated `redoc-cli`).
+
 Owner-style auth rules for `UserProfile` caused implicit field collisions with newer role assignment models. To avoid schema assembly failures while preserving least-privilege semantics, profile update & delete are now routed through custom Lambda resolvers:
 
 Mutations (GraphQL):

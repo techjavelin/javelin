@@ -20,6 +20,7 @@ import Profile from './pages/Profile.vue'
 import Preferences from './pages/Preferences.vue'
 import JavelinPulse from './pages/JavelinPulse.vue'
 import AdminPulseSubmissions from './pages/AdminPulseSubmissions.vue'
+import ApiDocs from './pages/ApiDocs.vue'
 
 const routes = [
   {
@@ -389,6 +390,11 @@ const routes = [
     component: () => import('./pages/hub/HubSettings.vue'),
     name: 'hub-settings',
     meta: { requiresAuth: true, hideTopNav: true, hubCapability: 'HUB.VIEW_ORG_DASH' }
+  }
+  ,{
+    path: '/api',
+    component: ApiDocs,
+    name: 'api-docs'
   }
 ];
 

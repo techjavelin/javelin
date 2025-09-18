@@ -6,6 +6,7 @@ export const userApiKeys = defineFunction({
   name: 'user-api-keys',
   entry: '../../functions/user-api-keys/handler.ts',
   environment: {
-    USER_API_KEYS_USAGE_PLAN_NAME: 'UserApiKeysUsagePlan'
+    USER_API_KEYS_USAGE_PLAN_NAME: 'UserApiKeysUsagePlan',
+    MAX_USER_API_KEYS: '5'
   }
 });

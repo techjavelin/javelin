@@ -62,6 +62,16 @@ export const handler: APIGatewayProxyHandler = withLogging('user-api-keys', asyn
     if(event.httpMethod === 'POST') {
       const body = event.body ? JSON.parse(event.body) : {};
       const name = body.name || keyNameForUser(sub) + '-' + Date.now();
+      // Enforce per-user key cap
+      const maxKeysRaw = (env as any).MAX_USER_API_KEYS || process.env.MAX_USER_API_KEYS;
+      const maxKeys = maxKeysRaw ? parseInt(maxKeysRaw, 10) : NaN;
+      if(!isNaN(maxKeys)) {
+        const listPre = await client.send(new GetApiKeysCommand({ includeValues: false, limit: 500 }));
+        const owned = (listPre.items||[]).filter((k: ApiKey) => k.tags && k.tags['owner-sub'] === sub);
+        if(owned.length >= maxKeys) {
+          return { statusCode: 400, headers: baseHeaders(), body: JSON.stringify({ error: 'KeyLimitExceeded', message: `Maximum of ${maxKeys} keys reached` }) };
+        }
+      }
       const createRes = await client.send(new CreateApiKeyCommand({
         name,
         enabled: true,
